@@ -77,7 +77,9 @@
                 <button type="button" class="symbol-key" data-insert="\le" title="Less than or equal"><math-field read-only>\le</math-field></button>
                 <button type="button" class="symbol-key" data-insert="\ge" title="Greater than or equal"><math-field read-only>\ge</math-field></button>
                 <button type="button" class="symbol-key symbol-key-system"
-                  data-insert="\begin{cases}#0\\#?\end{cases}" title="System of equations">
+                  data-structure="system"
+                  data-insert="\begin{cases}\placeholder{}\\\placeholder{}\end{cases}"
+                  title="System of equations">
                   <math-field read-only>\begin{cases}x+y=a\\x-y=b\end{cases}</math-field>
                 </button>
               </div>

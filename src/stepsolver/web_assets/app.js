@@ -421,12 +421,30 @@ form.addEventListener("submit", (event) => {
 function insertSymbolTemplate(key) {
   const template = key.dataset.insert;
   if (!template) return;
-  if (!usesMobileKeyboard()) expressionField.focus({ preventScroll: true });
-  expressionField.insert(template, {
-    insertionMode: "replaceSelection",
+  const useNativeMobileKeyboard = usesMobileKeyboard();
+  if (!useNativeMobileKeyboard) expressionField.focus({ preventScroll: true });
+  const insertionOptions = {
+    format: "latex",
+    mode: "math",
     selectionMode: "placeholder"
-  });
-  focusMobileKeyboard();
+  };
+  if (key.dataset.structure === "system") {
+    expressionField.setValue(template, {
+      ...insertionOptions,
+      insertionMode: "replaceAll"
+    });
+  } else {
+    expressionField.insert(template, {
+      ...insertionOptions,
+      insertionMode: "replaceSelection",
+      scrollIntoView: false
+    });
+  }
+  if (useNativeMobileKeyboard) focusMobileKeyboard();
+  else {
+    expressionField.focus({ preventScroll: true });
+    showNativeCaret(true);
+  }
 }
 
 for (const key of document.querySelectorAll(".symbol-key")) {

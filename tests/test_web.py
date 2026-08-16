@@ -220,7 +220,13 @@ def test_frontend_renders_domain_constraints_and_accepts_systems() -> None:
         stylesheet = client.get("/static/style.css")
         script = client.get("/static/app.js")
     assert 'title="System of equations"' in homepage.text
-    assert r'data-insert="\begin{cases}#0\\#?\end{cases}"' in homepage.text
+    assert 'data-structure="system"' in homepage.text
+    assert r'data-insert="\begin{cases}\placeholder{}\\\placeholder{}\end{cases}"' in homepage.text
+    assert 'format: "latex"' in script.text
+    assert 'mode: "math"' in script.text
+    assert 'key.dataset.structure === "system"' in script.text
+    assert "expressionField.setValue(template" in script.text
+    assert 'insertionMode: "replaceAll"' in script.text
     assert "createConstraints(step)" in script.text
     assert "Domain restrictions introduced here" in script.text
     assert "step.introduced_constraints" in script.text
