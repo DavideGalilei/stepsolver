@@ -10,6 +10,7 @@ const computeEngine = new ComputeEngine();
 const solverClient = createSolverClient();
 const form = document.querySelector("#solve-form");
 const expressionField = document.querySelector("#expression-field");
+const mobileKeyboardProxy = document.querySelector("#mobile-keyboard-proxy");
 const solveButton = document.querySelector("#solve-button");
 const resultSection = document.querySelector("#result-section");
 const statusText = document.querySelector("#status-text");
@@ -20,22 +21,100 @@ const stepsContainer = document.querySelector("#steps");
 const asciiOutput = document.querySelector("#ascii-output");
 const errorBox = document.querySelector("#error-box");
 
-function enableSystemKeyboard() {
-  const keyboardSink = expressionField.shadowRoot?.querySelector('[part="keyboard-sink"]');
-  if (!(keyboardSink instanceof HTMLElement)) return;
-  keyboardSink.setAttribute("inputmode", "text");
-  keyboardSink.inputMode = "text";
-}
-
 function hideMathVirtualKeyboard() {
   window.mathVirtualKeyboard?.hide();
 }
 
-void customElements.whenDefined("math-field").then(enableSystemKeyboard);
-expressionField.addEventListener("pointerdown", enableSystemKeyboard, { capture: true });
-expressionField.addEventListener("focusin", () => {
-  enableSystemKeyboard();
+const mobileKeyboardQuery = window.matchMedia("(hover: none) and (pointer: coarse)");
+let composingNativeText = false;
+
+function usesMobileKeyboard() {
+  return mobileKeyboardQuery.matches;
+}
+
+function focusMobileKeyboard() {
+  if (!usesMobileKeyboard()) return;
   hideMathVirtualKeyboard();
+  mobileKeyboardProxy.focus({ preventScroll: true });
+  mobileKeyboardProxy.setSelectionRange(0, mobileKeyboardProxy.value.length);
+}
+
+function insertNativeText(text) {
+  if (!text) return;
+  expressionField.insert(text, {
+    insertionMode: "replaceSelection",
+    selectionMode: "after"
+  });
+}
+
+function clearMobileKeyboardProxy() {
+  mobileKeyboardProxy.value = "";
+}
+
+expressionField.addEventListener("pointerup", focusMobileKeyboard);
+expressionField.addEventListener("focusin", hideMathVirtualKeyboard);
+mobileKeyboardProxy.addEventListener("focus", () => {
+  expressionField.classList.add("is-mobile-editing");
+  hideMathVirtualKeyboard();
+});
+mobileKeyboardProxy.addEventListener("blur", () => {
+  expressionField.classList.remove("is-mobile-editing");
+  clearMobileKeyboardProxy();
+});
+mobileKeyboardProxy.addEventListener("compositionstart", () => {
+  composingNativeText = true;
+});
+mobileKeyboardProxy.addEventListener("compositionend", (event) => {
+  composingNativeText = false;
+  insertNativeText(event.data || mobileKeyboardProxy.value);
+  clearMobileKeyboardProxy();
+});
+mobileKeyboardProxy.addEventListener("beforeinput", (event) => {
+  if (event.inputType === "insertCompositionText" || composingNativeText) return;
+  if (event.inputType === "insertLineBreak" || event.inputType === "insertParagraph") {
+    event.preventDefault();
+    clearMobileKeyboardProxy();
+    form.requestSubmit();
+    return;
+  }
+  if (event.inputType === "deleteContentBackward") {
+    event.preventDefault();
+    expressionField.executeCommand("deleteBackward");
+    return;
+  }
+  if (event.inputType === "deleteContentForward") {
+    event.preventDefault();
+    expressionField.executeCommand("deleteForward");
+    return;
+  }
+  if (event.inputType === "historyUndo" || event.inputType === "historyRedo") {
+    event.preventDefault();
+    expressionField.executeCommand(event.inputType === "historyUndo" ? "undo" : "redo");
+    return;
+  }
+  if (event.inputType.startsWith("insert") && event.data) {
+    event.preventDefault();
+    insertNativeText(event.data);
+    clearMobileKeyboardProxy();
+  }
+});
+mobileKeyboardProxy.addEventListener("keydown", (event) => {
+  if (event.key !== "Enter" || event.isComposing) return;
+  event.preventDefault();
+  clearMobileKeyboardProxy();
+  form.requestSubmit();
+});
+mobileKeyboardProxy.addEventListener("input", () => {
+  if (composingNativeText) return;
+  insertNativeText(mobileKeyboardProxy.value);
+  clearMobileKeyboardProxy();
+});
+mobileKeyboardProxy.addEventListener("paste", (event) => {
+  const text = event.clipboardData?.getData("text/plain");
+  if (!text) return;
+  event.preventDefault();
+  insertNativeText(text);
+  clearMobileKeyboardProxy();
 });
 
 function createReadonlyMath(latex, className) {
@@ -205,11 +284,12 @@ form.addEventListener("submit", (event) => {
 function insertSymbolTemplate(key) {
   const template = key.dataset.insert;
   if (!template) return;
-  expressionField.focus({ preventScroll: true });
+  if (!usesMobileKeyboard()) expressionField.focus({ preventScroll: true });
   expressionField.insert(template, {
     insertionMode: "replaceSelection",
     selectionMode: "placeholder"
   });
+  focusMobileKeyboard();
 }
 
 for (const key of document.querySelectorAll(".symbol-key")) {
@@ -230,7 +310,8 @@ for (const key of document.querySelectorAll(".symbol-key")) {
 for (const example of document.querySelectorAll(".example")) {
   example.addEventListener("click", () => {
     expressionField.value = example.dataset.expression;
-    expressionField.focus();
+    if (usesMobileKeyboard()) focusMobileKeyboard();
+    else expressionField.focus();
   });
 }
 

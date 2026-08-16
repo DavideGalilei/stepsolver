@@ -65,7 +65,6 @@ def test_homepage_and_assets_are_served() -> None:
     assert "event.preventDefault()" in script.text
     assert "event.detail === 0" in script.text
     assert "insertSymbolTemplate(key)" in script.text
-    assert "expressionField.executeCommand" not in script.text
     assert 'behavior: "smooth"' not in script.text
     assert (
         stylesheet.text.count("grid-template-columns: repeat(3, minmax(0, 1fr))")
@@ -89,16 +88,26 @@ def test_frontend_handles_large_math_and_warms_the_browser_runtime() -> None:
         runtime = client.get("/static/runtime.mjs")
     assert 'class="math-viewport result-viewport"' in homepage.text
     assert 'aria-label="Scrollable answer"' in homepage.text
+    assert 'id="mobile-keyboard-proxy"' in homepage.text
+    assert 'inputmode="text"' in homepage.text
     assert "createMathViewport" in script.text
     assert "solverClient.warmup()" in script.text
     assert '"requestIdleCallback" in window' in script.text
-    assert "querySelector('[part=\"keyboard-sink\"]')" in script.text
-    assert 'keyboardSink.setAttribute("inputmode", "text")' in script.text
+    assert "keyboard-sink" not in script.text
+    assert 'mobileKeyboardProxy.addEventListener("beforeinput"' in script.text
+    assert 'mobileKeyboardProxy.addEventListener("compositionend"' in script.text
+    assert 'mobileKeyboardProxy.addEventListener("keydown"' in script.text
+    assert 'mobileKeyboardProxy.addEventListener("paste"' in script.text
+    assert 'expressionField.executeCommand("deleteBackward")' in script.text
     assert "window.mathVirtualKeyboard?.hide()" in script.text
     assert "async warmup()" in runtime.text
     assert ".math-viewport" in stylesheet.text
     assert ".primary-math-field::part(virtual-keyboard-toggle)" in stylesheet.text
-    assert ".primary-math-field::part(keyboard-sink)" in stylesheet.text
+    assert ".mobile-keyboard-proxy" in stylesheet.text
+    assert "font-size: 16px" in stylesheet.text
+    assert "max-width: calc(100dvw - 20px)" in stylesheet.text
+    assert "contain: inline-size" in stylesheet.text
+    assert "-webkit-text-size-adjust: 100%" in stylesheet.text
     assert "overscroll-behavior-inline: contain" in stylesheet.text
     assert "touch-action: pan-x" in stylesheet.text
     assert "pointer-events: none" in stylesheet.text

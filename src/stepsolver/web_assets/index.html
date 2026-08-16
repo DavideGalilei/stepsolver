@@ -28,10 +28,22 @@
 
         <form id="solve-form">
           <label class="field-label" for="expression-field">Problem</label>
-          <math-field id="expression-field" class="primary-math-field"
-            math-virtual-keyboard-policy="manual"
-            smart-fence
-            placeholder="\text{Type an equation or expression}">x^2-4=0</math-field>
+          <div class="math-input-shell">
+            <math-field id="expression-field" class="primary-math-field"
+              math-virtual-keyboard-policy="manual"
+              smart-fence
+              placeholder="\text{Type an equation or expression}">x^2-4=0</math-field>
+            <textarea id="mobile-keyboard-proxy" class="mobile-keyboard-proxy"
+              aria-label="Type into the math problem"
+              aria-controls="expression-field"
+              autocomplete="off"
+              autocapitalize="none"
+              autocorrect="off"
+              enterkeyhint="go"
+              inputmode="text"
+              rows="1"
+              spellcheck="false"></textarea>
+          </div>
 
           <div class="math-toolbar" aria-label="Mathematical symbol palette">
             <section class="tool-group" aria-labelledby="structure-tools">
