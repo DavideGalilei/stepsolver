@@ -22,19 +22,9 @@
 
 StepSolver accepts ASCII or visual math, parses it into its own typed AST, and returns checked solution steps. It is most useful today for single-variable calculus and algebra.
 
-```console
-$ poetry run stepsolver "integrate(x*exp(x), x)"
-
-Step 1 (Choose integration by parts)
-  ∫ x eˣ dx  →  x eˣ − ∫ eˣ dx
-
-Step 2 (Evaluate the remaining integral)
-  x eˣ − ∫ eˣ dx  →  (x − 1)eˣ + C
-
-Result: (x - 1) * exp(x) + C
-```
-
-The web editor renders the problem, identities, substitutions, and intermediate work as LaTeX.
+<p align="center">
+  <img src="docs/assets/solver-example.png" width="920" alt="StepSolver solving the integral of x times e to the x using integration by parts">
+</p>
 
 ## Run it
 

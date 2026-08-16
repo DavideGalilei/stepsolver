@@ -1,0 +1,160 @@
+"""Backend-native display objects shared by derivation strategies."""
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+from typing import TYPE_CHECKING
+
+import sympy as sp
+
+if TYPE_CHECKING:
+    from stepsolver.results import VerificationMethod
+
+type EquationBackendExpression = sp.Basic | tuple[sp.Basic, ...]
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class BackendIntegral:
+    """An unevaluated backend integral used only for derivation display."""
+
+    integrand: sp.Basic
+    variable: sp.Symbol
+    coefficient: sp.Basic | None = None
+    lower: sp.Basic | None = None
+    upper: sp.Basic | None = None
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class BackendDifferential:
+    """A displayed differential such as dx or du."""
+
+    variable: sp.Symbol
+    coefficient: sp.Basic | None = None
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class BackendDerivative:
+    """A displayed derivative of a backend expression."""
+
+    expression: sp.Basic
+    variable: sp.Symbol
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class BackendIntegrationByPartsRule:
+    """The generic integration-by-parts identity."""
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class BackendQuadraticSolutions:
+    """Two roots displayed as quadratic-formula fractions."""
+
+    variable: sp.Symbol
+    negative_numerator: BackendExpression
+    positive_numerator: BackendExpression
+    denominator: BackendExpression
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class BackendEvaluationAtBounds:
+    """An antiderivative evaluated between lower and upper bounds."""
+
+    expression: sp.Basic
+    variable: sp.Symbol
+    lower: sp.Basic
+    upper: sp.Basic
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class BackendLimit:
+    """A displayed one- or two-sided limit."""
+
+    expression: BackendExpression
+    variable: sp.Symbol
+    point: sp.Basic
+    direction: str | None = None
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class BackendNotEqual:
+    """A displayed non-equality between two backend expressions."""
+
+    left: BackendExpression
+    right: BackendExpression
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class BackendSum:
+    """A displayed sum containing backend and derivation expressions."""
+
+    terms: tuple[BackendExpression, ...]
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class BackendProduct:
+    """A displayed product containing backend and derivation expressions."""
+
+    factors: tuple[BackendExpression, ...]
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class BackendQuotient:
+    """A displayed quotient containing backend and derivation expressions."""
+
+    numerator: BackendExpression
+    denominator: BackendExpression
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class BackendDifference:
+    """A displayed subtraction containing backend and derivation expressions."""
+
+    left: BackendExpression
+    right: BackendExpression
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class BackendIdentity:
+    """A displayed equality between two backend derivation expressions."""
+
+    left: BackendExpression
+    right: BackendExpression
+
+
+type BackendExpression = (
+    EquationBackendExpression
+    | BackendIntegral
+    | BackendDifferential
+    | BackendDerivative
+    | BackendIntegrationByPartsRule
+    | BackendQuadraticSolutions
+    | BackendEvaluationAtBounds
+    | BackendLimit
+    | BackendNotEqual
+    | BackendSum
+    | BackendProduct
+    | BackendQuotient
+    | BackendDifference
+    | BackendIdentity
+)
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class BackendMathNote:
+    """A labeled mathematical annotation supporting a derivation step."""
+
+    label: str
+    expression: BackendExpression
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class BackendDerivationStep:
+    """One backend-native transformation awaiting conversion to the public AST."""
+
+    rule: str
+    before: BackendExpression
+    after: BackendExpression
+    explanation: str
+    verification_method: VerificationMethod
+    verification_detail: str
+    notes: tuple[BackendMathNote, ...] = ()

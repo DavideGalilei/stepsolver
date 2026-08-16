@@ -90,18 +90,45 @@ explicit-preview-rules = false
     "too-many-branches",
 ]
 "src/stepsolver/sympy_backend.py" = [
+    "too-many-locals",
+    "too-many-return-statements",
+]
+"src/stepsolver/sympy_conversion.py" = [
     "complex-structure",
     "f-string-in-exception",
     "magic-value-comparison",
-    "no-self-use",
     "raise-vanilla-args",
     "raw-string-in-exception",
     "too-many-branches",
-    "too-many-locals",
+    "too-many-return-statements",
+]
+"src/stepsolver/sympy_execution.py" = [
+    "complex-structure",
+    "magic-value-comparison",
+    "raise-vanilla-args",
+    "raw-string-in-exception",
+    "too-many-branches",
     "too-many-return-statements",
     "too-many-statements",
 ]
-"src/stepsolver/sympy_derivation.py" = ["too-many-arguments", "too-many-locals"]
+"src/stepsolver/sympy_rendering.py" = [
+    "complex-structure",
+    "too-many-branches",
+    "too-many-return-statements",
+]
+"src/stepsolver/sympy_steps.py" = ["magic-value-comparison"]
+"src/stepsolver/sympy_support.py" = [
+    "f-string-in-exception",
+    "raise-vanilla-args",
+    "too-many-return-statements",
+]
+"src/stepsolver/sympy_verification.py" = [
+    "complex-structure",
+    "magic-value-comparison",
+    "raise-vanilla-args",
+    "raw-string-in-exception",
+]
+"src/stepsolver/derivation/*.py" = ["too-many-arguments", "too-many-locals"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"

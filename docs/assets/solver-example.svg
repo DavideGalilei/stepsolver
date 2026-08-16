@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="860" viewBox="0 0 1440 860">
+  <defs>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="125%">
+      <feDropShadow dx="0" dy="14" stdDeviation="18" flood-color="#18181b" flood-opacity="0.13"/>
+    </filter>
+    <clipPath id="window-clip">
+      <rect x="42" y="32" width="1356" height="786" rx="28"/>
+    </clipPath>
+  </defs>
+
+  <rect x="42" y="32" width="1356" height="786" rx="28" fill="#fbfaf8" stroke="#d8d6d1" stroke-width="2" filter="url(#shadow)"/>
+
+  <g clip-path="url(#window-clip)">
+    <rect x="42" y="32" width="1356" height="88" fill="#ffffff"/>
+    <line x1="42" y1="120" x2="1398" y2="120" stroke="#dedcd7" stroke-width="2"/>
+
+    <text x="92" y="88" fill="#e92740" font-family="Noto Serif, Georgia, serif" font-size="43" font-weight="700">∬</text>
+    <text x="143" y="85" fill="#202124" font-family="Noto Sans, Arial, sans-serif" font-size="28" font-weight="700" letter-spacing="-0.8">StepSolver</text>
+    <text x="1348" y="82" fill="#6e7075" font-family="Noto Sans, Arial, sans-serif" font-size="17" text-anchor="end">symbolic answers with the algebra shown</text>
+
+    <text x="94" y="176" fill="#72747a" font-family="Noto Sans, Arial, sans-serif" font-size="15" font-weight="700" letter-spacing="1.5">PROBLEM</text>
+    <text x="94" y="250" fill="#202124" font-family="Noto Serif, Georgia, serif" font-size="55">∫ x · eˣ dx</text>
+    <line x1="94" y1="284" x2="1346" y2="284" stroke="#292a2d" stroke-width="2"/>
+
+    <text x="94" y="336" fill="#72747a" font-family="Noto Sans, Arial, sans-serif" font-size="15" font-weight="700" letter-spacing="1.5">ANSWER</text>
+    <text x="94" y="402" fill="#202124" font-family="Noto Serif, Georgia, serif" font-size="48">(x − 1)eˣ + C</text>
+    <line x1="94" y1="443" x2="1346" y2="443" stroke="#dedcd7" stroke-width="2"/>
+
+    <text x="94" y="498" fill="#202124" font-family="Noto Sans, Arial, sans-serif" font-size="22" font-weight="700">Working</text>
+
+    <text x="96" y="559" fill="#e92740" font-family="Noto Sans, Arial, sans-serif" font-size="19" font-weight="700">1.</text>
+    <text x="145" y="558" fill="#202124" font-family="Noto Sans, Arial, sans-serif" font-size="20" font-weight="700">Choose integration by parts</text>
+    <text x="145" y="592" fill="#66686e" font-family="Noto Sans, Arial, sans-serif" font-size="17">Take u = x and dv = eˣ dx, so du = dx and v = eˣ.</text>
+    <text x="145" y="646" fill="#202124" font-family="Noto Serif, Georgia, serif" font-size="31">∫ x · eˣ dx   =   x · eˣ − ∫ eˣ dx</text>
+
+    <line x1="145" y1="682" x2="1346" y2="682" stroke="#e7e5e1" stroke-width="2"/>
+
+    <text x="96" y="735" fill="#e92740" font-family="Noto Sans, Arial, sans-serif" font-size="19" font-weight="700">2.</text>
+    <text x="145" y="734" fill="#202124" font-family="Noto Sans, Arial, sans-serif" font-size="20" font-weight="700">Evaluate the remaining integral</text>
+    <text x="145" y="782" fill="#202124" font-family="Noto Serif, Georgia, serif" font-size="31">x · eˣ − ∫ eˣ dx   =   (x − 1)eˣ + C</text>
+  </g>
+</svg>

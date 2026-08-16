@@ -1,0 +1,199 @@
+"""Translate backend derivations into the public step model."""
+
+from stepsolver.ast import (
+    BinaryExpression,
+    BinaryOperator,
+    Expression,
+    FunctionCall,
+    Identifier,
+    Operation,
+    Relation,
+    RelationOperator,
+    SequenceExpression,
+    Symbol,
+)
+from stepsolver.derivation.model import (
+    BackendDerivationStep,
+    BackendDerivative,
+    BackendDifference,
+    BackendDifferential,
+    BackendEvaluationAtBounds,
+    BackendExpression,
+    BackendIdentity,
+    BackendIntegral,
+    BackendIntegrationByPartsRule,
+    BackendLimit,
+    BackendNotEqual,
+    BackendProduct,
+    BackendQuadraticSolutions,
+    BackendQuotient,
+    BackendSum,
+)
+from stepsolver.results import (
+    SolutionStep,
+    StepNote,
+    Verification,
+)
+from stepsolver.sympy_conversion import SympyConverter
+
+
+class SympyDerivationRenderer:
+    """Render backend-native derivation objects as StepSolver expressions and steps."""
+
+    def __init__(self, converter: SympyConverter) -> None:
+        """Use the supplied scalar converter inside displayed derivations."""
+        self._converter = converter
+
+    def solution_step(self, step: BackendDerivationStep) -> SolutionStep:
+        """Convert one backend derivation step to the public step model."""
+        return SolutionStep(
+            rule=step.rule,
+            before=self.derivation_expression(step.before),
+            after=self.derivation_expression(step.after),
+            explanation=step.explanation,
+            verification=Verification(
+                method=step.verification_method,
+                detail=step.verification_detail,
+            ),
+            notes=tuple(
+                StepNote(
+                    label=note.label,
+                    expression=self.derivation_expression(note.expression),
+                )
+                for note in step.notes
+            ),
+        )
+
+    def derivation_expression(
+        self,
+        value: BackendExpression,
+    ) -> Expression:
+        """Convert one backend display object to the public mathematical AST."""
+        if isinstance(value, BackendIdentity):
+            return Relation(
+                operator=RelationOperator.EQUAL,
+                left=self.derivation_expression(value.left),
+                right=self.derivation_expression(value.right),
+            )
+        if isinstance(value, BackendIntegrationByPartsRule):
+            return FunctionCall(name=Identifier("integration_by_parts_rule"), arguments=())
+        if isinstance(value, BackendQuadraticSolutions):
+            return FunctionCall(
+                name=Identifier("quadratic_solutions"),
+                arguments=(
+                    self._converter.from_sympy(value.variable),
+                    self.derivation_expression(value.negative_numerator),
+                    self.derivation_expression(value.positive_numerator),
+                    self.derivation_expression(value.denominator),
+                ),
+            )
+        if isinstance(value, BackendNotEqual):
+            return Relation(
+                operator=RelationOperator.NOT_EQUAL,
+                left=self.derivation_expression(value.left),
+                right=self.derivation_expression(value.right),
+            )
+        if isinstance(value, BackendSum):
+            expressions = tuple(self.derivation_expression(term) for term in value.terms)
+            first, *remaining = expressions
+            result = first
+            for expression in remaining:
+                result = BinaryExpression(
+                    operator=BinaryOperator.ADD,
+                    left=result,
+                    right=expression,
+                )
+            return result
+        if isinstance(value, BackendProduct):
+            expressions = tuple(self.derivation_expression(factor) for factor in value.factors)
+            first, *remaining = expressions
+            result = first
+            for expression in remaining:
+                result = BinaryExpression(
+                    operator=BinaryOperator.MULTIPLY,
+                    left=result,
+                    right=expression,
+                )
+            return result
+        if isinstance(value, BackendQuotient):
+            return BinaryExpression(
+                operator=BinaryOperator.DIVIDE,
+                left=self.derivation_expression(value.numerator),
+                right=self.derivation_expression(value.denominator),
+            )
+        if isinstance(value, BackendDifference):
+            return BinaryExpression(
+                operator=BinaryOperator.SUBTRACT,
+                left=self.derivation_expression(value.left),
+                right=self.derivation_expression(value.right),
+            )
+        if isinstance(value, BackendDifferential):
+            differential = FunctionCall(
+                name=Identifier("differential"),
+                arguments=(self._converter.from_sympy(value.variable),),
+            )
+            if value.coefficient is None:
+                return differential
+            return BinaryExpression(
+                operator=BinaryOperator.MULTIPLY,
+                left=self._converter.from_sympy(value.coefficient),
+                right=differential,
+            )
+        if isinstance(value, BackendDerivative):
+            return FunctionCall(
+                name=Identifier(Operation.DIFFERENTIATE.value),
+                arguments=(
+                    self._converter.from_sympy(value.expression),
+                    self._converter.from_sympy(value.variable),
+                ),
+            )
+        if isinstance(value, BackendEvaluationAtBounds):
+            return FunctionCall(
+                name=Identifier("evaluate_at_bounds"),
+                arguments=(
+                    self._converter.from_sympy(value.expression),
+                    self._converter.from_sympy(value.variable),
+                    self._converter.from_sympy(value.lower),
+                    self._converter.from_sympy(value.upper),
+                ),
+            )
+        if isinstance(value, BackendLimit):
+            limit_arguments: tuple[Expression, ...] = (
+                self.derivation_expression(value.expression),
+                self._converter.from_sympy(value.variable),
+                self._converter.from_sympy(value.point),
+            )
+            if value.direction is not None:
+                direction = "right" if value.direction == "+" else "left"
+                limit_arguments = (*limit_arguments, Symbol(name=Identifier(direction)))
+            return FunctionCall(
+                name=Identifier(Operation.LIMIT.value),
+                arguments=limit_arguments,
+            )
+        if isinstance(value, BackendIntegral):
+            integral_arguments: tuple[Expression, ...] = (
+                self._converter.from_sympy(value.integrand),
+                self._converter.from_sympy(value.variable),
+            )
+            if value.lower is not None and value.upper is not None:
+                integral_arguments = (
+                    *integral_arguments,
+                    self._converter.from_sympy(value.lower),
+                    self._converter.from_sympy(value.upper),
+                )
+            integral = FunctionCall(
+                name=Identifier(Operation.INTEGRATE.value),
+                arguments=integral_arguments,
+            )
+            if value.coefficient is None:
+                return integral
+            return BinaryExpression(
+                operator=BinaryOperator.MULTIPLY,
+                left=self._converter.from_sympy(value.coefficient),
+                right=integral,
+            )
+        if isinstance(value, tuple):
+            return SequenceExpression(
+                items=tuple(self._converter.from_sympy(item) for item in value)
+            )
+        return self._converter.from_sympy(value)
