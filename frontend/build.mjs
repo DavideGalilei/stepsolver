@@ -8,6 +8,7 @@ const frontendDirectory = dirname(fileURLToPath(import.meta.url));
 const assetDirectory = resolve(frontendDirectory, "../src/stepsolver/web_assets");
 const fontDirectory = resolve(assetDirectory, "fonts");
 const vendorPath = resolve(assetDirectory, "vendor.mjs");
+const vendorLegalPath = resolve(assetDirectory, "vendor.mjs.LEGAL.txt");
 
 await mkdir(assetDirectory, { recursive: true });
 await rm(fontDirectory, { force: true, recursive: true });
@@ -27,6 +28,8 @@ await build({
 
 const vendorSource = await readFile(vendorPath, "utf8");
 await writeFile(vendorPath, vendorSource.replace(/[\t ]+$/gm, ""), "utf8");
+const vendorLegalSource = await readFile(vendorLegalPath, "utf8");
+await writeFile(vendorLegalPath, vendorLegalSource.replace(/[\t ]+$/gm, ""), "utf8");
 
 const dependencies = [
   ["MathLive 0.110.0", "mathlive/LICENSE.txt"],
@@ -48,6 +51,6 @@ notices.push(
 );
 await writeFile(
   resolve(assetDirectory, "THIRD_PARTY_NOTICES.txt"),
-  `${notices.join("\n").trim()}\n`,
+  `${notices.join("\n").trim().replace(/[\t ]+$/gm, "")}\n`,
   "utf8"
 );

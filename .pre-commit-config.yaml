@@ -8,9 +8,20 @@ repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v6.0.0
     hooks:
+      - id: check-added-large-files
+        args: [--maxkb=2500]
+      - id: check-ast
+      - id: check-case-conflict
+      - id: check-json
+      - id: check-merge-conflict
+      - id: check-symlinks
       - id: check-toml
       - id: check-yaml
+      - id: debug-statements
+      - id: destroyed-symlinks
       - id: end-of-file-fixer
+      - id: mixed-line-ending
+        args: [--fix=no]
       - id: trailing-whitespace
   - repo: local
     hooks:
@@ -27,5 +38,25 @@ repos:
       - id: ty
         name: ty
         entry: poetry run ty check
+        language: system
+        pass_filenames: false
+      - id: poetry-check
+        name: poetry metadata
+        entry: poetry check --strict
+        language: system
+        pass_filenames: false
+      - id: frontend-contract
+        name: frontend MathJSON contract
+        entry: npm --prefix frontend test
+        language: system
+        pass_filenames: false
+      - id: frontend-build
+        name: generated frontend assets
+        entry: bash -c 'npm --prefix frontend run build && git diff --exit-code -- src/stepsolver/web_assets'
+        language: system
+        pass_filenames: false
+      - id: pytest
+        name: pytest
+        entry: poetry run pytest
         language: system
         pass_filenames: false

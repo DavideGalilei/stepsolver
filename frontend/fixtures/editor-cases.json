@@ -1,0 +1,32 @@
+[
+  {
+    "name": "quadratic equation",
+    "latex": "x^2-4=0",
+    "math_json": ["Equal", ["Subtract", ["Power", "x", 2], 4], 0],
+    "result_latex": "\\left[\\left\\{x \\mapsto -2\\right\\}, \\left\\{x \\mapsto 2\\right\\}\\right]"
+  },
+  {
+    "name": "product derivative",
+    "latex": "\\frac{\\mathrm{d}}{\\mathrm{d}x}(\\sin(x)e^x)",
+    "math_json": ["D", ["Delimiter", ["InvisibleOperator", ["Sin", "x"], ["Power", "e", "x"]]], "x"],
+    "result_latex": "\\exp\\left(x\\right) \\cdot \\sin\\left(x\\right) + \\exp\\left(x\\right) \\cdot \\cos\\left(x\\right)"
+  },
+  {
+    "name": "definite integral",
+    "latex": "\\int_0^\\pi\\sin(x)\\,\\mathrm{d}x",
+    "math_json": ["Integrate", ["Sin", "x"], ["Tuple", "x", 0, "Pi"]],
+    "result_latex": "2"
+  },
+  {
+    "name": "sine limit",
+    "latex": "\\lim_{x\\to0}\\frac{\\sin(x)}{x}",
+    "math_json": ["Limit", ["Function", ["Divide", ["Sin", "x"], "x"], "x"], 0],
+    "result_latex": "1"
+  },
+  {
+    "name": "finite sum",
+    "latex": "\\sum_{n=1}^{10}n^2",
+    "math_json": ["Sum", ["Power", "n", 2], ["Tuple", "n", 1, 10]],
+    "result_latex": "385"
+  }
+]

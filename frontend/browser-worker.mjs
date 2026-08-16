@@ -44,7 +44,12 @@ self.addEventListener("message", async ({ data }) => {
     const solve = pyodide.globals.get("solve_mathjson_json");
     try {
       const result = solve(JSON.stringify(data.mathJson));
-      self.postMessage({ id: data.id, type: "result", payload: JSON.parse(result) });
+      const payload = JSON.parse(result);
+      if (payload.error) {
+        self.postMessage({ id: data.id, type: "error", message: payload.error });
+      } else {
+        self.postMessage({ id: data.id, type: "result", payload });
+      }
     } finally {
       solve.destroy();
     }

@@ -4,7 +4,8 @@
   "type": "module",
   "scripts": {
     "build": "node build.mjs",
-    "build:pages": "node build-pages.mjs"
+    "build:pages": "node build-pages.mjs",
+    "test": "node --test editor-contract.test.mjs"
   },
   "dependencies": {
     "@cortex-js/compute-engine": "0.58.0",

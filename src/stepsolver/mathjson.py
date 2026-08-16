@@ -29,6 +29,7 @@ type JsonValue = bool | int | float | str | list[JsonValue] | dict[str, JsonValu
 _CONSTANTS: dict[str, ConstantName] = {
     "Pi": ConstantName.PI,
     "ExponentialE": ConstantName.E,
+    "e": ConstantName.E,
     "ImaginaryUnit": ConstantName.IMAGINARY,
     "PositiveInfinity": ConstantName.INFINITY,
     "Infinity": ConstantName.INFINITY,
@@ -275,6 +276,22 @@ def _limit_query(node: list[JsonValue]) -> Query:
         arguments = tuple(expression_from_mathjson(item) for item in node[1:])
         return _query(Operation.LIMIT, arguments)
     if len(node) == 3:
+        bound_function = node[1]
+        if (
+            isinstance(bound_function, list)
+            and bound_function
+            and _head(bound_function) == "Function"
+        ):
+            if len(bound_function) != 3:
+                raise _error("limit function must include an expression and variable")
+            return _query(
+                Operation.LIMIT,
+                (
+                    expression_from_mathjson(bound_function[1]),
+                    expression_from_mathjson(bound_function[2]),
+                    expression_from_mathjson(node[2]),
+                ),
+            )
         limits = _node(node[2], role="limit approach")
         if _head(limits) != "Tuple" or len(limits) != 3:
             raise _error("limit notation must include a variable and approach point")
