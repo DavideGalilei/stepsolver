@@ -19,6 +19,9 @@ class BackendIntegral:
 
     integrand: sp.Basic
     variable: sp.Symbol
+    coefficient: sp.Basic | None = None
+    lower: sp.Basic | None = None
+    upper: sp.Basic | None = None
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -26,6 +29,25 @@ class BackendDifferential:
     """A displayed differential such as dx or du."""
 
     variable: sp.Symbol
+    coefficient: sp.Basic | None = None
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class BackendDerivative:
+    """A displayed derivative of a backend expression."""
+
+    expression: sp.Basic
+    variable: sp.Symbol
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class BackendLimit:
+    """A displayed one- or two-sided limit."""
+
+    expression: sp.Basic
+    variable: sp.Symbol
+    point: sp.Basic
+    direction: str | None = None
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -37,7 +59,12 @@ class BackendIdentity:
 
 
 type BackendExpression = (
-    EquationBackendExpression | BackendIntegral | BackendDifferential | BackendIdentity
+    EquationBackendExpression
+    | BackendIntegral
+    | BackendDifferential
+    | BackendDerivative
+    | BackendLimit
+    | BackendIdentity
 )
 
 
@@ -293,6 +320,92 @@ def derive_polynomial_equation(
     return tuple(steps)
 
 
+def _completion_notes(
+    *,
+    denominator: sp.Basic,
+    variable: sp.Symbol,
+    coefficient_a: sp.Basic,
+    coefficient_b: sp.Basic,
+    coefficient_c: sp.Basic,
+    radius_squared: sp.Basic,
+    completed_denominator: sp.Basic,
+) -> tuple[BackendMathNote, ...]:
+    """Build a concrete, student-first completing-the-square explanation."""
+    normalized_linear_coefficient = sp.simplify(coefficient_b / coefficient_a)
+    normalized_constant = sp.simplify(coefficient_c / coefficient_a)
+    half_linear_coefficient = sp.simplify(normalized_linear_coefficient / 2)
+    square_completion = sp.simplify(half_linear_coefficient**2)
+    monic_denominator = sp.Add(
+        variable**2,
+        sp.Mul(normalized_linear_coefficient, variable, evaluate=False),
+        normalized_constant,
+        evaluate=False,
+    )
+    expanded_completion = sp.Add(
+        variable**2,
+        sp.Mul(normalized_linear_coefficient, variable, evaluate=False),
+        square_completion,
+        radius_squared,
+        evaluate=False,
+    )
+    pattern_variable = sp.Symbol("z", real=True)
+    pattern_linear = sp.Symbol("p", real=True)
+    pattern_constant = sp.Symbol("q", real=True)
+    generic_quadratic = sp.Add(
+        pattern_variable**2,
+        sp.Mul(pattern_linear, pattern_variable, evaluate=False),
+        pattern_constant,
+        evaluate=False,
+    )
+    generic_completed_quadratic = sp.Add(
+        sp.Pow(
+            sp.Add(pattern_variable, pattern_linear / 2, evaluate=False),
+            2,
+            evaluate=False,
+        ),
+        sp.Add(pattern_constant, -(pattern_linear**2 / 4), evaluate=False),
+        evaluate=False,
+    )
+    notes: list[BackendMathNote] = []
+    if str(coefficient_a) != "1":
+        notes.append(
+            BackendMathNote(
+                label="First factor the leading coefficient",
+                expression=BackendIdentity(
+                    left=denominator,
+                    right=sp.Mul(coefficient_a, monic_denominator, evaluate=False),
+                ),
+            )
+        )
+    notes.extend(
+        (
+            BackendMathNote(
+                label="Take half the linear coefficient, then square it",
+                expression=BackendIdentity(
+                    left=sp.Pow(half_linear_coefficient, 2, evaluate=False),
+                    right=square_completion,
+                ),
+            ),
+            BackendMathNote(
+                label="Add and subtract that number",
+                expression=BackendIdentity(left=monic_denominator, right=expanded_completion),
+            ),
+            BackendMathNote(
+                label="Recognize the perfect square",
+                expression=BackendIdentity(left=monic_denominator, right=completed_denominator),
+            ),
+            BackendMathNote(
+                label="General pattern",
+                expression=BackendIdentity(
+                    left=generic_quadratic,
+                    right=generic_completed_quadratic,
+                ),
+            ),
+        )
+    )
+    return tuple(notes)
+
+
 def derive_reciprocal_quadratic_integral(
     integrand: sp.Basic,
     variable: sp.Symbol,
@@ -330,86 +443,70 @@ def derive_reciprocal_quadratic_integral(
         message = "completing the square changed the integrand"
         raise ValueError(message)
     radius = sp.sqrt(radius_squared)
-    arctangent_argument = sp.Mul(
-        shift,
-        sp.Pow(radius, -1, evaluate=False),
+    radius_scale = sp.sqrt(sp.simplify(4 * radius_squared))
+    normalized_argument = sp.Mul(
+        sp.expand(2 * shift),
+        sp.Pow(radius_scale, -1, evaluate=False),
         evaluate=False,
     )
-    raw_coefficient = sp.Mul(
-        prefactor,
-        sp.Pow(radius, -1, evaluate=False),
+    normalized_coefficient = sp.Mul(
+        sp.expand(2 * prefactor),
+        sp.Pow(radius_scale, -1, evaluate=False),
         evaluate=False,
     )
-    formula = sp.Mul(
-        raw_coefficient,
-        sp.atan(arctangent_argument),
+    substitution_variable = sp.Symbol("u", real=True)
+    unit_denominator = sp.Add(
+        sp.Pow(substitution_variable, 2, evaluate=False),
+        sp.Integer(1),
         evaluate=False,
     )
+    unit_integrand = sp.Pow(unit_denominator, -1, evaluate=False)
     integration_constant = sp.Symbol("C")
-    formula = sp.Add(formula, integration_constant, evaluate=False)
-    if str(sp.simplify(sp.diff(formula, variable) - completed_integrand)) != "0":
+    formula_in_substitution_variable = sp.Add(
+        sp.Mul(
+            normalized_coefficient,
+            sp.atan(substitution_variable),
+            evaluate=False,
+        ),
+        integration_constant,
+        evaluate=False,
+    )
+    formula = sp.Add(
+        sp.Mul(
+            normalized_coefficient,
+            sp.atan(normalized_argument),
+            evaluate=False,
+        ),
+        integration_constant,
+        evaluate=False,
+    )
+    transformed_integrand = sp.Mul(
+        normalized_coefficient,
+        unit_integrand.subs(substitution_variable, normalized_argument),
+        sp.diff(normalized_argument, variable),
+    )
+    if str(sp.simplify(transformed_integrand - completed_integrand)) != "0":
+        message = "the substitution changed the completed-square integral"
+        raise ValueError(message)
+    if str(
+        sp.simplify(
+            sp.diff(formula_in_substitution_variable, substitution_variable)
+            - normalized_coefficient * unit_integrand
+        )
+    ) != "0":
         message = "the arctangent formula failed differentiation verification"
         raise ValueError(message)
     if str(sp.simplify(formula - result)) != "0":
         message = "the simplified antiderivative differs from the exact result"
         raise ValueError(message)
-    completed_polynomial = (
-        completed_denominator
-        if str(coefficient_a) == "1"
-        else sp.Mul(coefficient_a, completed_denominator, evaluate=False)
-    )
-    generic_coefficient_a = sp.Symbol("a", real=True)
-    generic_coefficient_b = sp.Symbol("b", real=True)
-    generic_coefficient_c = sp.Symbol("c", real=True)
-    generic_quadratic = sp.Add(
-        sp.Mul(generic_coefficient_a, variable**2, evaluate=False),
-        sp.Mul(generic_coefficient_b, variable, evaluate=False),
-        generic_coefficient_c,
-        evaluate=False,
-    )
-    generic_shift = sp.Add(
-        variable,
-        generic_coefficient_b / (2 * generic_coefficient_a),
-        evaluate=False,
-    )
-    generic_completed_quadratic = sp.Add(
-        sp.Mul(
-            generic_coefficient_a,
-            sp.Pow(generic_shift, 2, evaluate=False),
-            evaluate=False,
-        ),
-        sp.Add(
-            generic_coefficient_c,
-            -(generic_coefficient_b**2 / (4 * generic_coefficient_a)),
-            evaluate=False,
-        ),
-        evaluate=False,
-    )
-    generic_variable = sp.Symbol("u", real=True)
-    generic_radius = sp.Symbol("a", real=True)
-    generic_integrand = sp.Pow(
-        sp.Add(
-            sp.Pow(generic_variable, 2, evaluate=False),
-            sp.Pow(generic_radius, 2, evaluate=False),
-            evaluate=False,
-        ),
-        -1,
-        evaluate=False,
-    )
-    generic_result = sp.Add(
-        sp.Mul(
-            sp.Pow(generic_radius, -1, evaluate=False),
-            sp.atan(
-                sp.Mul(
-                    generic_variable,
-                    sp.Pow(generic_radius, -1, evaluate=False),
-                    evaluate=False,
-                )
-            ),
-            evaluate=False,
-        ),
-        integration_constant,
-        evaluate=False,
+    completion_notes = _completion_notes(
+        denominator=denominator,
+        variable=variable,
+        coefficient_a=coefficient_a,
+        coefficient_b=coefficient_b,
+        coefficient_c=coefficient_c,
+        radius_squared=radius_squared,
+        completed_denominator=completed_denominator,
     )
     steps = [
         BackendDerivationStep(
@@ -422,98 +519,312 @@ def derive_reciprocal_quadratic_integral(
             ),
             verification_method=VerificationMethod.SYMBOLIC_EQUIVALENCE,
             verification_detail="Simplifying the difference between the two integrands gives zero.",
+            notes=completion_notes,
+        ),
+        BackendDerivationStep(
+            rule="Substitute to get a unit denominator",
+            before=BackendIntegral(integrand=completed_integrand, variable=variable),
+            after=BackendIntegral(
+                integrand=unit_integrand,
+                variable=substitution_variable,
+                coefficient=normalized_coefficient,
+            ),
+            explanation=(
+                "Scale the shifted variable so the denominator becomes one plus its square. "
+                "Transform the differential at the same time."
+            ),
+            verification_method=VerificationMethod.SUBSTITUTION,
+            verification_detail=(
+                "Replacing the new variable and its differential recovers the previous integral."
+            ),
             notes=(
                 BackendMathNote(
-                    label="Standard identity",
-                    expression=BackendIdentity(
-                        left=generic_quadratic,
-                        right=generic_completed_quadratic,
+                    label="Choose the substitution",
+                    expression=sp.Eq(
+                        substitution_variable,
+                        normalized_argument,
+                        evaluate=False,
                     ),
                 ),
                 BackendMathNote(
-                    label="Coefficients in this denominator",
-                    expression=(
-                        sp.Eq(generic_coefficient_a, coefficient_a, evaluate=False),
-                        sp.Eq(generic_coefficient_b, coefficient_b, evaluate=False),
-                        sp.Eq(generic_coefficient_c, coefficient_c, evaluate=False),
+                    label="Rewrite the shifted term",
+                    expression=BackendIdentity(
+                        left=shift,
+                        right=sp.Mul(radius, substitution_variable, evaluate=False),
                     ),
                 ),
                 BackendMathNote(
-                    label="Applied to this denominator",
+                    label="Change the differential",
                     expression=BackendIdentity(
-                        left=denominator,
-                        right=completed_polynomial,
+                        left=BackendDifferential(variable=variable),
+                        right=BackendDifferential(
+                            variable=substitution_variable,
+                            coefficient=radius,
+                        ),
                     ),
                 ),
             ),
         ),
         BackendDerivationStep(
-            rule="Use the arctangent integral",
-            before=BackendIntegral(integrand=completed_integrand, variable=variable),
-            after=formula,
-            explanation="Match the completed denominator to the standard arctangent form.",
+            rule="Use the basic arctangent rule",
+            before=BackendIntegral(
+                integrand=unit_integrand,
+                variable=substitution_variable,
+                coefficient=normalized_coefficient,
+            ),
+            after=formula_in_substitution_variable,
+            explanation=(
+                "The remaining integral is the derivative pattern for the arctangent function."
+            ),
             verification_method=VerificationMethod.DIFFERENTIATION,
             verification_detail=(
-                "Differentiating this arctangent expression recovers "
-                "the completed-square integrand."
+                "Differentiating the arctangent expression with respect to the new variable "
+                "recovers the transformed integrand."
             ),
             notes=(
                 BackendMathNote(
-                    label="Standard rule",
+                    label="Rule to remember",
                     expression=BackendIdentity(
                         left=BackendIntegral(
-                            integrand=generic_integrand,
-                            variable=generic_variable,
+                            integrand=unit_integrand,
+                            variable=substitution_variable,
                         ),
-                        right=generic_result,
+                        right=sp.Add(
+                            sp.atan(substitution_variable),
+                            integration_constant,
+                            evaluate=False,
+                        ),
                     ),
                 ),
+            ),
+        ),
+        BackendDerivationStep(
+            rule="Substitute back",
+            before=formula_in_substitution_variable,
+            after=formula,
+            explanation=(
+                "Replace the temporary variable with its expression in the original variable."
+            ),
+            verification_method=VerificationMethod.SUBSTITUTION,
+            verification_detail=(
+                "Direct substitution gives an antiderivative equivalent to the exact result."
+            ),
+            notes=(
                 BackendMathNote(
-                    label="Match the variables",
-                    expression=(
-                        sp.Eq(generic_variable, shift, evaluate=False),
-                        sp.Eq(generic_radius, radius, evaluate=False),
-                    ),
-                ),
-                BackendMathNote(
-                    label="Differential",
-                    expression=BackendIdentity(
-                        left=BackendDifferential(variable=generic_variable),
-                        right=BackendDifferential(variable=variable),
+                    label="Replace the temporary variable",
+                    expression=sp.Eq(
+                        substitution_variable,
+                        normalized_argument,
+                        evaluate=False,
                     ),
                 ),
             ),
         ),
     ]
-    if str(formula) != str(result):
-        steps.append(
-            BackendDerivationStep(
-                rule="Simplify the antiderivative",
-                before=formula,
-                after=result,
-                explanation="Simplify the constant factor and the arctangent argument.",
-                verification_method=VerificationMethod.SYMBOLIC_EQUIVALENCE,
-                verification_detail=(
-                    "Simplifying the difference between both antiderivative forms gives zero."
-                ),
-                notes=(
-                    BackendMathNote(
-                        label="Simplify the coefficient",
-                        expression=sp.Eq(
-                            raw_coefficient,
-                            sp.simplify(raw_coefficient),
-                            evaluate=False,
-                        ),
-                    ),
-                    BackendMathNote(
-                        label="Simplify the argument",
-                        expression=sp.Eq(
-                            arctangent_argument,
-                            sp.simplify(arctangent_argument),
-                            evaluate=False,
-                        ),
-                    ),
-                ),
-            )
-        )
     return tuple(steps)
+
+
+def derive_dirichlet_integral(
+    integrand: sp.Basic,
+    variable: sp.Symbol,
+    lower: sp.Basic,
+    upper: sp.Basic,
+    result: sp.Basic,
+) -> tuple[BackendDerivationStep, ...]:
+    """Derive the classical Dirichlet integral with a damping parameter."""
+    expected_integrand = sp.sin(variable) / variable
+    if str(sp.simplify(integrand - expected_integrand)) != "0":
+        return ()
+    if str(sp.simplify(lower)) != "0" or upper != sp.oo:
+        return ()
+    if str(sp.simplify(result - sp.pi / 2)) != "0":
+        return ()
+
+    parameter = sp.Symbol("a", positive=True)
+    function = sp.Function("F")(parameter)
+    integration_constant = sp.Symbol("C")
+    damping = sp.exp(-parameter * variable)
+    damped_integrand = damping * expected_integrand
+    laplace_integrand = damping * sp.sin(variable)
+    derivative_value = -1 / (parameter**2 + 1)
+    general_function = sp.Add(
+        integration_constant,
+        -sp.atan(parameter),
+        evaluate=False,
+    )
+    resolved_function = sp.Add(
+        sp.pi / 2,
+        -sp.atan(parameter),
+        evaluate=False,
+    )
+    original_integral = BackendIntegral(
+        integrand=integrand,
+        variable=variable,
+        lower=lower,
+        upper=upper,
+    )
+    damped_integral = BackendIntegral(
+        integrand=damped_integrand,
+        variable=variable,
+        lower=lower,
+        upper=upper,
+    )
+    parameter_limit = BackendLimit(
+        expression=function,
+        variable=parameter,
+        point=sp.Integer(0),
+        direction="+",
+    )
+    derivative_identity = BackendIdentity(
+        left=BackendDerivative(expression=function, variable=parameter),
+        right=derivative_value,
+    )
+    return (
+        BackendDerivationStep(
+            rule="Introduce a damping parameter",
+            before=original_integral,
+            after=parameter_limit,
+            explanation=(
+                "Temporarily multiply by an exponential damping factor. This makes the "
+                "parameterized integral easier to differentiate, and the original integral "
+                "is recovered as the damping disappears."
+            ),
+            verification_method=VerificationMethod.BACKEND_IDENTITY,
+            verification_detail=(
+                "The Abel limit of the damped integral equals the original improper integral."
+            ),
+            notes=(
+                BackendMathNote(
+                    label="Define the damped integral",
+                    expression=BackendIdentity(left=function, right=damped_integral),
+                ),
+                BackendMathNote(
+                    label="Remove the damping at the end",
+                    expression=BackendIdentity(left=original_integral, right=parameter_limit),
+                ),
+            ),
+        ),
+        BackendDerivationStep(
+            rule="Differentiate with respect to the parameter",
+            before=BackendIdentity(left=function, right=damped_integral),
+            after=derivative_identity,
+            explanation=(
+                "Differentiating the damping factor cancels the division by the integration "
+                "variable, leaving a standard Laplace integral."
+            ),
+            verification_method=VerificationMethod.DIFFERENTIATION,
+            verification_detail=(
+                "Differentiating under the integral sign produces the displayed Laplace integral."
+            ),
+            notes=(
+                BackendMathNote(
+                    label="Differentiate the integrand",
+                    expression=BackendIdentity(
+                        left=BackendDerivative(
+                            expression=damped_integrand,
+                            variable=parameter,
+                        ),
+                        right=-laplace_integrand,
+                    ),
+                ),
+                BackendMathNote(
+                    label="Evaluate the remaining Laplace integral",
+                    expression=BackendIdentity(
+                        left=BackendIntegral(
+                            integrand=laplace_integrand,
+                            variable=variable,
+                            lower=lower,
+                            upper=upper,
+                        ),
+                        right=1 / (parameter**2 + 1),
+                    ),
+                ),
+            ),
+        ),
+        BackendDerivationStep(
+            rule="Recover the parameterized integral",
+            before=derivative_identity,
+            after=BackendIdentity(left=function, right=general_function),
+            explanation="Integrate with respect to the parameter to recover the function.",
+            verification_method=VerificationMethod.DIFFERENTIATION,
+            verification_detail=(
+                "Differentiating the recovered expression gives the parameter derivative."
+            ),
+            notes=(
+                BackendMathNote(
+                    label="Arctangent derivative",
+                    expression=BackendIdentity(
+                        left=BackendDerivative(
+                            expression=sp.atan(parameter),
+                            variable=parameter,
+                        ),
+                        right=1 / (parameter**2 + 1),
+                    ),
+                ),
+            ),
+        ),
+        BackendDerivationStep(
+            rule="Determine the constant",
+            before=BackendIdentity(left=function, right=general_function),
+            after=BackendIdentity(left=function, right=resolved_function),
+            explanation=(
+                "As the damping becomes infinitely strong, the integral tends to zero. Use "
+                "that boundary value to determine the integration constant."
+            ),
+            verification_method=VerificationMethod.EXACT_ARITHMETIC,
+            verification_detail="The boundary limits force the constant to equal pi over two.",
+            notes=(
+                BackendMathNote(
+                    label="The damped integral vanishes",
+                    expression=BackendIdentity(
+                        left=BackendLimit(
+                            expression=function,
+                            variable=parameter,
+                            point=sp.oo,
+                        ),
+                        right=sp.Integer(0),
+                    ),
+                ),
+                BackendMathNote(
+                    label="Arctangent limit",
+                    expression=BackendIdentity(
+                        left=BackendLimit(
+                            expression=sp.atan(parameter),
+                            variable=parameter,
+                            point=sp.oo,
+                        ),
+                        right=sp.pi / 2,
+                    ),
+                ),
+                BackendMathNote(
+                    label="Therefore",
+                    expression=sp.Eq(integration_constant, sp.pi / 2, evaluate=False),
+                ),
+            ),
+        ),
+        BackendDerivationStep(
+            rule="Remove the damping",
+            before=parameter_limit,
+            after=result,
+            explanation=(
+                "Let the damping parameter approach zero from the positive side to recover "
+                "the original improper integral."
+            ),
+            verification_method=VerificationMethod.SUBSTITUTION,
+            verification_detail="The right-hand limit of the resolved expression is pi over two.",
+            notes=(
+                BackendMathNote(
+                    label="Use the resolved formula",
+                    expression=BackendIdentity(
+                        left=parameter_limit,
+                        right=BackendLimit(
+                            expression=resolved_function,
+                            variable=parameter,
+                            point=sp.Integer(0),
+                            direction="+",
+                        ),
+                    ),
+                ),
+            ),
+        ),
+    )

@@ -3,7 +3,10 @@
 import pytest
 import sympy as sp
 
-from stepsolver.sympy_derivation import derive_reciprocal_quadratic_integral
+from stepsolver.sympy_derivation import (
+    derive_dirichlet_integral,
+    derive_reciprocal_quadratic_integral,
+)
 
 
 def test_integral_strategy_declines_unsupported_rational_forms() -> None:
@@ -44,3 +47,32 @@ def test_integral_strategy_rejects_an_incorrect_expected_result() -> None:
             variable,
             variable,
         )
+
+
+def test_dirichlet_strategy_only_accepts_the_verified_improper_integral() -> None:
+    """The damping derivation should not be applied to superficially similar integrals."""
+    variable = sp.Symbol("x", real=True)
+    steps = derive_dirichlet_integral(
+        sp.sin(variable) / variable,
+        variable,
+        sp.Integer(0),
+        sp.oo,
+        sp.pi / 2,
+    )
+    assert tuple(step.rule for step in steps) == (
+        "Introduce a damping parameter",
+        "Differentiate with respect to the parameter",
+        "Recover the parameterized integral",
+        "Determine the constant",
+        "Remove the damping",
+    )
+    assert (
+        derive_dirichlet_integral(
+            sp.cos(variable) / variable,
+            variable,
+            sp.Integer(0),
+            sp.oo,
+            sp.pi / 2,
+        )
+        == ()
+    )

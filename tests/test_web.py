@@ -94,27 +94,73 @@ def test_reciprocal_quadratic_integral_contains_detailed_latex_steps() -> None:
     assert response.status_code == _HTTP_OK
     assert [step.rule for step in payload.steps] == [
         "Complete the square",
-        "Use the arctangent integral",
-        "Simplify the antiderivative",
+        "Substitute to get a unit denominator",
+        "Use the basic arctangent rule",
+        "Substitute back",
     ]
     assert payload.steps[0].after_latex.startswith(r"\int \frac{1}")
     assert [note.label for note in payload.steps[0].notes] == [
-        "Standard identity",
-        "Coefficients in this denominator",
-        "Applied to this denominator",
+        "Take half the linear coefficient, then square it",
+        "Add and subtract that number",
+        "Recognize the perfect square",
+        "General pattern",
     ]
-    assert r"a \cdot x^{2}" in payload.steps[0].notes[0].expression_latex
-    assert r"\arctan" in payload.steps[1].after_latex
+    assert payload.steps[0].notes[0].expression_latex == (
+        r"\left(\frac{-1}{2}\right)^{2} = \frac{1}{4}"
+    )
     assert [note.label for note in payload.steps[1].notes] == [
-        "Standard rule",
-        "Match the variables",
-        "Differential",
+        "Choose the substitution",
+        "Rewrite the shifted term",
+        "Change the differential",
     ]
-    assert payload.steps[1].notes[0].expression_latex.startswith(r"\int")
-    assert r"u = x - \frac{1}{2}" in payload.steps[1].notes[1].expression_latex
-    assert payload.steps[1].notes[2].expression_latex == r"\mathrm{d}u = \mathrm{d}x"
+    assert payload.steps[1].after_latex == (
+        r"\frac{2}{\sqrt{3}} \cdot \int \frac{1}{u^{2} + 1}\,\mathrm{d}u"
+    )
+    assert payload.steps[1].notes[0].expression_latex == (
+        r"u = \frac{2 \cdot x - 1}{\sqrt{3}}"
+    )
+    assert payload.steps[1].notes[2].expression_latex == (
+        r"\mathrm{d}x = \frac{\sqrt{3}}{2} \cdot \mathrm{d}u"
+    )
+    assert payload.steps[2].notes[0].expression_latex == (
+        r"\int \frac{1}{u^{2} + 1}\,\mathrm{d}u = \arctan\left(u\right) + C"
+    )
+    assert r"\frac{1}{\frac{\sqrt{3}}{2}}" not in payload.steps[2].after_latex
+    assert r"\arctan" in payload.steps[3].after_latex
     assert payload.result_latex is not None
     assert payload.result_latex.endswith("+ C")
+
+
+def test_dirichlet_integral_contains_human_parameter_steps() -> None:
+    """The browser should receive the full damping-parameter derivation."""
+    with TestClient(create_app()) as client:
+        response = client.post(
+            "/api/solve",
+            json={
+                "latex": r"\int_0^\infty\frac{\sin(x)}{x}\,\mathrm{d}x",
+                "math_json": [
+                    "Integrate",
+                    ["Divide", ["Sin", "x"], "x"],
+                    ["Tuple", "x", 0, "PositiveInfinity"],
+                ],
+            },
+        )
+    payload = SolveResponse.model_validate_json(response.text)
+    assert response.status_code == _HTTP_OK
+    assert [step.rule for step in payload.steps] == [
+        "Introduce a damping parameter",
+        "Differentiate with respect to the parameter",
+        "Recover the parameterized integral",
+        "Determine the constant",
+        "Remove the damping",
+    ]
+    assert payload.steps[0].after_latex == r"\lim_{a \to 0^{+}} F\left(a\right)"
+    assert payload.steps[1].after_latex == (
+        r"\frac{\mathrm{d}}{\mathrm{d}a}\left(F\left(a\right)\right) "
+        r"= \frac{-1}{a^{2} + 1}"
+    )
+    assert payload.steps[3].notes[2].expression_latex == r"C = \frac{\pi}{2}"
+    assert payload.steps[-1].after_latex == r"\frac{\pi}{2}"
 
 
 def test_graphical_equation_solve_response() -> None:

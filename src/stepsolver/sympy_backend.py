@@ -47,10 +47,13 @@ from stepsolver.results import (
 )
 from stepsolver.sympy_derivation import (
     BackendDerivationStep,
+    BackendDerivative,
     BackendDifferential,
     BackendExpression,
     BackendIdentity,
     BackendIntegral,
+    BackendLimit,
+    derive_dirichlet_integral,
     derive_polynomial_equation,
     derive_reciprocal_quadratic_integral,
 )
@@ -198,9 +201,9 @@ class SympyBackend:
         query: Query,
         backend_value: object,
     ) -> tuple[SolutionStep, ...]:
-        if len(query.arguments) != 2 or not isinstance(backend_value, sp.Basic):
+        if len(query.arguments) not in {2, 4} or not isinstance(backend_value, sp.Basic):
             return ()
-        integrand_expression, variable_expression = query.arguments
+        integrand_expression, variable_expression = query.arguments[:2]
         if not isinstance(variable_expression, Symbol):
             return ()
         integrand = self._to_sympy(integrand_expression)
@@ -208,11 +211,20 @@ class SympyBackend:
         if not isinstance(variable, sp.Symbol):
             return ()
         try:
-            derivation = derive_reciprocal_quadratic_integral(
-                integrand,
-                variable,
-                backend_value,
-            )
+            if len(query.arguments) == 2:
+                derivation = derive_reciprocal_quadratic_integral(
+                    integrand,
+                    variable,
+                    backend_value,
+                )
+            else:
+                derivation = derive_dirichlet_integral(
+                    integrand,
+                    variable,
+                    self._to_sympy(query.arguments[2]),
+                    self._to_sympy(query.arguments[3]),
+                    backend_value,
+                )
         except (sp.PolynomialError, TypeError, ValueError):
             return ()
         return tuple(self._solution_step(item) for item in derivation)
@@ -264,17 +276,59 @@ class SympyBackend:
                 right=self._derivation_expression(value.right),
             )
         if isinstance(value, BackendDifferential):
-            return FunctionCall(
+            differential = FunctionCall(
                 name=Identifier("differential"),
                 arguments=(self._from_sympy(value.variable),),
             )
-        if isinstance(value, BackendIntegral):
+            if value.coefficient is None:
+                return differential
+            return BinaryExpression(
+                operator=BinaryOperator.MULTIPLY,
+                left=self._from_sympy(value.coefficient),
+                right=differential,
+            )
+        if isinstance(value, BackendDerivative):
             return FunctionCall(
-                name=Identifier(Operation.INTEGRATE.value),
+                name=Identifier(Operation.DIFFERENTIATE.value),
                 arguments=(
-                    self._from_sympy(value.integrand),
+                    self._from_sympy(value.expression),
                     self._from_sympy(value.variable),
                 ),
+            )
+        if isinstance(value, BackendLimit):
+            limit_arguments: tuple[Expression, ...] = (
+                self._from_sympy(value.expression),
+                self._from_sympy(value.variable),
+                self._from_sympy(value.point),
+            )
+            if value.direction is not None:
+                direction = "right" if value.direction == "+" else "left"
+                limit_arguments = (*limit_arguments, Symbol(name=Identifier(direction)))
+            return FunctionCall(
+                name=Identifier(Operation.LIMIT.value),
+                arguments=limit_arguments,
+            )
+        if isinstance(value, BackendIntegral):
+            integral_arguments: tuple[Expression, ...] = (
+                self._from_sympy(value.integrand),
+                self._from_sympy(value.variable),
+            )
+            if value.lower is not None and value.upper is not None:
+                integral_arguments = (
+                    *integral_arguments,
+                    self._from_sympy(value.lower),
+                    self._from_sympy(value.upper),
+                )
+            integral = FunctionCall(
+                name=Identifier(Operation.INTEGRATE.value),
+                arguments=integral_arguments,
+            )
+            if value.coefficient is None:
+                return integral
+            return BinaryExpression(
+                operator=BinaryOperator.MULTIPLY,
+                left=self._from_sympy(value.coefficient),
+                right=integral,
             )
         if isinstance(value, tuple):
             return SequenceExpression(items=tuple(self._from_sympy(item) for item in value))

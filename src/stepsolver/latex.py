@@ -109,6 +109,10 @@ def _format_function(expression: FunctionCall) -> str:
         value = format_latex_expression(arguments[0])
         variable = format_latex_expression(arguments[1])
         point = format_latex_expression(arguments[2])
+        if len(arguments) == 4 and isinstance(arguments[3], Symbol):
+            direction = {"left": "-", "right": "+"}.get(arguments[3].name)
+            if direction is not None:
+                point = rf"{point}^{{{direction}}}"
         return rf"\lim_{{{variable} \to {point}}} {value}"
     if name in {"sum", "product"} and len(arguments) == 4:
         value = format_latex_expression(arguments[0])
@@ -132,7 +136,13 @@ def _format_function(expression: FunctionCall) -> str:
     if name == "differential" and len(arguments) == 1:
         return rf"\mathrm{{d}}{format_latex_expression(arguments[0])}"
     rendered_arguments = ", ".join(format_latex_expression(item) for item in arguments)
-    function = _NAMED_FUNCTIONS.get(name, rf"\operatorname{{{_escape_identifier(name)}}}")
+    function = _NAMED_FUNCTIONS.get(name)
+    if function is None:
+        function = (
+            name
+            if len(name) == 1 and name.isascii() and name.isupper()
+            else rf"\operatorname{{{_escape_identifier(name)}}}"
+        )
     return rf"{function}\left({rendered_arguments}\right)"
 
 

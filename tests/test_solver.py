@@ -113,23 +113,47 @@ def test_reciprocal_quadratic_integral_has_worked_steps(solver: Solver) -> None:
     assert isinstance(result, ExactResult)
     assert tuple(step.rule for step in result.steps) == (
         "Complete the square",
-        "Use the arctangent integral",
-        "Simplify the antiderivative",
+        "Substitute to get a unit denominator",
+        "Use the basic arctangent rule",
+        "Substitute back",
     )
     assert all(step.before != step.after for step in result.steps)
     assert tuple(note.label for note in result.steps[0].notes) == (
-        "Standard identity",
-        "Coefficients in this denominator",
-        "Applied to this denominator",
+        "Take half the linear coefficient, then square it",
+        "Add and subtract that number",
+        "Recognize the perfect square",
+        "General pattern",
+    )
+    assert result.steps[1].verification.method.value == "substitution"
+    assert tuple(note.label for note in result.steps[1].notes) == (
+        "Choose the substitution",
+        "Rewrite the shifted term",
+        "Change the differential",
+    )
+    assert result.steps[2].verification.method.value == "differentiation"
+    assert tuple(note.label for note in result.steps[2].notes) == ("Rule to remember",)
+    assert "u²" not in result.steps[2].explanation
+    assert format_ascii(result).endswith("+ C")
+
+
+def test_dirichlet_integral_has_a_parameter_derivation(solver: Solver) -> None:
+    """The classical improper integral should explain the damping-parameter method."""
+    result = solver.solve("integrate(sin(x)/x,x,0,oo)")
+    assert isinstance(result, ExactResult)
+    assert tuple(step.rule for step in result.steps) == (
+        "Introduce a damping parameter",
+        "Differentiate with respect to the parameter",
+        "Recover the parameterized integral",
+        "Determine the constant",
+        "Remove the damping",
     )
     assert result.steps[1].verification.method.value == "differentiation"
-    assert tuple(note.label for note in result.steps[1].notes) == (
-        "Standard rule",
-        "Match the variables",
-        "Differential",
+    assert tuple(note.label for note in result.steps[3].notes) == (
+        "The damped integral vanishes",
+        "Arctangent limit",
+        "Therefore",
     )
-    assert "u²" not in result.steps[1].explanation
-    assert format_ascii(result).endswith("+ C")
+    assert format_ascii(result).endswith("pi / 2")
 
 
 def test_inequality_solver(solver: Solver) -> None:
