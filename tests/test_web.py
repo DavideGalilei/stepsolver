@@ -254,10 +254,26 @@ def test_desktop_enter_adds_a_row_inside_a_system() -> None:
         script = client.get("/static/app.js")
     assert "function addSystemRow()" in script.text
     assert 'expressionField.addEventListener("beforeinput"' in script.text
-    assert 'event.inputType !== "insertLineBreak"' in script.text
-    assert 'event.inputType !== "insertParagraph"' in script.text
+    assert 'event.inputType === "insertLineBreak"' in script.text
+    assert 'event.inputType === "insertParagraph"' in script.text
     assert 'const added = expressionField.executeCommand("addRowAfter")' in script.text
     assert "if (addSystemRow()) event.preventDefault()" in script.text
+
+
+def test_delete_removes_only_an_empty_system_row() -> None:
+    """Delete should remove an empty active row without risking populated equations."""
+    with TestClient(create_app()) as client:
+        script = client.get("/static/app.js")
+    assert "function currentMathCellIsEmpty()" in script.text
+    assert "expressionField._mathfield?.model" in script.text
+    assert "model?.getCellRange(model.position)" in script.text
+    assert 'model.getValue(range, "latex-without-placeholders")' in script.text
+    assert "function removeEmptySystemRow()" in script.text
+    assert 'expressionField.executeCommand("removeRow")' in script.text
+    assert 'event.inputType === "deleteContentBackward"' in script.text
+    assert 'event.inputType === "deleteContentForward"' in script.text
+    assert 'expressionField.executeCommand("deleteBackward")' in script.text
+    assert 'expressionField.executeCommand("deleteForward")' in script.text
 
 
 def test_frontend_renders_domain_constraints_and_accepts_systems() -> None:

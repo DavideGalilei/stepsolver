@@ -136,6 +136,18 @@ function addSystemRow() {
   return added;
 }
 
+function currentMathCellIsEmpty() {
+  // MathLive 0.110 has no public current-cell API. Keep this adapter isolated.
+  const model = expressionField._mathfield?.model;
+  const range = model?.getCellRange(model.position);
+  if (!range) return false;
+  return model.getValue(range, "latex-without-placeholders").trim() === "";
+}
+
+function removeEmptySystemRow() {
+  return currentMathCellIsEmpty() && expressionField.executeCommand("removeRow");
+}
+
 function handleNativeEnter() {
   const now = window.performance.now();
   if (now - lastNativeEnterAt < 250) return;
@@ -157,13 +169,18 @@ function showNativeCaret(show) {
 
 expressionField.addEventListener("pointerup", focusMobileKeyboard);
 expressionField.addEventListener("beforeinput", (event) => {
-  if (
-    usesMobileKeyboard() ||
-    (event.inputType !== "insertLineBreak" && event.inputType !== "insertParagraph")
-  ) {
+  if (usesMobileKeyboard()) return;
+  if (event.inputType === "insertLineBreak" || event.inputType === "insertParagraph") {
+    if (addSystemRow()) event.preventDefault();
     return;
   }
-  if (addSystemRow()) event.preventDefault();
+  if (
+    (event.inputType === "deleteContentBackward" ||
+      event.inputType === "deleteContentForward") &&
+    removeEmptySystemRow()
+  ) {
+    event.preventDefault();
+  }
 });
 mobileKeyboardProxy.addEventListener("pointerdown", (event) => {
   const offset = expressionField.getOffsetFromPoint(event.clientX, event.clientY, { bias: 0 });
@@ -198,14 +215,14 @@ mobileKeyboardProxy.addEventListener("beforeinput", (event) => {
   }
   if (event.inputType === "deleteContentBackward") {
     event.preventDefault();
-    expressionField.executeCommand("deleteBackward");
+    if (!removeEmptySystemRow()) expressionField.executeCommand("deleteBackward");
     resetMobileKeyboardProxy();
     showNativeCaret(true);
     return;
   }
   if (event.inputType === "deleteContentForward") {
     event.preventDefault();
-    expressionField.executeCommand("deleteForward");
+    if (!removeEmptySystemRow()) expressionField.executeCommand("deleteForward");
     resetMobileKeyboardProxy();
     showNativeCaret(true);
     return;
