@@ -130,15 +130,19 @@ function resetMobileKeyboardProxy() {
   );
 }
 
+function addSystemRow() {
+  const added = expressionField.executeCommand("addRowAfter");
+  if (added) showNativeCaret(true);
+  return added;
+}
+
 function handleNativeEnter() {
   const now = window.performance.now();
   if (now - lastNativeEnterAt < 250) return;
   lastNativeEnterAt = now;
-  const before = expressionField.value;
-  expressionField.executeCommand("addRowAfter");
+  const addedRow = addSystemRow();
   resetMobileKeyboardProxy();
-  showNativeCaret(true);
-  if (expressionField.value === before) form.requestSubmit();
+  if (!addedRow) form.requestSubmit();
 }
 
 function showNativeCaret(show) {
@@ -152,6 +156,15 @@ function showNativeCaret(show) {
 }
 
 expressionField.addEventListener("pointerup", focusMobileKeyboard);
+expressionField.addEventListener("beforeinput", (event) => {
+  if (
+    usesMobileKeyboard() ||
+    (event.inputType !== "insertLineBreak" && event.inputType !== "insertParagraph")
+  ) {
+    return;
+  }
+  if (addSystemRow()) event.preventDefault();
+});
 mobileKeyboardProxy.addEventListener("pointerdown", (event) => {
   const offset = expressionField.getOffsetFromPoint(event.clientX, event.clientY, { bias: 0 });
   expressionField.position = offset >= 0 ? offset : expressionField.lastOffset;

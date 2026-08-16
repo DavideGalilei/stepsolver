@@ -243,9 +243,21 @@ def test_mobile_native_keyboard_can_edit_and_extend_systems() -> None:
     assert "function resetMobileKeyboardProxy()" in script.text
     assert 'expressionField.executeCommand("deleteBackward")' in script.text
     assert 'expressionField.executeCommand("addRowAfter")' in script.text
-    assert "if (expressionField.value === before) form.requestSubmit()" in script.text
+    assert "if (!addedRow) form.requestSubmit()" in script.text
     assert "if (!mobileKeyboardProxy.value)" in script.text
     assert "now - lastNativeEnterAt < 250" in script.text
+
+
+def test_desktop_enter_adds_a_row_inside_a_system() -> None:
+    """Desktop Enter should extend cases notation instead of submitting the form."""
+    with TestClient(create_app()) as client:
+        script = client.get("/static/app.js")
+    assert "function addSystemRow()" in script.text
+    assert 'expressionField.addEventListener("beforeinput"' in script.text
+    assert 'event.inputType !== "insertLineBreak"' in script.text
+    assert 'event.inputType !== "insertParagraph"' in script.text
+    assert 'const added = expressionField.executeCommand("addRowAfter")' in script.text
+    assert "if (addSystemRow()) event.preventDefault()" in script.text
 
 
 def test_frontend_renders_domain_constraints_and_accepts_systems() -> None:
