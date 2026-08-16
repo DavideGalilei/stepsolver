@@ -1,100 +1,126 @@
+<div align="center">
+
 # StepSolver
 
-StepSolver is a strictly typed symbolic mathematics library and CLI. It parses
-ASCII input into its own immutable AST, delegates difficult symbolic operations
-through a narrow SymPy adapter, and returns backend-independent typed results
-with machine-checked transformation records.
+### Symbolic mathematics, with the working left in.
 
-## Install
+</div>
+
+> [!WARNING]
+> This repository was written entirely by language models under human direction. Treat it as experimental software and review it accordingly.
+
+<div align="center">
+
+[Website](https://davidegalilei.github.io/stepsolver/) · [Run it](#run-it) · [Syntax](#syntax)
+
+[![Python 3.12–3.14](https://img.shields.io/badge/Python-3.12%E2%80%933.14-3776AB?logo=python&logoColor=white)](https://www.python.org/)
+[![Poetry](https://img.shields.io/badge/Poetry-managed-60A5FA?logo=poetry&logoColor=white)](https://python-poetry.org/)
+[![types: strict](https://img.shields.io/badge/types-strict-2F855A)](#checks)
+[![coverage: 90%+](https://img.shields.io/badge/coverage-90%25%2B-7C3AED)](#checks)
+
+</div>
+
+StepSolver accepts ASCII or visual math, parses it into its own typed AST, and returns checked solution steps. It is most useful today for single-variable calculus and algebra.
 
 ```console
+$ poetry run stepsolver "integrate(x*exp(x), x)"
+
+Step 1 (Choose integration by parts)
+  ∫ x eˣ dx  →  x eˣ − ∫ eˣ dx
+
+Step 2 (Evaluate the remaining integral)
+  x eˣ − ∫ eˣ dx  →  (x − 1)eˣ + C
+
+Result: (x - 1) * exp(x) + C
+```
+
+The web editor renders the problem, identities, substitutions, and intermediate work as LaTeX.
+
+## Run it
+
+StepSolver supports Python 3.12 through 3.14 and uses Poetry.
+
+```console
+git clone https://github.com/DavideGalilei/stepsolver.git
+cd stepsolver
 poetry install
 ```
 
-## Python API
-
-```python
-from stepsolver import Solver, format_ascii
-
-result = Solver().solve("integrate(sin(x), x, 0, pi)")
-print(format_ascii(result))
-```
-
-## CLI
-
-```console
-poetry run stepsolver "solve(x^2 - 4 = 0, x)"
-poetry run stepsolver "contour_integrate(1/z, z, exp(i*t), t, 0, 2*pi)"
-```
-
-When no argument is supplied, the CLI reads one query from standard input.
-
-## Web frontend
-
-Start the FastAPI server and open `http://127.0.0.1:8000`:
+Start the graphical editor:
 
 ```console
 poetry run stepsolver-web
 ```
 
-The browser frontend provides one universal graphical equation editor and an
-always-visible palette for fractions, roots, relations, calculus notation,
-functions, and constants. Enter the complete problem as conventional
-two-dimensional notation: an equation is solved, an integral is integrated,
-a derivative is differentiated, and a bare expression is simplified. No
-operation dropdown or separate variable/bounds form is needed. Answers and
-steps are rendered as semantic mathematical notation. The normalized ASCII
-solver input remains available in an expandable diagnostics panel.
+Then open `http://127.0.0.1:8000`.
 
-Server settings can be changed through environment variables:
+Or use the CLI:
 
 ```console
-STEPSOLVER_HOST=0.0.0.0 STEPSOLVER_PORT=8080 STEPSOLVER_RELOAD=true \
-  poetry run stepsolver-web
+poetry run stepsolver "solve(x^2 - 4 = 0, x)"
+poetry run stepsolver "limit(sin(3*x)/x, x, 0)"
+poetry run stepsolver "integrate(1/(sqrt(x)*(x+1)), x)"
 ```
 
-The graphical editor uses `POST /api/solve` with a body such as:
+## Python API
 
-```json
-{
-  "latex": "\\int_0^\\pi \\sin(x)\\,\\mathrm{d}x",
-  "math_json": [
-    "Integrate",
-    ["Sin", "x"],
-    ["Tuple", "x", 0, "Pi"]
-  ]
-}
+```python
+from stepsolver import ExactResult, Solver
+
+result = Solver().solve("integrate(sin(x), x, 0, pi)")
+
+if isinstance(result, ExactResult):
+    for step in result.steps:
+        print(step.rule)
 ```
 
-The browser derives semantic MathJSON from the visual field. The server
-validates that tree, converts it into StepSolver's custom AST, and infers the
-operation from the outer notation. The LaTeX string is display context only;
-it is not evaluated by the backend.
+Results and steps are immutable typed objects. Exact, divergent, and unsolved outcomes are separate result types.
 
 ## Syntax
 
-- Explicit operators: `+`, `-`, `*`, `/`, `^`, and `!`.
-- Relations: `=`, `!=`, `<`, `<=`, `>`, and `>=`.
-- Exact constants: `pi`, `e`, `i`, and `oo`.
-- Explicit multiplication is required: write `2*x`, not `2x`.
-- Top-level function syntax selects an operation. A bare expression is
-  simplified.
+ASCII input uses explicit operators. Write `2*x`, not `2x`. Constants include `pi`, `e`, `i`, and `oo`.
 
-Common operations include `simplify`, `expand`, `factor`, `solve`,
-`solve_inequality`, `diff`, `integrate`, `limit`, `series`, `sum`, `product`,
-`matrix`, `det`, `inverse`, `rank`, `rref`, `eigenvalues`, `dsolve`, `rsolve`,
-`laplace`, `fourier`, `gcd`, `lcm`, `is_prime`, `prime_factors`, `binomial`,
-`permutations`, `combinations`, and `numeric`.
+| Area | Operations |
+| --- | --- |
+| Algebra | `simplify`, `expand`, `factor`, `solve`, `solve_inequality` |
+| Calculus | `diff`, `integrate`, `limit`, `series` |
+| Sums and products | `sum`, `product` |
+| Matrices | `matrix`, `det`, `inverse`, `rank`, `rref`, `eigenvalues` |
+| Transforms | `laplace`, `inverse_laplace`, `fourier`, `inverse_fourier` |
+| Differential equations and recurrences | `dsolve`, `rsolve` |
+| Number theory | `gcd`, `lcm`, `is_prime`, `prime_factors`, `binomial` |
+| Numerical work | `numeric` |
 
-Parameterized contour integrals use:
+Contour integrals use an explicit parameterized path:
 
 ```text
-contour_integrate(integrand, complex_variable, path, parameter, lower, upper)
+contour_integrate(1/z, z, exp(i*t), t, 0, 2*pi)
 ```
 
-For example, the positively oriented unit circle is `exp(i*t)` for
-`0 <= t <= 2*pi`.
+Natural-language input and implicit multiplication are not supported.
 
-StepSolver does not execute Python input and does not use natural-language or
-implicit-multiplication parsing. Valid problems without a verified supported
-result return a typed `UnsolvedResult`.
+## How it is put together
+
+- The ASCII and MathJSON parsers produce the same custom AST.
+- SymPy performs symbolic computation behind an adapter.
+- Derivation strategies turn results into named, verified steps.
+- The CLI and web app render the same result model as ASCII or LaTeX.
+
+SymPy objects do not leak into the public API. If the backend leaves an operation unevaluated, StepSolver reports that instead of presenting it as an answer.
+
+## Checks
+
+```console
+poetry run ruff check .
+poetry run mypy src tests
+poetry run pyright
+poetry run ty check
+poetry run pytest --cov=stepsolver --cov-fail-under=90
+poetry check --strict
+```
+
+## Status
+
+This is early-stage research software, not a replacement for a mature computer algebra system. Some supported operations still lack good student-facing derivations; those cases are tracked in the tests.
+
+The repository does not currently include a license. Standard copyright restrictions apply.

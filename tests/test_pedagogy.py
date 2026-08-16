@@ -161,9 +161,7 @@ def test_student_facing_latex_has_no_backend_or_neutral_artifacts(solver: Solver
             for expression in (step.before, step.after)
         )
         rendered.extend(
-            format_latex_expression(note.expression)
-            for step in result.steps
-            for note in step.notes
+            format_latex_expression(note.expression) for step in result.steps for note in step.notes
         )
     joined = " ".join(rendered)
     assert "InvisibleOperator" not in joined

@@ -15,7 +15,7 @@ from stepsolver.errors import QueryError
 from stepsolver.formatter import format_ascii, format_expression
 from stepsolver.latex import format_latex_expression, format_latex_value
 from stepsolver.mathjson import query_from_mathjson
-from stepsolver.results import ExactResult, SolveResult
+from stepsolver.results import DivergenceKind, DivergentResult, ExactResult, SolveResult
 from stepsolver.solver import Solver
 
 _ASSET_DIRECTORY = Path(__file__).with_name("web_assets")
@@ -62,11 +62,11 @@ class StepResponse(BaseModel):
 
 
 class SolveResponse(BaseModel):
-    """Typed browser response for an exact or unsolved query."""
+    """Typed browser response for an exact, divergent, or unsolved query."""
 
     model_config = ConfigDict(extra="forbid", frozen=True)
 
-    status: Literal["exact", "unsolved"]
+    status: Literal["exact", "divergent", "unsolved"]
     source: str
     formatted_ascii: str
     result_latex: str | None
@@ -117,6 +117,20 @@ def _solve_response(result: SolveResult) -> SolveResponse:
             formatted_ascii=format_ascii(result),
             result_latex=format_latex_value(result.value),
             reason=None,
+            steps=steps,
+        )
+    if isinstance(result, DivergentResult):
+        divergence_latex = {
+            DivergenceKind.POSITIVE_INFINITY: r"\text{Diverges to }+\infty",
+            DivergenceKind.NEGATIVE_INFINITY: r"\text{Diverges to }-\infty",
+            DivergenceKind.NONFINITE: r"\text{Does not converge}",
+        }
+        return SolveResponse(
+            status="divergent",
+            source=result.query.source,
+            formatted_ascii=format_ascii(result),
+            result_latex=divergence_latex[result.kind],
+            reason=result.reason,
             steps=steps,
         )
     return SolveResponse(

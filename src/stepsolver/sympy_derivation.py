@@ -917,9 +917,7 @@ def _derive_power_chain(
         variable=variable,
         raw_derivative=raw_derivative,
         result=result,
-        explanation=(
-            "Differentiate the outer power, then multiply by the derivative of its base."
-        ),
+        explanation=("Differentiate the outer power, then multiply by the derivative of its base."),
         notes=(
             BackendMathNote(
                 label="Base derivative",
@@ -1719,9 +1717,7 @@ def derive_function_substitution_integral(
                 variable=substitution_variable,
                 coefficient=None if coefficient == sp.Integer(1) else coefficient,
             )
-            formula_in_substitution_variable_term = outer_antiderivative(
-                substitution_variable
-            )
+            formula_in_substitution_variable_term = outer_antiderivative(substitution_variable)
             formula_term = outer_antiderivative(argument)
             if coefficient != sp.Integer(1):
                 formula_in_substitution_variable_term = sp.Mul(
@@ -1834,10 +1830,7 @@ def derive_integration_by_parts(
         integration_constant,
         evaluate=False,
     )
-    if (
-        remaining_antiderivative.has(sp.Integral)
-        or sp.simplify(expected - result) != sp.Integer(0)
-    ):
+    if remaining_antiderivative.has(sp.Integral) or sp.simplify(expected - result) != sp.Integer(0):
         return ()
     product_term = sp.simplify(chosen_u * chosen_v)
     if remaining_integrand.could_extract_minus_sign():
@@ -1889,9 +1882,7 @@ def derive_integration_by_parts(
                         left=sp.Symbol("dv"),
                         right=BackendDifferential(
                             variable=variable,
-                            coefficient=(
-                                None if chosen_dv == sp.Integer(1) else chosen_dv
-                            ),
+                            coefficient=(None if chosen_dv == sp.Integer(1) else chosen_dv),
                         ),
                     ),
                 ),
@@ -1901,9 +1892,7 @@ def derive_integration_by_parts(
                         left=sp.Symbol("du"),
                         right=BackendDifferential(
                             variable=variable,
-                            coefficient=(
-                                None if chosen_du == sp.Integer(1) else chosen_du
-                            ),
+                            coefficient=(None if chosen_du == sp.Integer(1) else chosen_du),
                         ),
                     ),
                 ),
@@ -1973,8 +1962,7 @@ def derive_trigonometric_power_integral(
                 before=BackendIntegral(integrand=integrand, variable=variable),
                 after=BackendIntegral(integrand=reduced, variable=variable),
                 explanation=(
-                    "Rewrite the squared trigonometric function using a double-angle "
-                    "identity."
+                    "Rewrite the squared trigonometric function using a double-angle identity."
                 ),
                 verification_method=VerificationMethod.SYMBOLIC_EQUIVALENCE,
                 verification_detail="The power-reduction identity preserves the integrand.",
@@ -2158,11 +2146,7 @@ def derive_shifted_semicircle_integral(
         + sp.asin(substitution_variable) / 2
         + integration_constant
     )
-    final_formula = (
-        shifted * completed_integrand / 2
-        + sp.asin(shifted) / 2
-        + integration_constant
-    )
+    final_formula = shifted * completed_integrand / 2 + sp.asin(shifted) / 2 + integration_constant
     if sp.simplify(final_formula - result) != sp.Integer(0):
         return ()
     return (
@@ -2220,9 +2204,7 @@ def derive_shifted_semicircle_integral(
                 variable=substitution_variable,
             ),
             after=transformed_formula,
-            explanation=(
-                "Apply the standard antiderivative for the upper unit semicircle."
-            ),
+            explanation=("Apply the standard antiderivative for the upper unit semicircle."),
             verification_method=VerificationMethod.DIFFERENTIATION,
             verification_detail="Differentiating the formula gives the semicircle integrand.",
             notes=(
@@ -2321,9 +2303,7 @@ def derive_inverse_hyperbolic_integral(
             rule="Use the inverse hyperbolic sine rule",
             before=transformed_integral,
             after=transformed_formula,
-            explanation=(
-                "The normalized integrand is the derivative of inverse hyperbolic sine."
-            ),
+            explanation=("The normalized integrand is the derivative of inverse hyperbolic sine."),
             verification_method=VerificationMethod.DIFFERENTIATION,
             verification_detail=(
                 "Differentiating inverse hyperbolic sine gives the normalized integrand."
@@ -2431,11 +2411,7 @@ def derive_reciprocal_quadratic_integral(
     if radius_squared.is_positive is not True:
         return ()
     prefactor = sp.simplify(numerator / coefficient_a)
-    shift = (
-        variable
-        if center == sp.Integer(0)
-        else sp.Add(variable, -center, evaluate=False)
-    )
+    shift = variable if center == sp.Integer(0) else sp.Add(variable, -center, evaluate=False)
     completed_denominator = sp.Add(
         sp.Pow(shift, 2, evaluate=False),
         radius_squared,
@@ -2512,12 +2488,15 @@ def derive_reciprocal_quadratic_integral(
     if str(sp.simplify(transformed_integrand - completed_integrand)) != "0":
         message = "the substitution changed the completed-square integral"
         raise ValueError(message)
-    if str(
-        sp.simplify(
-            sp.diff(formula_in_substitution_variable, substitution_variable)
-            - normalized_coefficient * unit_integrand
+    if (
+        str(
+            sp.simplify(
+                sp.diff(formula_in_substitution_variable, substitution_variable)
+                - normalized_coefficient * unit_integrand
+            )
         )
-    ) != "0":
+        != "0"
+    ):
         message = "the arctangent formula failed differentiation verification"
         raise ValueError(message)
     if str(sp.simplify(formula - result)) != "0":
@@ -2587,8 +2566,7 @@ def derive_definite_integral(
             ),
             after=evaluated_at_bounds,
             explanation=(
-                "Find an antiderivative, then evaluate it at the upper bound minus the "
-                "lower bound."
+                "Find an antiderivative, then evaluate it at the upper bound minus the lower bound."
             ),
             verification_method=VerificationMethod.DIFFERENTIATION,
             verification_detail=(
@@ -2681,7 +2659,15 @@ def derive_improper_integral(
     upper: sp.Basic,
     result: sp.Basic,
 ) -> tuple[BackendDerivationStep, ...]:
-    """Evaluate a convergent one-ended improper integral through its defining limit."""
+    """Evaluate a one-ended improper integral through its defining limit."""
+    absolute_value_steps = _derive_absolute_value_improper_integral(
+        integrand,
+        variable,
+        lower,
+        upper,
+    )
+    if absolute_value_steps:
+        return absolute_value_steps
     has_infinite_lower = lower == -sp.oo and upper not in {sp.oo, -sp.oo}
     has_infinite_upper = upper == sp.oo and lower not in {sp.oo, -sp.oo}
     if not has_infinite_lower and not has_infinite_upper:
@@ -2763,7 +2749,238 @@ def derive_improper_integral(
                 "Evaluate the finite endpoint and take the limit at the infinite endpoint."
             ),
             verification_method=VerificationMethod.EXACT_ARITHMETIC,
-            verification_detail="The endpoint limit gives the exact convergent value.",
+            verification_detail=(
+                "The endpoint limit determines whether the improper integral converges."
+            ),
+        ),
+    )
+
+
+def _derive_absolute_value_improper_integral(
+    integrand: sp.Basic,
+    variable: sp.Symbol,
+    lower: sp.Basic,
+    upper: sp.Basic,
+) -> tuple[BackendDerivationStep, ...]:
+    """Show why the standard improper integrals of ``abs(x)`` diverge."""
+    if integrand != sp.Abs(variable):
+        return ()
+    original = BackendIntegral(
+        integrand=integrand,
+        variable=variable,
+        lower=lower,
+        upper=upper,
+    )
+    if lower == -sp.oo and upper == sp.oo:
+        left_integral = BackendIntegral(
+            integrand=integrand,
+            variable=variable,
+            lower=-sp.oo,
+            upper=sp.Integer(0),
+        )
+        right_integral = BackendIntegral(
+            integrand=integrand,
+            variable=variable,
+            lower=sp.Integer(0),
+            upper=sp.oo,
+        )
+        signed_integrals = BackendSum(
+            terms=(
+                BackendIntegral(
+                    integrand=-variable,
+                    variable=variable,
+                    lower=-sp.oo,
+                    upper=sp.Integer(0),
+                ),
+                BackendIntegral(
+                    integrand=variable,
+                    variable=variable,
+                    lower=sp.Integer(0),
+                    upper=sp.oo,
+                ),
+            )
+        )
+        a = sp.Symbol("a", real=True)
+        b = sp.Symbol("b", real=True)
+        tail_limits = BackendSum(
+            terms=(
+                BackendLimit(
+                    expression=a**2 / 2,
+                    variable=a,
+                    point=-sp.oo,
+                ),
+                BackendLimit(
+                    expression=b**2 / 2,
+                    variable=b,
+                    point=sp.oo,
+                ),
+            )
+        )
+        return (
+            BackendDerivationStep(
+                rule="Split the integral at zero",
+                before=original,
+                after=BackendSum(terms=(left_integral, right_integral)),
+                explanation=(
+                    "The formula for absolute value changes at zero, so treat the two "
+                    "half-lines separately."
+                ),
+                verification_method=VerificationMethod.SYMBOLIC_EQUIVALENCE,
+                verification_detail="The real line is split at the only sign-change point.",
+            ),
+            BackendDerivationStep(
+                rule="Remove the absolute value on each interval",
+                before=BackendSum(terms=(left_integral, right_integral)),
+                after=signed_integrals,
+                explanation=("For x at or below zero, |x| = -x; for x at or above zero, |x| = x."),
+                verification_method=VerificationMethod.SYMBOLIC_EQUIVALENCE,
+                verification_detail="Each replacement uses the sign of x on its interval.",
+                notes=(
+                    BackendMathNote(
+                        label="Left half-line",
+                        expression=BackendIdentity(left=sp.Abs(variable), right=-variable),
+                    ),
+                    BackendMathNote(
+                        label="Right half-line",
+                        expression=BackendIdentity(left=sp.Abs(variable), right=variable),
+                    ),
+                ),
+            ),
+            BackendDerivationStep(
+                rule="Evaluate both improper tails",
+                before=signed_integrals,
+                after=tail_limits,
+                explanation=(
+                    "Use an antiderivative on each finite interval, then send its outer "
+                    "endpoint toward infinity."
+                ),
+                verification_method=VerificationMethod.DIFFERENTIATION,
+                verification_detail=(
+                    "Differentiating -x^2/2 and x^2/2 gives -x and x respectively."
+                ),
+            ),
+            BackendDerivationStep(
+                rule="Check convergence of each tail",
+                before=tail_limits,
+                after=sp.oo,
+                explanation=(
+                    "Both limits grow without bound. Since even one divergent tail is "
+                    "enough, the integral over the whole real line diverges."
+                ),
+                verification_method=VerificationMethod.EXACT_ARITHMETIC,
+                verification_detail="Both quadratic endpoint limits equal +infinity.",
+            ),
+        )
+
+    has_infinite_lower = lower == -sp.oo and upper == sp.Integer(0)
+    has_infinite_upper = lower == sp.Integer(0) and upper == sp.oo
+    if not has_infinite_lower and not has_infinite_upper:
+        return ()
+    transformed_integrand = -variable if has_infinite_lower else variable
+    bound = sp.Symbol("a" if has_infinite_lower else "b", real=True)
+    finite_lower = bound if has_infinite_lower else lower
+    finite_upper = upper if has_infinite_lower else bound
+    approach_point = -sp.oo if has_infinite_lower else sp.oo
+    transformed = BackendIntegral(
+        integrand=transformed_integrand,
+        variable=variable,
+        lower=lower,
+        upper=upper,
+    )
+    finite_integral = BackendIntegral(
+        integrand=transformed_integrand,
+        variable=variable,
+        lower=finite_lower,
+        upper=finite_upper,
+    )
+    limit_of_integral = BackendLimit(
+        expression=finite_integral,
+        variable=bound,
+        point=approach_point,
+    )
+    antiderivative = sp.integrate(transformed_integrand, variable)
+    evaluated = BackendEvaluationAtBounds(
+        expression=antiderivative,
+        variable=variable,
+        lower=finite_lower,
+        upper=finite_upper,
+    )
+    endpoint_value = sp.integrate(
+        transformed_integrand,
+        (variable, finite_lower, finite_upper),
+    )
+    endpoint_limit = BackendLimit(
+        expression=endpoint_value,
+        variable=bound,
+        point=approach_point,
+    )
+    interval_description = "x <= 0" if has_infinite_lower else "x >= 0"
+    replacement = "-x" if has_infinite_lower else "x"
+    return (
+        BackendDerivationStep(
+            rule="Use the sign of x on the interval",
+            before=original,
+            after=transformed,
+            explanation=(
+                f"Throughout this interval, {interval_description}, so |x| = {replacement}."
+            ),
+            verification_method=VerificationMethod.SYMBOLIC_EQUIVALENCE,
+            verification_detail="The absolute-value definition was applied on the interval.",
+            notes=(
+                BackendMathNote(
+                    label="Absolute value on this interval",
+                    expression=BackendIdentity(
+                        left=sp.Abs(variable),
+                        right=transformed_integrand,
+                    ),
+                ),
+            ),
+        ),
+        BackendDerivationStep(
+            rule="Rewrite the improper integral as a limit",
+            before=transformed,
+            after=limit_of_integral,
+            explanation=(
+                "Replace the infinite endpoint with a finite bound, then move that bound "
+                "toward infinity."
+            ),
+            verification_method=VerificationMethod.SYMBOLIC_EQUIVALENCE,
+            verification_detail="This limit is the definition of the improper integral.",
+        ),
+        BackendDerivationStep(
+            rule="Apply the Fundamental Theorem of Calculus",
+            before=limit_of_integral,
+            after=BackendLimit(
+                expression=evaluated,
+                variable=bound,
+                point=approach_point,
+            ),
+            explanation="Evaluate the finite integral with an antiderivative first.",
+            verification_method=VerificationMethod.DIFFERENTIATION,
+            verification_detail="Differentiating the antiderivative recovers the integrand.",
+        ),
+        BackendDerivationStep(
+            rule="Evaluate the finite bounds",
+            before=BackendLimit(
+                expression=evaluated,
+                variable=bound,
+                point=approach_point,
+            ),
+            after=endpoint_limit,
+            explanation="Substitute the two finite endpoints and simplify.",
+            verification_method=VerificationMethod.EXACT_ARITHMETIC,
+            verification_detail="The endpoint subtraction simplifies exactly.",
+        ),
+        BackendDerivationStep(
+            rule="Test the endpoint limit",
+            before=endpoint_limit,
+            after=sp.oo,
+            explanation=(
+                "The quadratic term grows without bound, so the improper integral "
+                "diverges to +infinity."
+            ),
+            verification_method=VerificationMethod.EXACT_ARITHMETIC,
+            verification_detail="The quadratic endpoint limit equals +infinity.",
         ),
     )
 
@@ -2792,12 +3009,14 @@ def _derive_infinite_limit(
         numerator_degree = numerator_polynomial.degree()
         denominator_degree = denominator_polynomial.degree()
         if numerator_degree <= denominator_degree:
-            numerator_leading = numerator_polynomial.coeff_monomial(
-                variable**numerator_degree
-            ) * variable**numerator_degree
-            denominator_leading = denominator_polynomial.coeff_monomial(
-                variable**denominator_degree
-            ) * variable**denominator_degree
+            numerator_leading = (
+                numerator_polynomial.coeff_monomial(variable**numerator_degree)
+                * variable**numerator_degree
+            )
+            denominator_leading = (
+                denominator_polynomial.coeff_monomial(variable**denominator_degree)
+                * variable**denominator_degree
+            )
             return (
                 BackendDerivationStep(
                     rule="Compare the leading powers",
@@ -2865,19 +3084,14 @@ def _derive_sine_limit(
         direction=direction,
     )
     standard_sine_quotient = sp.sin(variable) / variable
-    if (
-        point == sp.Integer(0)
-        and sp.simplify(expression - standard_sine_quotient) == sp.Integer(0)
-    ):
+    if point == sp.Integer(0) and sp.simplify(expression - standard_sine_quotient) == sp.Integer(0):
         generic_variable = sp.Symbol("u", real=True)
         return (
             BackendDerivationStep(
                 rule="Use the standard sine limit",
                 before=displayed_limit,
                 after=result,
-                explanation=(
-                    "This expression is the standard trigonometric limit at zero."
-                ),
+                explanation=("This expression is the standard trigonometric limit at zero."),
                 verification_method=VerificationMethod.SYMBOLIC_EQUIVALENCE,
                 verification_detail="The expression exactly matches the standard sine limit.",
                 notes=(
@@ -2968,10 +3182,7 @@ def derive_limit(
     if point not in {sp.oo, -sp.oo}:
         numerator_at_point = sp.simplify(numerator.subs(variable, point))
         denominator_at_point = sp.simplify(denominator.subs(variable, point))
-        if (
-            numerator_at_point == sp.Integer(0)
-            and denominator_at_point == sp.Integer(0)
-        ):
+        if numerator_at_point == sp.Integer(0) and denominator_at_point == sp.Integer(0):
             canceled = sp.cancel(expression)
             if str(canceled) != str(expression):
                 canceled_limit = BackendLimit(
@@ -3045,11 +3256,7 @@ def derive_limit(
                 )
 
         substituted = sp.simplify(expression.subs(variable, point))
-        if (
-            substituted == result
-            and not substituted.has(sp.zoo)
-            and not substituted.has(sp.nan)
-        ):
+        if substituted == result and not substituted.has(sp.zoo) and not substituted.has(sp.nan):
             return (
                 BackendDerivationStep(
                     rule="Use direct substitution",
@@ -3112,8 +3319,7 @@ def derive_dirichlet_integral(
             ),
             verification_method=VerificationMethod.SUBSTITUTION,
             verification_detail=(
-                "Replacing the variable and differential produces the standard Dirichlet "
-                "integral."
+                "Replacing the variable and differential produces the standard Dirichlet integral."
             ),
             notes=(
                 BackendMathNote(

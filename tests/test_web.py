@@ -11,6 +11,7 @@ from stepsolver.web import SolveResponse, create_app
 _HTTP_OK = 200
 _HTTP_UNPROCESSABLE_CONTENT = 422
 _CONTOUR_STEP_COUNT = 2
+_MINIMUM_THREE_COLUMN_GRID_COUNT = 2
 _TEST_HOST = "127.0.0.2"
 _TEST_PORT = 8080
 
@@ -30,6 +31,7 @@ def test_homepage_and_assets_are_served() -> None:
         script = client.get("/static/app.js")
     assert homepage.status_code == _HTTP_OK
     assert "StepSolver" in homepage.text
+    assert '<span class="wordmark-symbol" aria-hidden="true">∬</span>' in homepage.text
     assert "math-field" in homepage.text
     assert "Mathematical symbol palette" in homepage.text
     assert "<select" not in homepage.text
@@ -44,14 +46,27 @@ def test_homepage_and_assets_are_served() -> None:
     assert "text-transform: uppercase" not in stylesheet.text
     assert script.status_code == _HTTP_OK
     assert "ComputeEngine" in script.text
-    assert "MathfieldElement.fontsDirectory" in script.text
-    assert "mathlive@0.110.0/fonts/" in script.text
+    assert 'from "/static/vendor.mjs"' in script.text
+    assert 'MathfieldElement.fontsDirectory = "/static/fonts/"' in script.text
     assert "firstElementChild" not in script.text
     assert "expressionField.insert" in script.text
-    assert 'addEventListener("pointerdown"' in script.text
+    assert 'key.addEventListener("pointerdown"' in script.text
+    assert "event.preventDefault()" in script.text
+    assert "event.detail === 0" in script.text
+    assert "insertSymbolTemplate(key)" in script.text
     assert "expressionField.executeCommand" not in script.text
     assert 'behavior: "smooth"' not in script.text
-    assert "grid-template-columns: repeat(3, minmax(86px, 1fr))" in stylesheet.text
+    assert (
+        stylesheet.text.count("grid-template-columns: repeat(3, minmax(0, 1fr))")
+        >= _MINIMUM_THREE_COLUMN_GRID_COUNT
+    )
+    assert ".math-toolbar" in stylesheet.text
+    assert "overflow: hidden" in stylesheet.text
+    assert "touch-action: manipulation" in stylesheet.text
+    assert "pointer-events: none" in stylesheet.text
+    assert "--smart-fence-color: var(--ink)" in stylesheet.text
+    assert 'table.className = "derivative-table"' in script.text
+    assert "Differentiate each factor once" in script.text
 
 
 def test_exact_solve_response_contains_latex_steps() -> None:
@@ -70,6 +85,37 @@ def test_exact_solve_response_contains_latex_steps() -> None:
     assert payload.result_latex == "2"
     assert payload.steps
     assert payload.steps[0].before_latex.startswith(r"\int_{0}^{\pi}")
+
+
+def test_divergent_absolute_value_integral_has_a_graphical_proof() -> None:
+    """The browser should distinguish a proved divergence from an unsolved query."""
+    with TestClient(create_app()) as client:
+        response = client.post(
+            "/api/solve",
+            json={
+                "latex": r"\int_0^\infty |x|\,\mathrm{d}x",
+                "math_json": [
+                    "Integrate",
+                    ["Abs", "x"],
+                    ["Tuple", "x", 0, "PositiveInfinity"],
+                ],
+            },
+        )
+    payload = SolveResponse.model_validate_json(response.text)
+    assert response.status_code == _HTTP_OK
+    assert payload.status == "divergent"
+    assert payload.result_latex == r"\text{Diverges to }+\infty"
+    assert payload.reason == "The improper integral diverges to +infinity."
+    assert [step.rule for step in payload.steps] == [
+        "Use the sign of x on the interval",
+        "Rewrite the improper integral as a limit",
+        "Apply the Fundamental Theorem of Calculus",
+        "Evaluate the finite bounds",
+        "Test the endpoint limit",
+    ]
+    assert payload.steps[0].before_latex == r"\int_{0}^{\infty} \left|x\right|\,\mathrm{d}x"
+    assert payload.steps[-1].after_latex == r"\infty"
+    assert "Integral(" not in payload.formatted_ascii
 
 
 def test_visual_adjacency_uses_the_product_rule() -> None:
@@ -99,6 +145,7 @@ def test_visual_adjacency_uses_the_product_rule() -> None:
         r"\exp\left(x\right) \cdot \cos\left(x\right)"
     )
     assert payload.steps[0].notes[0].label == "Product rule"
+    assert "log" not in payload.result_latex
     assert "InvisibleOperator" not in response.text
 
 
@@ -167,9 +214,7 @@ def test_reciprocal_quadratic_integral_contains_detailed_latex_steps() -> None:
     assert payload.steps[1].after_latex == (
         r"\frac{2}{\sqrt{3}} \cdot \int \frac{1}{u^{2} + 1}\,\mathrm{d}u"
     )
-    assert payload.steps[1].notes[0].expression_latex == (
-        r"u = \frac{2 \cdot x - 1}{\sqrt{3}}"
-    )
+    assert payload.steps[1].notes[0].expression_latex == (r"u = \frac{2 \cdot x - 1}{\sqrt{3}}")
     assert payload.steps[1].notes[2].expression_latex == (
         r"\mathrm{d}x = \frac{\sqrt{3}}{2} \cdot \mathrm{d}u"
     )

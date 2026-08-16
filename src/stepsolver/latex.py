@@ -92,9 +92,7 @@ def _format_quadratic_solutions(arguments: tuple[Expression, ...]) -> str:
 
 
 def _format_evaluation_at_bounds(arguments: tuple[Expression, ...]) -> str:
-    value, variable, lower, upper = (
-        format_latex_expression(argument) for argument in arguments
-    )
+    value, variable, lower, upper = (format_latex_expression(argument) for argument in arguments)
     if lower == upper:
         return rf"\left.{value}\right|_{{{variable}={lower}}}"
     return rf"\left[{value}\right]_{{{lower}}}^{{{upper}}}"

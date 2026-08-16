@@ -3,6 +3,8 @@
 import pytest
 
 from stepsolver import (
+    DivergenceKind,
+    DivergentResult,
     ExactResult,
     Solver,
     UnsolvedResult,
@@ -354,3 +356,59 @@ def test_invalid_operation_arguments_return_unsolved(solver: Solver, query: str)
     result = solver.solve(query)
     assert isinstance(result, UnsolvedResult)
     assert result.reason
+
+
+@pytest.mark.parametrize(
+    ("query", "expected_first_rule"),
+    [
+        ("integrate(abs(x),x,0,oo)", "Use the sign of x on the interval"),
+        ("integrate(abs(x),x,-oo,0)", "Use the sign of x on the interval"),
+        ("integrate(abs(x),x,-oo,oo)", "Split the integral at zero"),
+        ("integrate(x,x,0,oo)", "Rewrite the improper integral as a limit"),
+    ],
+)
+def test_divergent_improper_integrals_are_explained_as_divergent(
+    solver: Solver,
+    query: str,
+    expected_first_rule: str,
+) -> None:
+    """Divergent integrals should be conclusions, never fake exact values."""
+    result = solver.solve(query)
+    assert isinstance(result, DivergentResult)
+    assert result.kind is DivergenceKind.POSITIVE_INFINITY
+    assert result.steps[0].rule == expected_first_rule
+    assert result.steps[-1].after != result.steps[-1].before
+    assert all(step.rule != "Compute exact result" for step in result.steps)
+    rendered = format_ascii(result)
+    assert "Integral(" not in rendered
+    assert rendered.endswith("The improper integral diverges to +infinity.")
+
+
+def test_negative_infinite_improper_integral_has_its_own_direction(solver: Solver) -> None:
+    """A negative divergent tail should retain the direction of divergence."""
+    result = solver.solve("integrate(-x,x,0,oo)")
+    assert isinstance(result, DivergentResult)
+    assert result.kind is DivergenceKind.NEGATIVE_INFINITY
+    assert result.steps[-1].verification.detail == (
+        "The endpoint limit determines whether the improper integral converges."
+    )
+
+
+@pytest.mark.parametrize(
+    "query",
+    [
+        "diff(f(x),x)",
+        "integrate(f(x),x)",
+        "sum(f(k),k,1,n)",
+        "product(f(k),k,1,n)",
+    ],
+)
+def test_unevaluated_backend_operations_are_never_exact(
+    solver: Solver,
+    query: str,
+) -> None:
+    """Backend placeholders must not leak through the exact-result boundary."""
+    result = solver.solve(query)
+    assert isinstance(result, UnsolvedResult)
+    assert "could not evaluate" in result.reason
+    assert "Compute exact result" not in format_ascii(result)

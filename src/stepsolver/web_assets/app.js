@@ -1,9 +1,8 @@
 "use strict";
 
-import { MathfieldElement } from "https://esm.run/mathlive@0.110.0";
-import { ComputeEngine } from "https://esm.run/@cortex-js/compute-engine";
+import { ComputeEngine, MathfieldElement } from "/static/vendor.mjs";
 
-MathfieldElement.fontsDirectory = "https://cdn.jsdelivr.net/npm/mathlive@0.110.0/fonts/";
+MathfieldElement.fontsDirectory = "/static/fonts/";
 MathfieldElement.soundsDirectory = null;
 
 const computeEngine = new ComputeEngine();
@@ -27,6 +26,56 @@ function createReadonlyMath(latex, className) {
   return field;
 }
 
+function createNotes(step) {
+  const notes = document.createElement("div");
+  notes.className = "step-notes";
+  const derivativeNotes = new Map(
+    step.notes
+      .filter((note) => note.label.endsWith(" factor derivative"))
+      .map((note) => [note.label, note])
+  );
+  if (step.rule === "Apply the product rule" && derivativeNotes.size === 2) {
+    const table = document.createElement("table");
+    table.className = "derivative-table";
+    const caption = document.createElement("caption");
+    caption.textContent = "Differentiate each factor once";
+    const header = document.createElement("tr");
+    for (const label of ["Factor", "Derivative"]) {
+      const cell = document.createElement("th");
+      cell.scope = "col";
+      cell.textContent = label;
+      header.append(cell);
+    }
+    const head = document.createElement("thead");
+    head.append(header);
+    const body = document.createElement("tbody");
+    for (const [label, note] of derivativeNotes) {
+      const row = document.createElement("tr");
+      const name = document.createElement("th");
+      name.scope = "row";
+      name.textContent = label.startsWith("First") ? "First" : "Second";
+      const derivative = document.createElement("td");
+      derivative.append(createReadonlyMath(note.expression_latex, "step-note-math"));
+      row.append(name, derivative);
+      body.append(row);
+    }
+    table.append(caption, head, body);
+    notes.append(table);
+  }
+  for (const note of step.notes) {
+    if (derivativeNotes.has(note.label)) continue;
+    const noteBlock = document.createElement("div");
+    noteBlock.className = "step-note";
+    const noteLabel = document.createElement("div");
+    noteLabel.className = "step-note-label";
+    noteLabel.textContent = note.label;
+    const noteMath = createReadonlyMath(note.expression_latex, "step-note-math");
+    noteBlock.append(noteLabel, noteMath);
+    notes.append(noteBlock);
+  }
+  return notes;
+}
+
 function createStep(step) {
   const article = document.createElement("article");
   article.className = "step";
@@ -38,18 +87,7 @@ function createStep(step) {
   heading.textContent = step.rule;
   const explanation = document.createElement("p");
   explanation.textContent = step.explanation;
-  const notes = document.createElement("div");
-  notes.className = "step-notes";
-  for (const note of step.notes) {
-    const noteBlock = document.createElement("div");
-    noteBlock.className = "step-note";
-    const noteLabel = document.createElement("div");
-    noteLabel.className = "step-note-label";
-    noteLabel.textContent = note.label;
-    const noteMath = createReadonlyMath(note.expression_latex, "step-note-math");
-    noteBlock.append(noteLabel, noteMath);
-    notes.append(noteBlock);
-  }
+  const notes = createNotes(step);
   const transformation = document.createElement("div");
   transformation.className = "step-transformation";
   const before = createReadonlyMath(step.before_latex, "step-math");
@@ -94,9 +132,12 @@ async function solve() {
     });
     const payload = await response.json();
     if (!response.ok) throw new Error(payload.detail ?? "The server could not solve this query.");
-    statusText.textContent = payload.status === "exact" ? "Exact answer" : "No exact answer";
+    const completed = payload.status === "exact" || payload.status === "divergent";
+    if (payload.status === "divergent") statusText.textContent = "Diverges";
+    else if (payload.status === "exact") statusText.textContent = "Exact answer";
+    else statusText.textContent = "No exact answer";
     asciiOutput.textContent = payload.formatted_ascii;
-    if (payload.status === "exact") {
+    if (completed) {
       answerBlock.classList.remove("hidden");
       resultLatex.value = payload.result_latex;
     } else {
@@ -126,6 +167,16 @@ form.addEventListener("submit", (event) => {
   if (expressionField.value.trim()) solve();
 });
 
+function insertSymbolTemplate(key) {
+  const template = key.dataset.insert;
+  if (!template) return;
+  expressionField.focus({ preventScroll: true });
+  expressionField.insert(template, {
+    insertionMode: "replaceSelection",
+    selectionMode: "placeholder"
+  });
+}
+
 for (const key of document.querySelectorAll(".symbol-key")) {
   const label = key.querySelector("math-field");
   if (label) {
@@ -134,13 +185,10 @@ for (const key of document.querySelectorAll(".symbol-key")) {
   }
   key.addEventListener("pointerdown", (event) => {
     event.preventDefault();
+    insertSymbolTemplate(key);
   });
-  key.addEventListener("click", () => {
-    expressionField.focus();
-    expressionField.insert(key.dataset.insert, {
-      insertionMode: "replaceSelection",
-      selectionMode: "placeholder"
-    });
+  key.addEventListener("click", (event) => {
+    if (event.detail === 0) insertSymbolTemplate(key);
   });
 }
 

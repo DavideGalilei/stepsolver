@@ -19,6 +19,7 @@ from stepsolver.ast import (
 )
 from stepsolver.results import (
     BooleanValue,
+    DivergentResult,
     ExactResult,
     MappingValue,
     MathValue,
@@ -123,6 +124,8 @@ def format_ascii(result: SolveResult) -> str:
         lines.extend(f"  {note.label}: {format_expression(note.expression)}" for note in step.notes)
     if isinstance(result, ExactResult):
         lines.append(f"Result: {_format_value(result.value)}")
+    elif isinstance(result, DivergentResult):
+        lines.append(f"Diverges: {result.reason}")
     else:
         lines.append(f"Unsolved: {result.reason}")
     return "\n".join(lines)

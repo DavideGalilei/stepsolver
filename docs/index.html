@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="StepSolver is a typed symbolic mathematics engine that records human-readable solution steps.">
+    <meta name="theme-color" content="#f7f3ea">
+    <title>StepSolver — symbolic mathematics with the working left in</title>
+    <link rel="stylesheet" href="style.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="brand" href="#top" aria-label="StepSolver home">
+        <span class="brand-mark" aria-hidden="true">∬</span>
+        <span>StepSolver</span>
+      </a>
+      <nav aria-label="Main navigation">
+        <a href="#method">Method</a>
+        <a href="#install">Install</a>
+        <a href="https://github.com/DavideGalilei/stepsolver">GitHub</a>
+      </nav>
+    </header>
+
+    <main id="top">
+      <section class="hero">
+        <div class="hero-copy">
+          <p class="eyebrow">Typed symbolic mathematics</p>
+          <h1>The answer,<br><em>with the working left in.</em></h1>
+          <p class="lede">StepSolver turns ASCII or visual notation into a custom mathematical tree, solves it symbolically, and records the transformations a student would write down.</p>
+          <div class="actions">
+            <a class="button primary" href="#install">Run it locally</a>
+            <a class="button secondary" href="https://github.com/DavideGalilei/stepsolver">Read the source</a>
+          </div>
+        </div>
+
+        <div class="worked-example" aria-label="Worked integration example">
+          <div class="problem-line">
+            <span class="step-number">01</span>
+            <span class="math">∫ x e<sup>x</sup> dx</span>
+          </div>
+          <div class="rule-card">
+            <span>Integration by parts</span>
+            <span class="formula">∫u dv = uv − ∫v du</span>
+          </div>
+          <div class="choices">
+            <span>u = x</span><span>dv = e<sup>x</sup> dx</span>
+            <span>du = dx</span><span>v = e<sup>x</sup></span>
+          </div>
+          <div class="transform">
+            <span>x e<sup>x</sup> − ∫e<sup>x</sup> dx</span>
+            <span class="arrow">↓</span>
+            <strong>(x − 1)e<sup>x</sup> + C</strong>
+          </div>
+          <p class="verified"><span aria-hidden="true">✓</span> Verified by differentiation</p>
+        </div>
+      </section>
+
+      <section class="statement" id="method">
+        <p>Computer algebra usually hides the middle. StepSolver makes the middle its data model.</p>
+      </section>
+
+      <section class="principles" aria-label="Project principles">
+        <article>
+          <span class="index">I</span>
+          <h2>Own the notation</h2>
+          <p>Input is parsed into an immutable, strictly typed AST. Python is never evaluated, and backend objects do not leak into the public API.</p>
+        </article>
+        <article>
+          <span class="index">II</span>
+          <h2>Name the method</h2>
+          <p>Substitution, integration by parts, power reduction, partial fractions, completing the square: the derivation records the method and its general identity.</p>
+        </article>
+        <article>
+          <span class="index">III</span>
+          <h2>Check each move</h2>
+          <p>Steps carry verification records for symbolic equivalence, substitution, differentiation, exact arithmetic, or solution-set equivalence.</p>
+        </article>
+      </section>
+
+      <section class="terminal-section" id="install">
+        <div class="section-copy">
+          <p class="eyebrow">Local by design</p>
+          <h2>A visual editor,<br>one command away.</h2>
+          <p>The web interface accepts two-dimensional mathematical notation and shows identities, substitutions, intermediate expressions, and checks in readable math. FastAPI runs the solver locally; this static site is only its front door.</p>
+        </div>
+        <div class="terminal" aria-label="Installation commands">
+          <div class="terminal-bar"><span></span><span></span><span></span></div>
+          <pre><code><span class="prompt">$</span> git clone https://github.com/DavideGalilei/stepsolver.git
+<span class="prompt">$</span> cd stepsolver
+<span class="prompt">$</span> poetry install
+<span class="prompt">$</span> poetry run stepsolver-web
+
+<span class="muted">Serving on http://127.0.0.1:8000</span></code></pre>
+        </div>
+      </section>
+
+      <section class="scope">
+        <h2>Built for honest output.</h2>
+        <div class="scope-grid">
+          <p>StepSolver is early-stage research software. Its strongest area is single-variable calculus with worked derivations. It also exposes algebra, limits, series, matrices, equations, transforms, discrete mathematics, and numerical evaluation.</p>
+          <p>When a valid problem has no verified result—or needs domain reasoning the engine cannot yet explain safely—it returns <code>UnsolvedResult</code>. A short list of known pedagogy gaps stays visible as strict expected failures in the tests.</p>
+        </div>
+      </section>
+
+      <aside class="disclosure">
+        <p class="eyebrow">Authorship note</p>
+        <h2>This repository was built entirely by language models.</h2>
+        <p>The solver, tests, frontend, documentation, and visual design were produced by LLMs under human direction. Correctness is earned through tests, strict static analysis, symbolic verification, and review—not through a claim about who typed the code.</p>
+      </aside>
+    </main>
+
+    <footer>
+      <span>StepSolver</span>
+      <span>Python 3.12–3.14 · Poetry · strict types</span>
+      <a href="https://github.com/DavideGalilei/stepsolver">Source on GitHub ↗</a>
+    </footer>
+  </body>
+</html>

@@ -19,7 +19,7 @@ stepsolver-web = "stepsolver.web:main"
 
 [tool.poetry]
 packages = [{ include = "stepsolver", from = "src" }]
-include = ["src/stepsolver/py.typed", "src/stepsolver/web_assets/*"]
+include = ["src/stepsolver/py.typed", "src/stepsolver/web_assets/**/*"]
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]

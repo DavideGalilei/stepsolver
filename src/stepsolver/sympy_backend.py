@@ -31,6 +31,8 @@ from stepsolver.errors import BackendError, ParseError, QueryError
 from stepsolver.parser import parse_expression
 from stepsolver.results import (
     BooleanValue,
+    DivergenceKind,
+    DivergentResult,
     ExactResult,
     MappingEntry,
     MappingValue,
@@ -85,6 +87,15 @@ from stepsolver.sympy_derivation import (
 _INTEGER_PATTERN = re.compile(r"^-?[0-9]+$")
 _RATIONAL_PATTERN = re.compile(r"^-?[0-9]+/[0-9]+$")
 _DECIMAL_PATTERN = re.compile(r"^-?[0-9]+\.[0-9]+$")
+_UNEVALUATED_OPERATION_TYPES: frozenset[tuple[str, str]] = frozenset(
+    {
+        ("sympy.concrete.products", "Product"),
+        ("sympy.concrete.summations", "Sum"),
+        ("sympy.core.function", "Derivative"),
+        ("sympy.integrals.integrals", "Integral"),
+        ("sympy.series.limits", "Limit"),
+    }
+)
 
 
 def _is_object_mapping(value: object) -> TypeGuard[Mapping[object, object]]:
@@ -93,6 +104,23 @@ def _is_object_mapping(value: object) -> TypeGuard[Mapping[object, object]]:
 
 def _is_object_sequence(value: object) -> TypeGuard[Sequence[object]]:
     return isinstance(value, Sequence) and not isinstance(value, str | bytes)
+
+
+def _contains_unevaluated_operation(value: object) -> bool:
+    """Return whether a backend result still contains an unevaluated operation."""
+    if isinstance(value, sp.Basic):
+        operation_type = (type(value).__module__, type(value).__name__)
+        return operation_type in _UNEVALUATED_OPERATION_TYPES or any(
+            _contains_unevaluated_operation(argument) for argument in value.args
+        )
+    if _is_object_mapping(value):
+        return any(
+            _contains_unevaluated_operation(key) or _contains_unevaluated_operation(item)
+            for key, item in value.items()
+        )
+    if _is_object_sequence(value):
+        return any(_contains_unevaluated_operation(item) for item in value)
+    return False
 
 
 def _query_expression(query: Query) -> FunctionCall:
@@ -257,8 +285,30 @@ class SympyBackend:
         if integral_domain_reason is not None:
             return UnsolvedResult(query=query, reason=integral_domain_reason, steps=())
         backend_value = self._execute(query)
-        value = self._to_value(backend_value)
         detailed_steps = self._detailed_steps(query, backend_value)
+        divergence = self._divergence_kind(query, backend_value, detailed_steps)
+        if divergence is not None:
+            reasons = {
+                DivergenceKind.POSITIVE_INFINITY: ("The improper integral diverges to +infinity."),
+                DivergenceKind.NEGATIVE_INFINITY: ("The improper integral diverges to -infinity."),
+                DivergenceKind.NONFINITE: (
+                    "The improper integral does not converge to a finite value."
+                ),
+            }
+            return DivergentResult(
+                query=query,
+                kind=divergence,
+                reason=reasons[divergence],
+                steps=detailed_steps,
+            )
+        non_exact_reason = self._non_exact_reason(backend_value)
+        if non_exact_reason is not None:
+            return UnsolvedResult(
+                query=query,
+                reason=non_exact_reason,
+                steps=detailed_steps,
+            )
+        value = self._to_value(backend_value)
         if detailed_steps:
             return ExactResult(query=query, value=value, steps=detailed_steps)
         after = self._step_expression(backend_value)
@@ -272,6 +322,36 @@ class SympyBackend:
             verification=self._verify_result(query, backend_value),
         )
         return ExactResult(query=query, value=value, steps=(step,))
+
+    def _divergence_kind(
+        self,
+        query: Query,
+        backend_value: object,
+        detailed_steps: tuple[SolutionStep, ...],
+    ) -> DivergenceKind | None:
+        """Classify a definite integral whose non-convergence was established."""
+        if query.operation is Operation.INTEGRATE and len(query.arguments) == 4:
+            final_expression = detailed_steps[-1].after if detailed_steps else None
+            if backend_value == sp.oo or final_expression == Constant(name=ConstantName.INFINITY):
+                return DivergenceKind.POSITIVE_INFINITY
+            negative_infinity = UnaryExpression(
+                operator=UnaryOperator.NEGATIVE,
+                operand=Constant(name=ConstantName.INFINITY),
+            )
+            if backend_value == -sp.oo or final_expression == negative_infinity:
+                return DivergenceKind.NEGATIVE_INFINITY
+            if backend_value in {sp.nan, sp.zoo}:
+                return DivergenceKind.NONFINITE
+        return None
+
+    def _non_exact_reason(self, backend_value: object) -> str | None:
+        """Reject backend placeholders as exact answers."""
+        if _contains_unevaluated_operation(backend_value):
+            return (
+                "The symbolic backend could not evaluate this operation exactly. "
+                "The unevaluated operation has been kept out of the answer."
+            )
+        return None
 
     def _integral_domain_reason(self, query: Query) -> str | None:
         if query.operation is not Operation.INTEGRATE or len(query.arguments) != 2:
@@ -291,9 +371,7 @@ class SympyBackend:
         roots = sp.solve(denominator_polynomial.as_expr(), variable)
         if not _is_object_sequence(roots):
             return None
-        has_real_pole = any(
-            isinstance(root, sp.Basic) and root.is_real is True for root in roots
-        )
+        has_real_pole = any(isinstance(root, sp.Basic) and root.is_real is True for root in roots)
         if not has_real_pole or not sp.integrate(integrand, variable).has(sp.log):
             return None
         return (
@@ -308,9 +386,7 @@ class SympyBackend:
         equation, variable = query.arguments
         if not isinstance(equation, Relation) or not isinstance(variable, Symbol):
             return None
-        difference = sp.simplify(
-            self._to_sympy(equation.left) - self._to_sympy(equation.right)
-        )
+        difference = sp.simplify(self._to_sympy(equation.left) - self._to_sympy(equation.right))
         if difference != sp.Integer(0):
             return None
         return (
@@ -514,9 +590,7 @@ class SympyBackend:
                 )
             return result
         if isinstance(value, BackendProduct):
-            expressions = tuple(
-                self._derivation_expression(factor) for factor in value.factors
-            )
+            expressions = tuple(self._derivation_expression(factor) for factor in value.factors)
             first, *remaining = expressions
             result = first
             for expression in remaining:
@@ -810,6 +884,9 @@ class SympyBackend:
             source=query.source,
         )
         backend_result = self._execute(transformed_query)
+        non_exact_reason = self._non_exact_reason(backend_result)
+        if non_exact_reason is not None:
+            return UnsolvedResult(query=query, reason=non_exact_reason, steps=())
         value = self._to_value(backend_result)
         transformation = FunctionCall(
             name=Identifier(Operation.INTEGRATE.value),
@@ -1006,10 +1083,13 @@ class SympyBackend:
 
     def _from_sympy(self, value: sp.Basic) -> Expression:
         integration_constant = sp.Symbol("C")
-        if value.func == sp.Add and value.has(integration_constant):
-            nonconstant_terms = tuple(
-                term for term in value.args if term != integration_constant
+        if value.func == sp.Abs and len(value.args) == 1:
+            return FunctionCall(
+                name=Identifier("abs"),
+                arguments=(self._from_sympy(value.args[0]),),
             )
+        if value.func == sp.Add and value.has(integration_constant):
+            nonconstant_terms = tuple(term for term in value.args if term != integration_constant)
             if nonconstant_terms and all(
                 not term.has(integration_constant) for term in nonconstant_terms
             ):

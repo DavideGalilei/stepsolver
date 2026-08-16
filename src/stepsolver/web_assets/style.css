@@ -119,7 +119,7 @@ math-field {
   --primary: var(--accent);
   --caret-color: var(--accent);
   --selection-background-color: rgb(233 50 66 / 14%);
-  --smart-fence-color: var(--accent);
+  --smart-fence-color: var(--ink);
   display: block;
   width: 100%;
   outline: none;
@@ -140,7 +140,8 @@ math-field {
 
 .math-toolbar {
   display: grid;
-  grid-template-columns: auto auto 1fr;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  overflow: hidden;
   margin-top: 0;
   border-bottom: 1px solid var(--line);
   background: var(--toolbar);
@@ -163,7 +164,7 @@ math-field {
 
 .tool-group-calculus .tool-row {
   display: grid;
-  grid-template-columns: repeat(3, minmax(86px, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 .symbol-key {
@@ -178,6 +179,7 @@ math-field {
   color: var(--ink);
   padding: 5px 9px 4px;
   cursor: pointer;
+  touch-action: manipulation;
   transition: border-color 120ms ease, background-color 120ms ease, color 120ms ease;
 }
 
@@ -362,6 +364,39 @@ math-field {
   overflow-x: auto;
   padding: 2px 0;
   font-size: 19px;
+}
+
+.derivative-table {
+  width: 100%;
+  border-collapse: collapse;
+  color: var(--ink);
+}
+
+.derivative-table caption {
+  padding-bottom: 10px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+  text-align: left;
+}
+
+.derivative-table th,
+.derivative-table td {
+  padding: 9px 12px;
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+}
+
+.derivative-table thead th {
+  color: var(--muted);
+  font-size: 11px;
+  letter-spacing: .035em;
+}
+
+.derivative-table tbody th {
+  width: 88px;
+  color: var(--muted);
+  font-size: 12px;
 }
 
 .step-transformation {

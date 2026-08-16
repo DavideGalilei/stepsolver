@@ -10,6 +10,8 @@ from stepsolver.formatter import format_ascii, format_expression
 from stepsolver.latex import format_latex_expression, format_latex_value
 from stepsolver.parser import parse, parse_expression
 from stepsolver.results import (
+    DivergenceKind,
+    DivergentResult,
     ExactResult,
     SolutionStep,
     SolveResult,
@@ -20,6 +22,8 @@ from stepsolver.solver import Solver
 
 __all__ = [
     "BackendError",
+    "DivergenceKind",
+    "DivergentResult",
     "ExactResult",
     "Expression",
     "Operation",

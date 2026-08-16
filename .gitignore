@@ -4,6 +4,7 @@
 /.ruff_cache/
 /.hypothesis/
 /dist/
+/frontend/node_modules/
 /htmlcov/
 /.coverage
 __pycache__/

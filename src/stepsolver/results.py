@@ -21,6 +21,14 @@ class VerificationMethod(Enum):
     EXACT_ARITHMETIC = "exact arithmetic"
 
 
+class DivergenceKind(Enum):
+    """Ways an otherwise valid mathematical operation can fail to converge."""
+
+    POSITIVE_INFINITY = "positive infinity"
+    NEGATIVE_INFINITY = "negative infinity"
+    NONFINITE = "no finite limit"
+
+
 @dataclass(frozen=True, slots=True, kw_only=True)
 class Verification:
     """Evidence that a transformation was checked successfully."""
@@ -113,4 +121,14 @@ class UnsolvedResult:
     steps: tuple[SolutionStep, ...]
 
 
-type SolveResult = ExactResult | UnsolvedResult
+@dataclass(frozen=True, slots=True, kw_only=True)
+class DivergentResult:
+    """A valid query whose divergence was established by verified steps."""
+
+    query: Query
+    kind: DivergenceKind
+    reason: str
+    steps: tuple[SolutionStep, ...]
+
+
+type SolveResult = ExactResult | DivergentResult | UnsolvedResult
