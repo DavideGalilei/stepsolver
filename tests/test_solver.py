@@ -260,7 +260,9 @@ def test_inconsistent_system_is_no_solution(solver: Solver) -> None:
         (
             "solve((x+1)/(x-2)=3,x)",
             (
-                "Clear the denominators",
+                "Multiply both sides by the denominator",
+                "Cancel the common factors",
+                "Expand and collect like terms",
                 "Collect variable terms",
                 "Divide by the coefficient",
             ),
@@ -284,10 +286,103 @@ def test_equations_have_verified_detailed_derivations(
 
 def test_unsupported_derivation_has_an_honest_fallback(solver: Solver) -> None:
     """Unsupported equation families should not invent a fake worked derivation."""
-    result = solver.solve("solve(x^3-1=0,x)")
+    result = solver.solve("solve(exp(x)+x=0,x)")
     assert isinstance(result, ExactResult)
     assert len(result.steps) == 1
     assert result.steps[0].rule == "Compute exact result"
+
+
+def test_rational_equation_reducing_to_cubic_has_human_steps(solver: Solver) -> None:
+    """A rational cubic should retain its domain and show the standard cubic method."""
+    result = solver.solve("solve(x^2-4=1/(x+1),x)")
+    assert isinstance(result, ExactResult)
+    assert tuple(step.rule for step in result.steps) == (
+        "Multiply both sides by the denominator",
+        "Cancel the common factors",
+        "Expand and collect like terms",
+        "Depress the cubic",
+        "Apply Cardano's formula",
+    )
+    assert tuple(
+        format_latex_expression(item.expression) for item in result.steps[0].introduced_constraints
+    ) == (r"x + 1 \ne 0", r"x \ne -1")
+    assert format_latex_expression(result.steps[0].after) == (
+        r"\left(x + 1\right) \cdot \left(x^{2} - 4\right)"
+        r" = \left(x + 1\right) \cdot \left(\frac{1}{x + 1}\right)"
+    )
+    assert format_latex_expression(result.steps[1].before) == (
+        r"\left(x + 1\right) \cdot \left(x^{2} - 4\right)"
+        r" = \frac{\color{#e93242}{\cancel{x + 1}}}"
+        r"{\color{#e93242}{\cancel{x + 1}}}"
+    )
+    assert format_latex_expression(result.steps[1].after) == (
+        r"\left(x + 1\right) \cdot \left(x^{2} - 4\right) = 1"
+    )
+    assert tuple(note.label for note in result.steps[3].notes) == (
+        "General substitution",
+        "For this cubic",
+        "Coefficient p",
+        "Coefficient q",
+    )
+    assert tuple(note.label for note in result.steps[4].notes) == (
+        "Discriminant formula",
+        "For this cubic",
+        "Real-root formula",
+        "Decimal check",
+    )
+    assert format_latex_expression(result.steps[3].notes[0].expression) == (
+        r"x = t - \frac{b}{3 \cdot a}"
+    )
+    assert format_latex_expression(result.steps[4].notes[0].expression) == (
+        r"\Delta = \frac{p^{3}}{27} + \frac{q^{2}}{4}"
+    )
+    assert "sqrt[3]" not in format_ascii(result)
+
+
+@pytest.mark.parametrize(
+    ("query", "rules"),
+    [
+        (
+            "solve(x^3-1=0,x)",
+            (
+                "Factor the polynomial",
+                "Apply the zero-product property",
+                "Keep the real solutions",
+            ),
+        ),
+        (
+            "solve(x^4-5*x^2+4=0,x)",
+            (
+                "Factor the polynomial",
+                "Apply the zero-product property",
+                "Keep the real solutions",
+            ),
+        ),
+        ("solve(x^5-x+1=0,x)", ("Approximate the real roots",)),
+        (
+            "solve(x^3=1/(x+1),x)",
+            (
+                "Multiply both sides by the denominator",
+                "Cancel the common factors",
+                "Expand and collect like terms",
+                "Approximate the real roots",
+            ),
+        ),
+        ("solve(x^4+x+1=0,x)", ("Check for real roots",)),
+    ],
+)
+def test_higher_degree_polynomials_do_not_fall_back_to_answer_only(
+    solver: Solver,
+    query: str,
+    rules: tuple[str, ...],
+) -> None:
+    """Polynomial equations should expose a real solving strategy beyond degree two."""
+    result = solver.solve(query)
+    assert isinstance(result, ExactResult)
+    assert tuple(step.rule for step in result.steps) == rules
+    assert all(step.rule != "Compute exact result" for step in result.steps)
+    if result.steps[-1].rule == "Approximate the real roots":
+        assert tuple(note.label for note in result.steps[-1].notes) == ("Newton iteration",)
 
 
 def test_reciprocal_quadratic_integral_has_worked_steps(solver: Solver) -> None:

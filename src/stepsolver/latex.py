@@ -38,6 +38,7 @@ _GREEK_SYMBOLS: frozenset[str] = frozenset(
         "alpha",
         "beta",
         "gamma",
+        "Delta",
         "delta",
         "epsilon",
         "theta",
@@ -90,6 +91,23 @@ def _format_quadratic_solutions(arguments: tuple[Expression, ...]) -> str:
     return (
         rf"\left[{variable} = \frac{{{negative}}}{{{denominator}}}, "
         rf"{variable} = \frac{{{positive}}}{{{denominator}}}\right]"
+    )
+
+
+def _format_cardano_solution(arguments: tuple[Expression, ...]) -> str:
+    variable_expression, shift_expression, first_expression, second_expression = arguments
+    variable = format_latex_expression(variable_expression)
+    shift = format_latex_expression(shift_expression)
+    first_radicand = format_latex_expression(first_expression)
+    second_radicand = format_latex_expression(second_expression)
+    shift_term = (
+        ""
+        if isinstance(shift_expression, Number) and shift_expression.value == 0
+        else f"{shift} + "
+    )
+    return (
+        rf"{variable} = {shift_term}\sqrt[3]{{{first_radicand}}}"
+        rf" + \sqrt[3]{{{second_radicand}}}"
     )
 
 
@@ -174,6 +192,19 @@ def _format_function(expression: FunctionCall) -> str:
         return r"\int u\,\mathrm{d}v = uv - \int v\,\mathrm{d}u"
     if name == "quadratic_solutions" and len(arguments) == 4:
         return _format_quadratic_solutions(arguments)
+    if name == "cardano_solution" and len(arguments) == 4:
+        return _format_cardano_solution(arguments)
+    if name == "crossed_out" and len(arguments) == 1:
+        value = format_latex_expression(arguments[0])
+        return rf"\color{{#e93242}}{{\cancel{{{value}}}}}"
+    if name == "newton_rule" and not arguments:
+        return r"x_{k+1} = x_k - \frac{f\left(x_k\right)}{f'\left(x_k\right)}"
+    if name == "approximate_solutions" and len(arguments) >= 2:
+        variable = format_latex_expression(arguments[0])
+        approximations = (
+            rf"{variable} \approx {format_latex_expression(root)}" for root in arguments[1:]
+        )
+        return r"\quad\text{or}\quad ".join(approximations)
     rendered_arguments = ", ".join(format_latex_expression(item) for item in arguments)
     function = _NAMED_FUNCTIONS.get(name)
     if function is None:

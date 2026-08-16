@@ -92,6 +92,16 @@ def test_header_has_a_github_star_link() -> None:
     assert ".github-star" in stylesheet.text
 
 
+def test_mathfield_selection_uses_a_light_neutral_palette() -> None:
+    """Focused selections should stay readable even when the device prefers dark mode."""
+    with TestClient(create_app()) as client:
+        stylesheet = client.get("/static/style.css")
+    assert "--selection-color: var(--ink)" in stylesheet.text
+    assert "--selection-background-color: #e3e4e7" in stylesheet.text
+    assert "--contains-highlight-color: var(--ink)" in stylesheet.text
+    assert "--contains-highlight-background-color: #f0f1f2" in stylesheet.text
+
+
 def test_frontend_handles_large_math_and_warms_the_browser_runtime() -> None:
     """Large formulas should scroll, while browser startup happens outside the main thread."""
     with TestClient(create_app()) as client:
@@ -148,13 +158,32 @@ def test_frontend_handles_large_math_and_warms_the_browser_runtime() -> None:
     assert "-webkit-overflow-scrolling: touch" in stylesheet.text
 
 
-def test_mobile_workspace_uses_the_full_viewport_width() -> None:
-    """Mobile solver content should be full bleed except for hardware safe areas."""
+def test_mobile_sections_use_internal_safe_area_padding() -> None:
+    """Mobile sections should provide their own readable, notch-safe gutters."""
     with TestClient(create_app()) as client:
         stylesheet = client.get("/static/style.css")
-    assert ".workspace {\n    width: 100%;" in stylesheet.text
-    assert "padding-right: env(safe-area-inset-right, 0)" in stylesheet.text
-    assert "padding-left: env(safe-area-inset-left, 0)" in stylesheet.text
+    assert ".workspace {\n    --mobile-inset-left:" in stylesheet.text
+    assert "width: auto" in stylesheet.text
+    assert "padding-right: var(--mobile-inset-right)" in stylesheet.text
+    assert "padding-left: var(--mobile-inset-left)" in stylesheet.text
+    assert "safe-area-inset-right" in stylesheet.text
+    assert "safe-area-inset-left" in stylesheet.text
+
+
+def test_mobile_formula_gestures_preserve_vertical_page_scrolling() -> None:
+    """Formula panes should reserve native touch panning for the document's vertical axis."""
+    with TestClient(create_app()) as client:
+        stylesheet = client.get("/static/style.css")
+        script = client.get("/static/app.js")
+    assert ".math-viewport { touch-action: pan-y pinch-zoom; }" in stylesheet.text
+    assert ".math-viewport > math-field" in stylesheet.text
+    assert "max-width: none" in stylesheet.text
+    assert "overflow: visible" in stylesheet.text
+    assert "overflow-y: visible" in stylesheet.text
+    assert "function enableTouchMathScrolling(viewport)" in script.text
+    assert "gesture.horizontal = Math.abs(deltaX) > Math.abs(deltaY)" in script.text
+    assert "viewport.scrollLeft = gesture.startScrollLeft - deltaX" in script.text
+    assert 'enableTouchMathScrolling(document.querySelector(".result-viewport"))' in script.text
 
 
 def test_frontend_renders_domain_constraints_and_accepts_systems() -> None:
@@ -459,6 +488,48 @@ def test_graphical_equation_solve_response() -> None:
     assert payload.steps[-1].after_latex == r"\left[x = 2, x = -2\right]"
     assert all(step.verification_method == "solution-set equivalence" for step in payload.steps)
     assert all(r"\mathtt" not in step.after_latex for step in payload.steps)
+
+
+def test_rational_cubic_response_uses_student_facing_cardano_steps() -> None:
+    """The browser should receive domain, reduction, identity, and approximation details."""
+    with TestClient(create_app()) as client:
+        response = client.post(
+            "/api/solve",
+            json={
+                "latex": r"x^2-4=\frac{1}{x+1}",
+                "math_json": [
+                    "Equal",
+                    ["Subtract", ["Power", "x", 2], 4],
+                    ["Divide", 1, ["Add", "x", 1]],
+                ],
+            },
+        )
+    payload = SolveResponse.model_validate_json(response.text)
+    assert payload.status == "exact"
+    assert tuple(step.rule for step in payload.steps) == (
+        "Multiply both sides by the denominator",
+        "Cancel the common factors",
+        "Expand and collect like terms",
+        "Depress the cubic",
+        "Apply Cardano's formula",
+    )
+    assert payload.steps[0].introduced_constraints[1].expression_latex == r"x \ne -1"
+    assert payload.steps[1].before_latex == (
+        r"\left(x + 1\right) \cdot \left(x^{2} - 4\right)"
+        r" = \frac{\color{#e93242}{\cancel{x + 1}}}"
+        r"{\color{#e93242}{\cancel{x + 1}}}"
+    )
+    assert payload.steps[3].notes[0].label == "General substitution"
+    assert payload.steps[3].notes[0].expression_latex == r"x = t - \frac{b}{3 \cdot a}"
+    assert payload.steps[4].notes[0].label == "Discriminant formula"
+    assert payload.steps[4].notes[0].expression_latex == (
+        r"\Delta = \frac{p^{3}}{27} + \frac{q^{2}}{4}"
+    )
+    assert payload.steps[-1].after_latex.startswith(r"x = \frac{-1}{3} + \sqrt[3]")
+    assert payload.result_latex is not None
+    assert r"x \approx 2.079596" in payload.result_latex
+    assert r"\sqrt[3]" in payload.result_latex
+    assert r"\mathrm{i}" not in payload.result_latex
 
 
 def test_invalid_syntax_returns_validation_error() -> None:

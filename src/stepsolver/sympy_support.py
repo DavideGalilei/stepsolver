@@ -43,6 +43,15 @@ def is_object_sequence(value: object) -> TypeGuard[Sequence[object]]:
     return isinstance(value, Sequence) and not isinstance(value, str | bytes)
 
 
+def is_real_expression(value: sp.Basic) -> bool:
+    """Return whether a solved expression is compatible with a real-valued symbol."""
+    if value.is_real is not None:
+        return value.is_real
+    if value.free_symbols:
+        return True
+    return sp.N(value).is_real is not False
+
+
 def contains_unevaluated_operation(value: object) -> bool:
     """Return whether a backend result still contains an unevaluated operation."""
     if isinstance(value, sp.Basic):

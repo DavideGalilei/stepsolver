@@ -13,6 +13,9 @@ from stepsolver.ast import (
     Symbol,
 )
 from stepsolver.derivation.model import (
+    BackendApproximateSolutions,
+    BackendCardanoSolution,
+    BackendCrossedOut,
     BackendDerivationStep,
     BackendDerivative,
     BackendDifference,
@@ -24,6 +27,7 @@ from stepsolver.derivation.model import (
     BackendIntegral,
     BackendIntegrationByPartsRule,
     BackendLimit,
+    BackendNewtonRule,
     BackendNotEqual,
     BackendProduct,
     BackendQuadraticSolutions,
@@ -96,6 +100,31 @@ class SympyDerivationRenderer:
                     self.derivation_expression(value.negative_numerator),
                     self.derivation_expression(value.positive_numerator),
                     self.derivation_expression(value.denominator),
+                ),
+            )
+        if isinstance(value, BackendCardanoSolution):
+            return FunctionCall(
+                name=Identifier("cardano_solution"),
+                arguments=(
+                    self._converter.from_sympy(value.variable),
+                    self._converter.from_sympy(value.shift),
+                    self._converter.from_sympy(value.first_radicand),
+                    self._converter.from_sympy(value.second_radicand),
+                ),
+            )
+        if isinstance(value, BackendCrossedOut):
+            return FunctionCall(
+                name=Identifier("crossed_out"),
+                arguments=(self.derivation_expression(value.expression),),
+            )
+        if isinstance(value, BackendNewtonRule):
+            return FunctionCall(name=Identifier("newton_rule"), arguments=())
+        if isinstance(value, BackendApproximateSolutions):
+            return FunctionCall(
+                name=Identifier("approximate_solutions"),
+                arguments=(
+                    self._converter.from_sympy(value.variable),
+                    *(self._converter.from_sympy(root) for root in value.roots),
                 ),
             )
         if isinstance(value, BackendSigma):

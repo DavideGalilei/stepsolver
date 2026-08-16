@@ -56,6 +56,36 @@ class BackendQuadraticSolutions:
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
+class BackendCardanoSolution:
+    """The real Cardano root of a cubic with positive discriminant."""
+
+    variable: sp.Symbol
+    shift: sp.Basic
+    first_radicand: sp.Basic
+    second_radicand: sp.Basic
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class BackendNewtonRule:
+    """The generic Newton iteration identity."""
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class BackendApproximateSolutions:
+    """One or more numerical roots displayed with approximation signs."""
+
+    variable: sp.Symbol
+    roots: tuple[sp.Basic, ...]
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class BackendCrossedOut:
+    """A factor displayed with a red cancellation stroke."""
+
+    expression: BackendExpression
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
 class BackendEvaluationAtBounds:
     """An antiderivative evaluated between lower and upper bounds."""
 
@@ -152,6 +182,10 @@ type BackendExpression = (
     | BackendDerivative
     | BackendIntegrationByPartsRule
     | BackendQuadraticSolutions
+    | BackendCardanoSolution
+    | BackendNewtonRule
+    | BackendApproximateSolutions
+    | BackendCrossedOut
     | BackendEvaluationAtBounds
     | BackendEvaluationAtIndex
     | BackendSigma

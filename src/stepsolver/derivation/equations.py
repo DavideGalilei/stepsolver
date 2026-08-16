@@ -9,19 +9,29 @@ from typing import TypeGuard, cast
 import sympy as sp
 
 from stepsolver.derivation.model import (
+    BackendApproximateSolutions,
+    BackendCardanoSolution,
+    BackendCrossedOut,
     BackendDerivationStep,
+    BackendExpression,
     BackendIdentity,
     BackendMathNote,
+    BackendNewtonRule,
     BackendNotEqual,
+    BackendProduct,
     BackendQuadraticSolutions,
+    BackendQuotient,
     BackendStepConstraint,
     EquationBackendExpression,
 )
 from stepsolver.results import VerificationMethod
+from stepsolver.sympy_support import is_real_expression
 
 _LINEAR_DEGREE = 1
 _QUADRATIC_DEGREE = 2
+_CUBIC_DEGREE = 3
 _CONSTANT_DEGREE = 0
+_ROOT_VERIFICATION_DIGITS = 12
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -68,6 +78,35 @@ def _equivalent_step(
     )
 
 
+def _equivalent_display_step(
+    *,
+    rule: str,
+    semantic_before: EquationBackendExpression,
+    semantic_after: EquationBackendExpression,
+    display_before: BackendExpression,
+    display_after: BackendExpression,
+    explanation: str,
+    variable: sp.Symbol,
+    excluded_values: tuple[sp.Basic, ...] = (),
+    introduced_constraints: tuple[BackendStepConstraint, ...] = (),
+    verification_detail: str = "Both displayed forms preserve the same solution set.",
+) -> BackendDerivationStep:
+    if _solution_set(semantic_before, variable, excluded_values) != _solution_set(
+        semantic_after, variable, excluded_values
+    ):
+        message = "a proposed display step changed the equation's solution set"
+        raise ValueError(message)
+    return BackendDerivationStep(
+        rule=rule,
+        before=display_before,
+        after=display_after,
+        explanation=explanation,
+        verification_method=VerificationMethod.SOLUTION_SET_EQUIVALENCE,
+        verification_detail=verification_detail,
+        introduced_constraints=introduced_constraints,
+    )
+
+
 def _solution_set(
     expression: EquationBackendExpression,
     variable: sp.Symbol,
@@ -81,8 +120,13 @@ def _solution_set(
             message = "equation verification did not produce a root sequence"
             raise TypeError(message)
         roots.update(
-            str(sp.simplify(root))
+            (
+                str(sp.simplify(root))
+                if root.free_symbols
+                else str(sp.N(root, _ROOT_VERIFICATION_DIGITS))
+            )
             for root in solved
+            if is_real_expression(root)
             if not any(
                 sp.simplify(root - excluded) == sp.Integer(0) for excluded in excluded_values
             )
@@ -158,6 +202,46 @@ def _append_if_changed(
         )
     )
     return after
+
+
+def _cleared_side(expression: sp.Basic, denominator: sp.Basic) -> sp.Basic:
+    if expression == sp.Integer(0):
+        return expression
+    _numerator, expression_denominator = sp.fraction(sp.together(expression))
+    product = expression * denominator
+    if expression_denominator != sp.Integer(1):
+        return sp.cancel(product)
+    return sp.Mul(expression, denominator, evaluate=False)
+
+
+def _multiplied_side(expression: sp.Basic, denominator: sp.Basic) -> sp.Basic:
+    if expression == sp.Integer(0):
+        return expression
+    return sp.Mul(denominator, expression, evaluate=False)
+
+
+def _cancelled_side(expression: sp.Basic, denominator: sp.Basic) -> BackendExpression:
+    if expression == sp.Integer(0):
+        return expression
+    numerator, expression_denominator = sp.fraction(sp.together(expression))
+    if expression_denominator == sp.Integer(1):
+        return BackendProduct(factors=(denominator, expression))
+    remaining_multiplier = sp.cancel(denominator / expression_denominator)
+    numerator_factors: list[BackendExpression] = []
+    if remaining_multiplier != sp.Integer(1):
+        numerator_factors.append(remaining_multiplier)
+    numerator_factors.append(BackendCrossedOut(expression=expression_denominator))
+    if numerator != sp.Integer(1):
+        numerator_factors.append(numerator)
+    displayed_numerator: BackendExpression
+    if len(numerator_factors) == 1:
+        displayed_numerator = numerator_factors[0]
+    else:
+        displayed_numerator = BackendProduct(factors=tuple(numerator_factors))
+    return BackendQuotient(
+        numerator=displayed_numerator,
+        denominator=BackendCrossedOut(expression=expression_denominator),
+    )
 
 
 def _linear_steps(
@@ -402,6 +486,243 @@ def _quadratic_steps(
     return tuple(steps)
 
 
+def _factored_polynomial_steps(
+    equation: sp.Equality,
+    variable: sp.Symbol,
+    polynomial: sp.Poly,
+    roots: tuple[sp.Basic, ...],
+    excluded_values: tuple[sp.Basic, ...],
+) -> tuple[BackendDerivationStep, ...]:
+    expression = polynomial.as_expr()
+    factored = sp.factor(expression)
+    if str(factored) == str(expression) or not (factored.is_Mul or factored.is_Pow):
+        return ()
+    _coefficient, factor_pairs = sp.factor_list(expression, variable)
+    factor_bases = tuple(factor for factor, _multiplicity in factor_pairs if factor.has(variable))
+    if not factor_bases:
+        return ()
+    steps: list[BackendDerivationStep] = []
+    factored_equation = sp.Eq(factored, 0, evaluate=False)
+    current: EquationBackendExpression = _append_if_changed(
+        steps,
+        rule="Factor the polynomial",
+        before=equation,
+        after=factored_equation,
+        explanation="Rewrite the polynomial as a product of lower-degree factors.",
+        variable=variable,
+        excluded_values=excluded_values,
+    )
+    factor_equations = tuple(sp.Eq(factor, 0, evaluate=False) for factor in factor_bases)
+    separated: EquationBackendExpression = (
+        factor_equations[0] if len(factor_equations) == 1 else factor_equations
+    )
+    current = _append_if_changed(
+        steps,
+        rule="Apply the zero-product property",
+        before=current,
+        after=separated,
+        explanation="At least one factor must equal zero, so solve each factor separately.",
+        variable=variable,
+        excluded_values=excluded_values,
+    )
+    _append_if_changed(
+        steps,
+        rule="Keep the real solutions",
+        before=current,
+        after=_relations(variable, roots),
+        explanation=(
+            "Solve the lower-degree equations and keep the real values allowed by the "
+            "original domain."
+        ),
+        variable=variable,
+        excluded_values=excluded_values,
+    )
+    return tuple(steps)
+
+
+def _cubic_steps(
+    equation: sp.Equality,
+    variable: sp.Symbol,
+    polynomial: sp.Poly,
+    roots: tuple[sp.Basic, ...],
+    excluded_values: tuple[sp.Basic, ...],
+) -> tuple[BackendDerivationStep, ...]:
+    factored = _factored_polynomial_steps(
+        equation,
+        variable,
+        polynomial,
+        roots,
+        excluded_values,
+    )
+    if factored:
+        return factored
+    coefficient_a = polynomial.coeff_monomial(variable**3)
+    coefficient_b = polynomial.coeff_monomial(variable**2)
+    coefficient_c = polynomial.coeff_monomial(variable)
+    coefficient_d = polynomial.coeff_monomial(1)
+    depressed_linear = sp.simplify(
+        (3 * coefficient_a * coefficient_c - coefficient_b**2) / (3 * coefficient_a**2)
+    )
+    depressed_constant = sp.simplify(
+        (
+            2 * coefficient_b**3
+            - 9 * coefficient_a * coefficient_b * coefficient_c
+            + 27 * coefficient_a**2 * coefficient_d
+        )
+        / (27 * coefficient_a**3)
+    )
+    discriminant = sp.simplify((depressed_constant / 2) ** 2 + (depressed_linear / 3) ** 3)
+    if discriminant.is_positive is not True or len(roots) != 1:
+        return ()
+    reduced_variable = sp.Symbol("t", real=True)
+    shift = sp.simplify(-coefficient_b / (3 * coefficient_a))
+    depressed_equation = sp.Eq(
+        reduced_variable**3 + depressed_linear * reduced_variable + depressed_constant,
+        0,
+        evaluate=False,
+    )
+    first_radicand = sp.simplify(-depressed_constant / 2 + sp.sqrt(discriminant))
+    second_radicand = sp.simplify(-depressed_constant / 2 - sp.sqrt(discriminant))
+    generic_p = sp.Symbol("p", real=True)
+    generic_q = sp.Symbol("q", real=True)
+    generic_a = sp.Symbol("a", real=True, nonzero=True)
+    generic_b = sp.Symbol("b", real=True)
+    generic_discriminant = (generic_q / 2) ** 2 + (generic_p / 3) ** 3
+    cardano_solution = BackendCardanoSolution(
+        variable=variable,
+        shift=shift,
+        first_radicand=first_radicand,
+        second_radicand=second_radicand,
+    )
+    return (
+        BackendDerivationStep(
+            rule="Depress the cubic",
+            before=equation,
+            after=depressed_equation,
+            explanation=(
+                "Shift the variable to remove the squared term, producing the standard "
+                "form t^3 + pt + q = 0."
+            ),
+            verification_method=VerificationMethod.SUBSTITUTION,
+            verification_detail="Substituting the displayed variable shift gives this cubic.",
+            notes=(
+                BackendMathNote(
+                    label="General substitution",
+                    expression=BackendIdentity(
+                        left=variable,
+                        right=reduced_variable - generic_b / (3 * generic_a),
+                    ),
+                ),
+                BackendMathNote(
+                    label="For this cubic",
+                    expression=BackendIdentity(
+                        left=variable,
+                        right=reduced_variable + shift,
+                    ),
+                ),
+                BackendMathNote(
+                    label="Coefficient p",
+                    expression=BackendIdentity(left=generic_p, right=depressed_linear),
+                ),
+                BackendMathNote(
+                    label="Coefficient q",
+                    expression=BackendIdentity(left=generic_q, right=depressed_constant),
+                ),
+            ),
+        ),
+        BackendDerivationStep(
+            rule="Apply Cardano's formula",
+            before=depressed_equation,
+            after=cardano_solution,
+            explanation=(
+                "The Cardano discriminant is positive, so the cubic has one real root. "
+                "Substitute p and q into the real-root formula."
+            ),
+            verification_method=VerificationMethod.BACKEND_IDENTITY,
+            verification_detail="Substitution of the displayed radical expression gives zero.",
+            notes=(
+                BackendMathNote(
+                    label="Discriminant formula",
+                    expression=BackendIdentity(
+                        left=sp.Symbol("Delta"),
+                        right=generic_discriminant,
+                    ),
+                ),
+                BackendMathNote(
+                    label="For this cubic",
+                    expression=BackendIdentity(
+                        left=sp.Symbol("Delta"),
+                        right=discriminant,
+                    ),
+                ),
+                BackendMathNote(
+                    label="Real-root formula",
+                    expression=BackendCardanoSolution(
+                        variable=reduced_variable,
+                        shift=sp.Integer(0),
+                        first_radicand=-generic_q / 2 + sp.sqrt(generic_discriminant),
+                        second_radicand=-generic_q / 2 - sp.sqrt(generic_discriminant),
+                    ),
+                ),
+                BackendMathNote(
+                    label="Decimal check",
+                    expression=BackendIdentity(left=variable, right=sp.N(roots[0], 7)),
+                ),
+            ),
+        ),
+    )
+
+
+def _generic_polynomial_steps(
+    equation: sp.Equality,
+    variable: sp.Symbol,
+    polynomial: sp.Poly,
+    roots: tuple[sp.Basic, ...],
+    excluded_values: tuple[sp.Basic, ...],
+) -> tuple[BackendDerivationStep, ...]:
+    factored = _factored_polynomial_steps(
+        equation,
+        variable,
+        polynomial,
+        roots,
+        excluded_values,
+    )
+    if factored:
+        return factored
+    if not roots:
+        return (
+            _equivalent_step(
+                rule="Check for real roots",
+                before=equation,
+                after=(),
+                explanation=(
+                    "The polynomial does not cross zero on the real number line, so it has "
+                    "no real solutions."
+                ),
+                variable=variable,
+                excluded_values=excluded_values,
+            ),
+        )
+    approximations = tuple(sp.N(root, 7) for root in roots)
+    return (
+        BackendDerivationStep(
+            rule="Approximate the real roots",
+            before=equation,
+            after=BackendApproximateSolutions(variable=variable, roots=approximations),
+            explanation=(
+                "The polynomial has no simpler exact factorization. Bracket each real root, "
+                "then refine it with Newton's method."
+            ),
+            verification_method=VerificationMethod.BACKEND_IDENTITY,
+            verification_detail=(
+                "Substitution gives a residual consistent with the displayed precision; "
+                "the exact algebraic roots remain in the result."
+            ),
+            notes=(BackendMathNote(label="Newton iteration", expression=BackendNewtonRule()),),
+        ),
+    )
+
+
 def derive_polynomial_equation(
     equation: sp.Equality,
     variable: sp.Symbol,
@@ -418,15 +739,70 @@ def derive_polynomial_equation(
     normalized = sp.Eq(expanded, 0, evaluate=False)
     current: EquationBackendExpression = equation
     if restrictions.denominators:
+        multiplied = sp.Eq(
+            _multiplied_side(equation.lhs, denominator),
+            _multiplied_side(equation.rhs, denominator),
+            evaluate=False,
+        )
+        multiplied_display = BackendIdentity(
+            left=BackendProduct(factors=(denominator, equation.lhs)),
+            right=BackendProduct(factors=(denominator, equation.rhs)),
+        )
+        cleared = sp.Eq(
+            _cleared_side(equation.lhs, denominator),
+            _cleared_side(equation.rhs, denominator),
+            evaluate=False,
+        )
+        steps.append(
+            _equivalent_display_step(
+                rule="Multiply both sides by the denominator",
+                semantic_before=current,
+                semantic_after=multiplied,
+                display_before=current,
+                display_after=multiplied_display,
+                explanation=(
+                    "Multiply each side by the common denominator. The domain restrictions "
+                    "make this multiplier nonzero."
+                ),
+                variable=variable,
+                excluded_values=excluded_values,
+                introduced_constraints=restrictions.displayed,
+                verification_detail=(
+                    "Multiplying both sides by the same nonzero expression preserves the "
+                    "solution set."
+                ),
+            )
+        )
+        current = multiplied
+        cancellation_display = BackendIdentity(
+            left=_cancelled_side(equation.lhs, denominator),
+            right=_cancelled_side(equation.rhs, denominator),
+        )
+        steps.append(
+            _equivalent_display_step(
+                rule="Cancel the common factors",
+                semantic_before=multiplied,
+                semantic_after=cleared,
+                display_before=cancellation_display,
+                display_after=cleared,
+                explanation=(
+                    "Cancel each denominator with the matching nonzero factor introduced on "
+                    "the same side."
+                ),
+                variable=variable,
+                excluded_values=excluded_values,
+                verification_detail=("Canceling equal nonzero factors preserves the solution set."),
+            )
+        )
+        current = cleared
         current = _append_if_changed(
             steps,
-            rule="Clear the denominators",
+            rule="Expand and collect like terms",
             before=current,
             after=normalized,
-            explanation=("Multiply through by the common denominator, which must be nonzero."),
+            explanation="Expand the products, move every term to one side, and combine terms.",
             variable=variable,
             excluded_values=excluded_values,
-            introduced_constraints=restrictions.displayed,
         )
     polynomial = sp.Poly(expanded, variable)
     degree = polynomial.degree()
@@ -483,7 +859,21 @@ def derive_polynomial_equation(
             roots,
             excluded_values,
         )
+    elif degree == _CUBIC_DEGREE:
+        detail = _cubic_steps(
+            normalized if steps else equation,
+            variable,
+            polynomial,
+            roots,
+            excluded_values,
+        )
     else:
-        return ()
+        detail = _generic_polynomial_steps(
+            normalized if steps else equation,
+            variable,
+            polynomial,
+            roots,
+            excluded_values,
+        )
     steps.extend(detail)
     return tuple(steps)

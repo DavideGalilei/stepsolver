@@ -38,7 +38,9 @@ from stepsolver.sympy_support import (
     contains_unevaluated_operation,
     expect_arity,
     expect_symbol,
+    is_object_mapping,
     is_object_sequence,
+    is_real_expression,
     query_expression,
     substitute,
 )
@@ -80,6 +82,7 @@ class SympyBackend:
         if undefined_sum is not None:
             return undefined_sum
         backend_value = self._executor.execute(query)
+        backend_value = self._real_solve_result(query, backend_value)
         detailed_steps = self._steps.detailed_steps(query, backend_value)
         divergence = self._divergence_kind(query, backend_value, detailed_steps)
         if divergence is not None:
@@ -115,6 +118,21 @@ class SympyBackend:
             verification=self._verifier.verify_result(query, backend_value),
         )
         return ExactResult(query=query, value=value, steps=(step,))
+
+    @staticmethod
+    def _real_solve_result(query: Query, backend_value: object) -> object:
+        if query.operation is not Operation.SOLVE or not is_object_sequence(backend_value):
+            return backend_value
+        filtered: list[object] = []
+        for solution in backend_value:
+            if not is_object_mapping(solution):
+                return backend_value
+            values = tuple(solution.values())
+            if all(
+                not isinstance(value, sp.Basic) or is_real_expression(value) for value in values
+            ):
+                filtered.append(solution)
+        return filtered
 
     @staticmethod
     def _divergence_reasons(operation: Operation) -> dict[DivergenceKind, str]:

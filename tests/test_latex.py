@@ -43,6 +43,7 @@ def test_special_expression_nodes_latex() -> None:
     assert format_latex_expression(parse_expression("sqrt(x)")) == r"\sqrt{x}"
     assert format_latex_expression(parse_expression("abs(x)")) == r"\left|x\right|"
     assert format_latex_expression(parse_expression("alpha")) == r"\alpha"
+    assert format_latex_expression(parse_expression("Delta")) == r"\Delta"
     assert format_latex_expression(parse_expression("alpha_1")) == r"alpha\_1"
     sequence = SequenceExpression(items=(Number(value=Fraction(1)), ApproximateNumber(text="1.25")))
     assert format_latex_expression(sequence) == r"\left[1, 1.25\right]"

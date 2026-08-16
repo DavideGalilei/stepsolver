@@ -3,7 +3,7 @@
 from dataclasses import asdict, dataclass
 from typing import Literal
 
-from stepsolver.ast import OpaqueExpression, Operation
+from stepsolver.ast import FunctionCall, OpaqueExpression, Operation, Relation
 from stepsolver.formatter import format_ascii, format_expression
 from stepsolver.latex import format_latex_expression, format_latex_value
 from stepsolver.results import (
@@ -90,6 +90,22 @@ def _single_variable_solutions_latex(value: MathValue) -> str | None:
 
 def _exact_result_latex(result: ExactResult) -> str:
     if result.query.operation is Operation.SOLVE:
+        if result.steps:
+            final_step = result.steps[-1]
+            if (
+                isinstance(final_step.after, FunctionCall)
+                and str(final_step.after.name) == "cardano_solution"
+            ):
+                exact = format_latex_expression(final_step.after)
+                decimal_note = next(
+                    (note for note in final_step.notes if note.label == "Decimal check"),
+                    None,
+                )
+                if decimal_note is not None and isinstance(decimal_note.expression, Relation):
+                    approximation = format_latex_expression(decimal_note.expression.right)
+                    variable = format_latex_expression(decimal_note.expression.left)
+                    return rf"{exact}\quad\left({variable} \approx {approximation}\right)"
+                return exact
         solutions = _single_variable_solutions_latex(result.value)
         if solutions is not None:
             return solutions

@@ -28,6 +28,7 @@ from stepsolver.derivation.integrals_special import (
 )
 from stepsolver.derivation.limits import derive_limit
 from stepsolver.derivation.model import (
+    BackendCrossedOut,
     BackendDerivationStep,
     BackendDerivative,
     BackendDifference,
@@ -49,6 +50,7 @@ from stepsolver.derivation.model import (
 from stepsolver.derivation.reciprocal_quadratic import derive_reciprocal_quadratic_integral
 
 __all__ = [
+    "BackendCrossedOut",
     "BackendDerivationStep",
     "BackendDerivative",
     "BackendDifference",

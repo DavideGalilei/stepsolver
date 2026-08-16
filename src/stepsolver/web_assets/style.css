@@ -23,8 +23,8 @@ html {
   width: 100%;
   max-width: 100%;
   min-width: 0;
-  overflow-x: hidden;
   overflow-x: clip;
+  overflow-y: visible;
 }
 
 body {
@@ -33,8 +33,8 @@ body {
   max-width: 100%;
   min-width: 0;
   min-height: 100vh;
-  overflow-x: hidden;
   overflow-x: clip;
+  overflow-y: visible;
   background: var(--background);
   color: var(--ink);
   font-family: var(--sans);
@@ -246,7 +246,10 @@ h1,
 math-field {
   --primary: var(--accent);
   --caret-color: var(--accent);
-  --selection-background-color: rgb(233 50 66 / 14%);
+  --selection-color: var(--ink);
+  --selection-background-color: #e3e4e7;
+  --contains-highlight-color: var(--ink);
+  --contains-highlight-background-color: #f0f1f2;
   --smart-fence-color: var(--ink);
   display: block;
   width: 100%;
@@ -476,8 +479,11 @@ math-field {
 }
 
 .math-viewport > math-field {
+  display: inline-block;
   width: max-content;
+  max-width: none;
   min-width: 100%;
+  overflow: visible;
   pointer-events: none;
   user-select: none;
 }
@@ -581,7 +587,6 @@ math-field {
   min-height: 35px;
   border: 0;
   background: transparent;
-  overflow-x: auto;
   padding: 2px 0;
   font-size: 19px;
 }
@@ -677,19 +682,28 @@ pre { overflow-x: auto; color: var(--muted); font: 12px/1.65 var(--mono); white-
     margin-left: 12px;
   }
   .workspace {
-    width: 100%;
+    --mobile-inset-left: max(12px, env(safe-area-inset-left, 0px));
+    --mobile-inset-right: max(12px, env(safe-area-inset-right, 0px));
+    width: auto;
     max-width: none;
     margin-right: 0;
     margin-left: 0;
-    padding-right: env(safe-area-inset-right, 0);
-    padding-left: env(safe-area-inset-left, 0);
   }
   .site-header { align-items: flex-start; gap: 10px; padding-top: 19px; }
   .header-copy { align-items: flex-start; flex-direction: column; gap: 2px; }
   .site-header p { font-size: 12px; }
   .github-star { min-height: 34px; padding: 6px 8px; }
-  .problem-heading { padding: 36px 0 19px; }
+  .problem-heading {
+    padding: 36px var(--mobile-inset-right) 19px var(--mobile-inset-left);
+  }
   .problem-heading p { font-size: 14px; }
+  .field-heading,
+  .math-input-shell,
+  .problem-actions,
+  .solution-heading {
+    padding-right: var(--mobile-inset-right);
+    padding-left: var(--mobile-inset-left);
+  }
   .primary-math-field {
     min-height: 92px;
     padding: 17px 2px 21px;
@@ -698,7 +712,9 @@ pre { overflow-x: auto; color: var(--muted); font: 12px/1.65 var(--mono); white-
   .math-toolbar { display: block; }
   .tool-group,
   .tool-group:first-child,
-  .tool-group:last-child { padding: 15px 0 17px; }
+  .tool-group:last-child {
+    padding: 15px var(--mobile-inset-right) 17px var(--mobile-inset-left);
+  }
   .tool-group + .tool-group { border-top: 1px solid var(--line); border-left: 0; }
   .tool-row,
   .tool-group-calculus .tool-row {
@@ -716,9 +732,17 @@ pre { overflow-x: auto; color: var(--muted); font: 12px/1.65 var(--mono); white-
   .problem-actions { align-items: stretch; flex-direction: column; }
   .solve-button { width: 100%; }
   .solution-panel { margin-top: 48px; padding-top: 32px; }
-  .answer-block { padding: 27px 0 30px; }
+  .answer-block {
+    padding: 27px var(--mobile-inset-right) 30px var(--mobile-inset-left);
+  }
   .result-math { min-height: 45px; font-size: clamp(25px, 8vw, 34px); }
-  .working-block { padding-top: 30px; }
+  .working-block {
+    padding: 30px var(--mobile-inset-right) 0 var(--mobile-inset-left);
+  }
+  .error-box {
+    margin-right: var(--mobile-inset-right);
+    margin-left: var(--mobile-inset-left);
+  }
   .step { grid-template-columns: 24px minmax(0, 1fr); gap: 8px; padding: 25px 0; }
   .step-number { font-size: 15px; }
   .step h3 { font-size: 16px; }
@@ -736,6 +760,8 @@ pre { overflow-x: auto; color: var(--muted); font: 12px/1.65 var(--mono); white-
     margin-left: 10px;
   }
   .workspace {
+    --mobile-inset-left: max(10px, env(safe-area-inset-left, 0px));
+    --mobile-inset-right: max(10px, env(safe-area-inset-right, 0px));
     margin-right: 0;
     margin-left: 0;
   }
@@ -745,6 +771,8 @@ pre { overflow-x: auto; color: var(--muted); font: 12px/1.65 var(--mono); white-
 
 @media (hover: none) and (pointer: coarse) {
   .primary-math-field { pointer-events: none; }
+
+  .math-viewport { touch-action: pan-y pinch-zoom; }
 
   .math-keyboard-button { display: inline-flex; }
 

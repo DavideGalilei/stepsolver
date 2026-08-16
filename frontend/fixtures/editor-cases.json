@@ -3,7 +3,7 @@
     "name": "quadratic equation",
     "latex": "x^2-4=0",
     "math_json": ["Equal", ["Subtract", ["Power", "x", 2], 4], 0],
-    "result_latex": "\\left[\\left\\{x \\mapsto -2\\right\\}, \\left\\{x \\mapsto 2\\right\\}\\right]"
+    "result_latex": "x = -2\\quad\\text{or}\\quad x = 2"
   },
   {
     "name": "product derivative",

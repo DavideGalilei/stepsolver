@@ -163,13 +163,55 @@ function createReadonlyMath(latex, className) {
   return field;
 }
 
+function enableTouchMathScrolling(viewport) {
+  let gesture = null;
+  const finishGesture = (event) => {
+    if (gesture?.pointerId !== event.pointerId) return;
+    if (viewport.hasPointerCapture(event.pointerId)) {
+      viewport.releasePointerCapture(event.pointerId);
+    }
+    gesture = null;
+  };
+  viewport.addEventListener("pointerdown", (event) => {
+    if (event.pointerType !== "touch") return;
+    gesture = {
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      startY: event.clientY,
+      startScrollLeft: viewport.scrollLeft,
+      horizontal: null
+    };
+  });
+  viewport.addEventListener("pointermove", (event) => {
+    if (gesture?.pointerId !== event.pointerId) return;
+    const deltaX = event.clientX - gesture.startX;
+    const deltaY = event.clientY - gesture.startY;
+    if (gesture.horizontal === null) {
+      if (Math.max(Math.abs(deltaX), Math.abs(deltaY)) < 6) return;
+      gesture.horizontal = Math.abs(deltaX) > Math.abs(deltaY);
+      if (!gesture.horizontal) {
+        gesture = null;
+        return;
+      }
+      viewport.setPointerCapture(event.pointerId);
+    }
+    viewport.scrollLeft = gesture.startScrollLeft - deltaX;
+  });
+  viewport.addEventListener("pointerup", finishGesture);
+  viewport.addEventListener("pointercancel", finishGesture);
+  viewport.addEventListener("lostpointercapture", finishGesture);
+}
+
 function createMathViewport(field, className) {
   const viewport = document.createElement("div");
   viewport.className = `math-viewport ${className}`;
   viewport.tabIndex = 0;
   viewport.append(field);
+  enableTouchMathScrolling(viewport);
   return viewport;
 }
+
+enableTouchMathScrolling(document.querySelector(".result-viewport"));
 
 function createNotes(step) {
   const notes = document.createElement("div");
