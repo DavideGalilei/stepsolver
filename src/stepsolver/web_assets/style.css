@@ -19,9 +19,19 @@
 
 * { box-sizing: border-box; }
 
+html {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+  overflow-x: clip;
+}
+
 body {
   margin: 0;
+  width: 100%;
+  max-width: 100%;
   min-height: 100vh;
+  overflow-x: hidden;
   overflow-x: clip;
   background: var(--background);
   color: var(--ink);
@@ -132,11 +142,14 @@ math-field {
   --smart-fence-color: var(--ink);
   display: block;
   width: 100%;
+  max-width: 100%;
+  min-width: 0;
   outline: none;
   color: var(--ink);
 }
 
 .primary-math-field {
+  contain: inline-size;
   min-height: 120px;
   border: 0;
   border-bottom: 2px solid var(--ink);
@@ -147,6 +160,9 @@ math-field {
 }
 
 .primary-math-field:focus-within { border-color: var(--accent); }
+
+.primary-math-field::part(virtual-keyboard-toggle) { display: none; }
+.primary-math-field::part(keyboard-sink) { font-size: 16px; }
 
 .math-toolbar {
   display: grid;
@@ -320,6 +336,7 @@ math-field {
   overflow-y: hidden;
   overscroll-behavior-inline: contain;
   scrollbar-width: thin;
+  touch-action: pan-x;
   -webkit-overflow-scrolling: touch;
 }
 
@@ -331,6 +348,8 @@ math-field {
 .math-viewport > math-field {
   width: max-content;
   min-width: 100%;
+  pointer-events: none;
+  user-select: none;
 }
 
 .result-viewport { padding: 5px 0 12px; }

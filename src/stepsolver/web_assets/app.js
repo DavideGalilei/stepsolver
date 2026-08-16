@@ -20,6 +20,24 @@ const stepsContainer = document.querySelector("#steps");
 const asciiOutput = document.querySelector("#ascii-output");
 const errorBox = document.querySelector("#error-box");
 
+function enableSystemKeyboard() {
+  const keyboardSink = expressionField.shadowRoot?.querySelector('[part="keyboard-sink"]');
+  if (!(keyboardSink instanceof HTMLElement)) return;
+  keyboardSink.setAttribute("inputmode", "text");
+  keyboardSink.inputMode = "text";
+}
+
+function hideMathVirtualKeyboard() {
+  window.mathVirtualKeyboard?.hide();
+}
+
+void customElements.whenDefined("math-field").then(enableSystemKeyboard);
+expressionField.addEventListener("pointerdown", enableSystemKeyboard, { capture: true });
+expressionField.addEventListener("focusin", () => {
+  enableSystemKeyboard();
+  hideMathVirtualKeyboard();
+});
+
 function createReadonlyMath(latex, className) {
   const field = document.createElement("math-field");
   field.className = className;
@@ -65,7 +83,12 @@ function createNotes(step) {
       name.scope = "row";
       name.textContent = label.startsWith("First") ? "First" : "Second";
       const derivative = document.createElement("td");
-      derivative.append(createReadonlyMath(note.expression_latex, "step-note-math"));
+      derivative.append(
+        createMathViewport(
+          createReadonlyMath(note.expression_latex, "step-note-math"),
+          "step-note-viewport"
+        )
+      );
       row.append(name, derivative);
       body.append(row);
     }
@@ -80,7 +103,7 @@ function createNotes(step) {
     noteLabel.className = "step-note-label";
     noteLabel.textContent = note.label;
     const noteMath = createReadonlyMath(note.expression_latex, "step-note-math");
-    noteBlock.append(noteLabel, noteMath);
+    noteBlock.append(noteLabel, createMathViewport(noteMath, "step-note-viewport"));
     notes.append(noteBlock);
   }
   return notes;

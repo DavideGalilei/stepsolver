@@ -92,9 +92,17 @@ def test_frontend_handles_large_math_and_warms_the_browser_runtime() -> None:
     assert "createMathViewport" in script.text
     assert "solverClient.warmup()" in script.text
     assert '"requestIdleCallback" in window' in script.text
+    assert "querySelector('[part=\"keyboard-sink\"]')" in script.text
+    assert 'keyboardSink.setAttribute("inputmode", "text")' in script.text
+    assert "window.mathVirtualKeyboard?.hide()" in script.text
     assert "async warmup()" in runtime.text
     assert ".math-viewport" in stylesheet.text
+    assert ".primary-math-field::part(virtual-keyboard-toggle)" in stylesheet.text
+    assert ".primary-math-field::part(keyboard-sink)" in stylesheet.text
     assert "overscroll-behavior-inline: contain" in stylesheet.text
+    assert "touch-action: pan-x" in stylesheet.text
+    assert "pointer-events: none" in stylesheet.text
+    assert "user-select: none" in stylesheet.text
     assert "-webkit-overflow-scrolling: touch" in stylesheet.text
 
 
