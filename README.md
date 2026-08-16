@@ -1,8 +1,8 @@
 <div align="center">
 
-# StepSolver
+# ∬ StepSolver
 
-### Symbolic mathematics, with the working left in.
+### A typed symbolic solver with worked steps.
 
 </div>
 
@@ -17,6 +17,7 @@
 [![Poetry](https://img.shields.io/badge/Poetry-managed-60A5FA?logo=poetry&logoColor=white)](https://python-poetry.org/)
 [![types: strict](https://img.shields.io/badge/types-strict-2F855A)](#checks)
 [![coverage: 90%+](https://img.shields.io/badge/coverage-90%25%2B-7C3AED)](#checks)
+[![License: MIT](https://img.shields.io/badge/License-MIT-2F855A.svg)](LICENSE)
 
 </div>
 
@@ -113,4 +114,6 @@ poetry check --strict
 
 This is early-stage research software, not a replacement for a mature computer algebra system. Some supported operations still lack good student-facing derivations; those cases are tracked in the tests.
 
-The repository does not currently include a license. Standard copyright restrictions apply.
+## License
+
+StepSolver is available under the [MIT License](LICENSE).

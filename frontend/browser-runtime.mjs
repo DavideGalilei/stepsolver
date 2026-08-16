@@ -3,6 +3,7 @@
 let nextRequestId = 0;
 let worker;
 const pendingRequests = new Map();
+let warmupPromise;
 
 function solverWorker() {
   if (!worker) {
@@ -32,13 +33,24 @@ function solverWorker() {
 }
 
 export function createSolverClient() {
+  function request(message, onProgress = () => {}) {
+    const id = nextRequestId++;
+    return new Promise((resolve, reject) => {
+      pendingRequests.set(id, { resolve, reject, onProgress });
+      solverWorker().postMessage({ id, ...message });
+    });
+  }
+
   return {
-    solve(payload, onProgress = () => {}) {
-      const id = nextRequestId++;
-      return new Promise((resolve, reject) => {
-        pendingRequests.set(id, { resolve, reject, onProgress });
-        solverWorker().postMessage({ id, mathJson: payload.math_json });
+    warmup() {
+      warmupPromise ??= request({ action: "warmup" }).catch((error) => {
+        warmupPromise = undefined;
+        throw error;
       });
+      return warmupPromise;
+    },
+    solve(payload, onProgress = () => {}) {
+      return request({ action: "solve", mathJson: payload.math_json }, onProgress);
     }
   };
 }

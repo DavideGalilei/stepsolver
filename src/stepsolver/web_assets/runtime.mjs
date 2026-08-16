@@ -2,6 +2,7 @@
 
 export function createSolverClient() {
   return {
+    async warmup() {},
     async solve(payload) {
       const response = await fetch("./api/solve", {
         method: "POST",

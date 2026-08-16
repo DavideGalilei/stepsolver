@@ -28,6 +28,14 @@ function createReadonlyMath(latex, className) {
   return field;
 }
 
+function createMathViewport(field, className) {
+  const viewport = document.createElement("div");
+  viewport.className = `math-viewport ${className}`;
+  viewport.tabIndex = 0;
+  viewport.append(field);
+  return viewport;
+}
+
 function createNotes(step) {
   const notes = document.createElement("div");
   notes.className = "step-notes";
@@ -93,12 +101,14 @@ function createStep(step) {
   const transformation = document.createElement("div");
   transformation.className = "step-transformation";
   const before = createReadonlyMath(step.before_latex, "step-math");
+  const beforeViewport = createMathViewport(before, "step-math-viewport");
   const arrow = document.createElement("div");
   arrow.className = "step-arrow";
   arrow.textContent = "→";
   arrow.setAttribute("aria-label", "becomes");
   const after = createReadonlyMath(step.after_latex, "step-math step-math-after");
-  transformation.append(before, arrow, after);
+  const afterViewport = createMathViewport(after, "step-math-viewport");
+  transformation.append(beforeViewport, arrow, afterViewport);
   const verification = document.createElement("details");
   verification.className = "step-verification";
   const verificationSummary = document.createElement("summary");
@@ -199,4 +209,18 @@ for (const example of document.querySelectorAll(".example")) {
     expressionField.value = example.dataset.expression;
     expressionField.focus();
   });
+}
+
+function warmSolver() {
+  void solverClient.warmup().catch(() => {});
+}
+
+expressionField.addEventListener("focus", warmSolver, { once: true });
+
+const connection = navigator.connection;
+const constrainedConnection =
+  connection?.saveData || connection?.effectiveType === "slow-2g" || connection?.effectiveType === "2g";
+if (!constrainedConnection) {
+  if ("requestIdleCallback" in window) window.requestIdleCallback(warmSolver, { timeout: 2500 });
+  else window.setTimeout(warmSolver, 1200);
 }

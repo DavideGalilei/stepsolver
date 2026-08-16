@@ -4,7 +4,9 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="description" content="Visual step-by-step symbolic mathematics.">
-    <title>StepSolver</title>
+    <title>∬ StepSolver</title>
+    <link rel="icon" href="./static/favicon.svg" type="image/svg+xml">
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
     <link rel="stylesheet" href="./static/style.css">
     <script type="module" src="./static/app.js"></script>
   </head>
@@ -14,14 +16,14 @@
         <span class="wordmark-symbol" aria-hidden="true">∬</span>
         <span>StepSolver</span>
       </a>
-      <p>Symbolic answers with the algebra shown</p>
+      <p>Worked symbolic mathematics</p>
     </header>
 
     <main class="workspace">
       <section class="problem-panel" aria-labelledby="query-heading">
         <header class="problem-heading">
           <h1 id="query-heading">Enter a math problem</h1>
-          <p>Write the complete expression. StepSolver detects whether to solve, simplify, differentiate, or integrate.</p>
+          <p>Enter an equation, derivative, integral, limit, sum, or expression.</p>
         </header>
 
         <form id="solve-form">
@@ -95,7 +97,9 @@
         <div id="error-box" class="error-box hidden"></div>
         <div id="answer-block" class="answer-block">
           <h3>Answer</h3>
-          <math-field id="result-latex" class="result-math" read-only></math-field>
+          <div class="math-viewport result-viewport" tabindex="0" aria-label="Scrollable answer">
+            <math-field id="result-latex" class="result-math" read-only></math-field>
+          </div>
         </div>
 
         <section id="working-block" class="working-block" aria-labelledby="working-heading">
@@ -104,7 +108,7 @@
         </section>
 
         <details class="ascii-panel">
-          <summary>Technical details</summary>
+          <summary>ASCII output</summary>
           <pre id="ascii-output"></pre>
         </details>
       </section>

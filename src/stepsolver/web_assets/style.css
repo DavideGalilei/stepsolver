@@ -22,6 +22,7 @@
 body {
   margin: 0;
   min-height: 100vh;
+  overflow-x: clip;
   background: var(--background);
   color: var(--ink);
   font-family: var(--sans);
@@ -74,6 +75,15 @@ button { font: inherit; }
   width: min(920px, calc(100% - 48px));
   margin: 0 auto 96px;
 }
+
+.workspace,
+.problem-panel,
+.solution-panel,
+.solution-heading > div,
+.step > div,
+.step-notes,
+.step-note,
+.step-transformation { min-width: 0; }
 
 .problem-panel,
 .solution-panel {
@@ -303,12 +313,33 @@ math-field {
   letter-spacing: .035em;
 }
 
+.math-viewport {
+  width: 100%;
+  min-width: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior-inline: contain;
+  scrollbar-width: thin;
+  -webkit-overflow-scrolling: touch;
+}
+
+.math-viewport:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 4px;
+}
+
+.math-viewport > math-field {
+  width: max-content;
+  min-width: 100%;
+}
+
+.result-viewport { padding: 5px 0 12px; }
+
 .result-math {
   min-height: 56px;
   border: 0;
   background: transparent;
   padding: 0;
-  overflow-x: auto;
   font-size: clamp(31px, 5vw, 46px);
 }
 
@@ -360,6 +391,8 @@ math-field {
 }
 
 .step-note-math {
+  width: max-content;
+  min-width: 100%;
   min-height: 35px;
   border: 0;
   background: transparent;
@@ -370,6 +403,7 @@ math-field {
 
 .derivative-table {
   width: 100%;
+  min-width: 360px;
   border-collapse: collapse;
   color: var(--ink);
 }
@@ -414,7 +448,6 @@ math-field {
   border: 0;
   border-bottom: 1px solid var(--line-strong);
   background: transparent;
-  overflow-x: auto;
   padding: 12px 4px;
   font-size: 21px;
 }
@@ -447,28 +480,58 @@ pre { overflow-x: auto; color: var(--muted); font: 12px/1.65 var(--mono); white-
   .tool-group:first-child { padding-left: 18px; }
   .tool-group-calculus { grid-column: 1 / -1; border-top: 1px solid var(--line); border-left: 0 !important; }
   .tool-group-calculus { padding-right: 18px; }
-  .step-transformation { grid-template-columns: 1fr; }
+  .step-transformation { grid-template-columns: minmax(0, 1fr); }
   .step-arrow { transform: rotate(90deg); }
 }
 
 @media (max-width: 680px) {
   .site-header,
-  .workspace { width: min(100% - 30px, 920px); }
+  .workspace { width: min(100% - 24px, 920px); }
   .site-header { align-items: flex-start; flex-direction: column; gap: 7px; padding-top: 19px; }
-  .problem-heading { padding: 42px 0 21px; }
-  .primary-math-field { min-height: 102px; padding: 20px 2px 24px; }
+  .site-header p { font-size: 12px; }
+  .problem-heading { padding: 36px 0 19px; }
+  .problem-heading p { font-size: 14px; }
+  .primary-math-field {
+    min-height: 92px;
+    padding: 17px 2px 21px;
+    font-size: clamp(27px, 9vw, 38px);
+  }
   .math-toolbar { display: block; }
   .tool-group,
   .tool-group:first-child,
   .tool-group:last-child { padding: 15px 0 17px; }
   .tool-group + .tool-group { border-top: 1px solid var(--line); border-left: 0; }
+  .tool-row,
+  .tool-group-calculus .tool-row {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 5px;
+    overflow-x: auto;
+    padding: 0 2px 6px;
+    scrollbar-width: thin;
+    -webkit-overflow-scrolling: touch;
+  }
+  .symbol-key { flex: 0 0 47px; min-width: 47px; min-height: 47px; }
+  .symbol-key-wide { flex-basis: 92px; width: 92px; min-height: 57px; }
   .problem-actions { align-items: stretch; flex-direction: column; }
   .solve-button { width: 100%; }
-  .solution-panel { margin-top: 52px; padding-top: 38px; }
-  .step { grid-template-columns: 28px minmax(0, 1fr); gap: 9px; }
+  .solution-panel { margin-top: 48px; padding-top: 32px; }
+  .answer-block { padding: 27px 0 30px; }
+  .result-math { min-height: 45px; font-size: clamp(25px, 8vw, 34px); }
+  .working-block { padding-top: 30px; }
+  .step { grid-template-columns: 24px minmax(0, 1fr); gap: 8px; padding: 25px 0; }
+  .step-number { font-size: 15px; }
+  .step h3 { font-size: 16px; }
+  .step p { font-size: 13px; line-height: 1.55; }
+  .step-notes { overflow-x: auto; margin-block: 17px 20px; padding-left: 12px; }
   .step-note { grid-template-columns: 1fr; gap: 6px; }
+  .step-math { min-height: 50px; padding: 10px 2px; font-size: 18px; }
+  .step-verification summary { padding-block: 5px; }
 }
 
 @media (max-width: 430px) {
-  .tool-group-calculus .tool-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .site-header,
+  .workspace { width: calc(100% - 20px); }
+  .examples { gap: 7px 12px; }
+  .solution-heading h2 { font-size: 30px; }
 }

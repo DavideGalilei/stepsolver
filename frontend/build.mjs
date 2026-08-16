@@ -7,6 +7,7 @@ import { build } from "esbuild";
 const frontendDirectory = dirname(fileURLToPath(import.meta.url));
 const assetDirectory = resolve(frontendDirectory, "../src/stepsolver/web_assets");
 const fontDirectory = resolve(assetDirectory, "fonts");
+const vendorPath = resolve(assetDirectory, "vendor.mjs");
 
 await mkdir(assetDirectory, { recursive: true });
 await rm(fontDirectory, { force: true, recursive: true });
@@ -20,13 +21,16 @@ await build({
   format: "esm",
   legalComments: "external",
   minify: true,
-  outfile: resolve(assetDirectory, "vendor.mjs"),
+  outfile: vendorPath,
   target: "es2022"
 });
 
+const vendorSource = await readFile(vendorPath, "utf8");
+await writeFile(vendorPath, vendorSource.replace(/[\t ]+$/gm, ""), "utf8");
+
 const dependencies = [
   ["MathLive 0.110.0", "mathlive/LICENSE.txt"],
-  ["CortexJS Compute Engine 0.113.0", "@cortex-js/compute-engine/LICENSE"]
+  ["CortexJS Compute Engine 0.58.0", "@cortex-js/compute-engine/LICENSE"]
 ];
 const notices = [
   "Third-party software bundled with the StepSolver web interface",

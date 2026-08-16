@@ -36,6 +36,10 @@ async function runtime(id) {
 self.addEventListener("message", async ({ data }) => {
   try {
     const pyodide = await runtime(data.id);
+    if (data.action === "warmup") {
+      self.postMessage({ id: data.id, type: "result", payload: null });
+      return;
+    }
     progress(data.id, "Solving…");
     const solve = pyodide.globals.get("solve_mathjson_json");
     try {

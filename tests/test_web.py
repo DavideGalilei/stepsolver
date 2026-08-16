@@ -32,13 +32,16 @@ def test_homepage_and_assets_are_served() -> None:
         stylesheet = client.get("/static/style.css")
         script = client.get("/static/app.js")
         runtime = client.get("/static/runtime.mjs")
+        favicon = client.get("/static/favicon.svg")
     assert homepage.status_code == _HTTP_OK
     assert "StepSolver" in homepage.text
+    assert "<title>∬ StepSolver</title>" in homepage.text
     assert '<span class="wordmark-symbol" aria-hidden="true">∬</span>' in homepage.text
     assert "math-field" in homepage.text
     assert "Mathematical symbol palette" in homepage.text
     assert "<select" not in homepage.text
     assert 'class="site-header"' in homepage.text
+    assert 'href="./static/favicon.svg"' in homepage.text
     assert "Try an example:" in homepage.text
     assert "section-number" not in homepage.text
     assert "status-pill" not in homepage.text
@@ -53,6 +56,8 @@ def test_homepage_and_assets_are_served() -> None:
     assert 'from "./runtime.mjs"' in script.text
     assert 'new URL("./fonts/", import.meta.url).href' in script.text
     assert runtime.status_code == _HTTP_OK
+    assert favicon.status_code == _HTTP_OK
+    assert "∬" in favicon.text
     assert 'fetch("./api/solve"' in runtime.text
     assert "firstElementChild" not in script.text
     assert "expressionField.insert" in script.text
@@ -73,6 +78,24 @@ def test_homepage_and_assets_are_served() -> None:
     assert "--smart-fence-color: var(--ink)" in stylesheet.text
     assert 'table.className = "derivative-table"' in script.text
     assert "Differentiate each factor once" in script.text
+
+
+def test_frontend_handles_large_math_and_warms_the_browser_runtime() -> None:
+    """Large formulas should scroll, while browser startup happens outside the main thread."""
+    with TestClient(create_app()) as client:
+        homepage = client.get("/")
+        stylesheet = client.get("/static/style.css")
+        script = client.get("/static/app.js")
+        runtime = client.get("/static/runtime.mjs")
+    assert 'class="math-viewport result-viewport"' in homepage.text
+    assert 'aria-label="Scrollable answer"' in homepage.text
+    assert "createMathViewport" in script.text
+    assert "solverClient.warmup()" in script.text
+    assert '"requestIdleCallback" in window' in script.text
+    assert "async warmup()" in runtime.text
+    assert ".math-viewport" in stylesheet.text
+    assert "overscroll-behavior-inline: contain" in stylesheet.text
+    assert "-webkit-overflow-scrolling: touch" in stylesheet.text
 
 
 def test_browser_runtime_serializes_the_same_solver_payload() -> None:
