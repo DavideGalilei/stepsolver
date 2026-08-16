@@ -4,6 +4,7 @@ from fractions import Fraction
 
 from stepsolver.ast import (
     ApproximateNumber,
+    BinaryExpression,
     BinaryOperator,
     Constant,
     Expression,
@@ -68,6 +69,16 @@ def format_expression(expression: Expression, *, parent_precedence: int = 0) -> 
         if expression.operator is UnaryOperator.FACTORIAL:
             return f"{operand}!"
         return f"{expression.operator.value}{operand}"
+    if (
+        expression.operator is BinaryOperator.ADD
+        and isinstance(expression.left, Symbol)
+        and expression.left.name == "C"
+    ):
+        expression = BinaryExpression(
+            operator=BinaryOperator.ADD,
+            left=expression.right,
+            right=expression.left,
+        )
     precedence = _PRECEDENCE[expression.operator]
     left = format_expression(expression.left, parent_precedence=precedence)
     right_precedence = precedence if expression.operator is BinaryOperator.POWER else precedence + 1
@@ -109,6 +120,7 @@ def format_ascii(result: SolveResult) -> str:
                 f"  Verified by {step.verification.method.value}: {step.verification.detail}",
             )
         )
+        lines.extend(f"  {note.label}: {format_expression(note.expression)}" for note in step.notes)
     if isinstance(result, ExactResult):
         lines.append(f"Result: {_format_value(result.value)}")
     else:

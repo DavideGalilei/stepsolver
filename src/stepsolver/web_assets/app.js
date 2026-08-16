@@ -38,6 +38,18 @@ function createStep(step) {
   heading.textContent = step.rule;
   const explanation = document.createElement("p");
   explanation.textContent = step.explanation;
+  const notes = document.createElement("div");
+  notes.className = "step-notes";
+  for (const note of step.notes) {
+    const noteBlock = document.createElement("div");
+    noteBlock.className = "step-note";
+    const noteLabel = document.createElement("div");
+    noteLabel.className = "step-note-label";
+    noteLabel.textContent = note.label;
+    const noteMath = createReadonlyMath(note.expression_latex, "step-note-math");
+    noteBlock.append(noteLabel, noteMath);
+    notes.append(noteBlock);
+  }
   const transformation = document.createElement("div");
   transformation.className = "step-transformation";
   const before = createReadonlyMath(step.before_latex, "step-math");
@@ -54,7 +66,9 @@ function createStep(step) {
   const verificationDetail = document.createElement("p");
   verificationDetail.textContent = `${step.verification_method}: ${step.verification_detail}`;
   verification.append(verificationSummary, verificationDetail);
-  body.append(heading, explanation, transformation, verification);
+  body.append(heading, explanation);
+  if (step.notes.length > 0) body.append(notes);
+  body.append(transformation, verification);
   article.append(number, body);
   return article;
 }
@@ -113,9 +127,20 @@ form.addEventListener("submit", (event) => {
 });
 
 for (const key of document.querySelectorAll(".symbol-key")) {
+  const label = key.querySelector("math-field");
+  if (label) {
+    label.tabIndex = -1;
+    label.setAttribute("aria-hidden", "true");
+  }
+  key.addEventListener("pointerdown", (event) => {
+    event.preventDefault();
+  });
   key.addEventListener("click", () => {
-    expressionField.executeCommand(["insert", key.dataset.insert, { selectionMode: "placeholder" }]);
     expressionField.focus();
+    expressionField.insert(key.dataset.insert, {
+      insertionMode: "replaceSelection",
+      selectionMode: "placeholder"
+    });
   });
 }
 

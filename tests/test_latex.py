@@ -65,3 +65,10 @@ def test_solver_operations_use_conventional_notation() -> None:
         r"\frac{\mathrm{d}^{2}}{\mathrm{d}x^{2}}\left(x^{3}\right)"
     )
     assert format_latex_expression(limit) == (r"\lim_{x \to 0} \frac{\sin\left(x\right)}{x}")
+
+
+def test_indefinite_integral_places_the_constant_last() -> None:
+    """Indefinite antiderivatives should display the integration constant conventionally."""
+    result = Solver().solve("integrate(x^2,x)")
+    assert isinstance(result, ExactResult)
+    assert format_latex_value(result.value) == r"\frac{x^{3}}{3} + C"

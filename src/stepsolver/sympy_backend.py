@@ -40,13 +40,16 @@ from stepsolver.results import (
     SequenceValue,
     SolutionStep,
     SolveResult,
+    StepNote,
     UnsolvedResult,
     Verification,
     VerificationMethod,
 )
 from stepsolver.sympy_derivation import (
     BackendDerivationStep,
+    BackendDifferential,
     BackendExpression,
+    BackendIdentity,
     BackendIntegral,
     derive_polynomial_equation,
     derive_reciprocal_quadratic_integral,
@@ -241,12 +244,30 @@ class SympyBackend:
                 method=step.verification_method,
                 detail=step.verification_detail,
             ),
+            notes=tuple(
+                StepNote(
+                    label=note.label,
+                    expression=self._derivation_expression(note.expression),
+                )
+                for note in step.notes
+            ),
         )
 
     def _derivation_expression(
         self,
         value: BackendExpression,
     ) -> Expression:
+        if isinstance(value, BackendIdentity):
+            return Relation(
+                operator=RelationOperator.EQUAL,
+                left=self._derivation_expression(value.left),
+                right=self._derivation_expression(value.right),
+            )
+        if isinstance(value, BackendDifferential):
+            return FunctionCall(
+                name=Identifier("differential"),
+                arguments=(self._from_sympy(value.variable),),
+            )
         if isinstance(value, BackendIntegral):
             return FunctionCall(
                 name=Identifier(Operation.INTEGRATE.value),
@@ -310,7 +331,7 @@ class SympyBackend:
                 integrand = self._to_sympy(arguments[0])
                 variable = self._to_sympy(arguments[1])
                 if len(arguments) == 2:
-                    return sp.integrate(integrand, variable)
+                    return sp.integrate(integrand, variable) + sp.Symbol("C")
                 return sp.integrate(
                     integrand,
                     (variable, self._to_sympy(arguments[2]), self._to_sympy(arguments[3])),

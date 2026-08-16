@@ -129,6 +129,8 @@ def _format_function(expression: FunctionCall) -> str:
         return rf"\sqrt{{{format_latex_expression(arguments[0])}}}"
     if name == "abs" and len(arguments) == 1:
         return rf"\left|{format_latex_expression(arguments[0])}\right|"
+    if name == "differential" and len(arguments) == 1:
+        return rf"\mathrm{{d}}{format_latex_expression(arguments[0])}"
     rendered_arguments = ", ".join(format_latex_expression(item) for item in arguments)
     function = _NAMED_FUNCTIONS.get(name, rf"\operatorname{{{_escape_identifier(name)}}}")
     return rf"{function}\left({rendered_arguments}\right)"
@@ -136,6 +138,16 @@ def _format_function(expression: FunctionCall) -> str:
 
 def _format_binary(expression: BinaryExpression, *, parent_precedence: int) -> str:
     operator = expression.operator
+    if (
+        operator is BinaryOperator.ADD
+        and isinstance(expression.left, Symbol)
+        and expression.left.name == "C"
+    ):
+        expression = BinaryExpression(
+            operator=operator,
+            left=expression.right,
+            right=expression.left,
+        )
     precedence = _PRECEDENCE[operator]
     left = format_latex_expression(expression.left, parent_precedence=precedence)
     right_precedence = precedence if operator is BinaryOperator.POWER else precedence + 1

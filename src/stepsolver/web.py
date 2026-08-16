@@ -34,6 +34,16 @@ class SolveRequest(BaseModel):
     math_json: JsonValue
 
 
+class StepNoteResponse(BaseModel):
+    """One labeled mathematical rule or substitution supporting a step."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    label: str
+    expression_ascii: str
+    expression_latex: str
+
+
 class StepResponse(BaseModel):
     """One browser-renderable verified solution step."""
 
@@ -48,6 +58,7 @@ class StepResponse(BaseModel):
     after_latex: str
     verification_method: str
     verification_detail: str
+    notes: tuple[StepNoteResponse, ...]
 
 
 class SolveResponse(BaseModel):
@@ -84,6 +95,14 @@ def _step_responses(result: SolveResult) -> tuple[StepResponse, ...]:
             ),
             verification_method=step.verification.method.value,
             verification_detail=step.verification.detail,
+            notes=tuple(
+                StepNoteResponse(
+                    label=note.label,
+                    expression_ascii=format_expression(note.expression),
+                    expression_latex=format_latex_expression(note.expression),
+                )
+                for note in step.notes
+            ),
         )
         for index, step in enumerate(result.steps, start=1)
     )

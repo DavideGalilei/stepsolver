@@ -13,6 +13,7 @@ from stepsolver.results import (
     ExactResult,
     SolutionStep,
     SolveResult,
+    StepNote,
     UnsolvedResult,
 )
 from stepsolver.solver import Solver
@@ -28,6 +29,7 @@ __all__ = [
     "SolutionStep",
     "SolveResult",
     "Solver",
+    "StepNote",
     "StepSolverError",
     "UnsolvedResult",
     "format_ascii",

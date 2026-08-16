@@ -47,7 +47,11 @@ def test_homepage_and_assets_are_served() -> None:
     assert "MathfieldElement.fontsDirectory" in script.text
     assert "mathlive@0.110.0/fonts/" in script.text
     assert "firstElementChild" not in script.text
+    assert "expressionField.insert" in script.text
+    assert 'addEventListener("pointerdown"' in script.text
+    assert "expressionField.executeCommand" not in script.text
     assert 'behavior: "smooth"' not in script.text
+    assert "grid-template-columns: repeat(3, minmax(86px, 1fr))" in stylesheet.text
 
 
 def test_exact_solve_response_contains_latex_steps() -> None:
@@ -94,7 +98,23 @@ def test_reciprocal_quadratic_integral_contains_detailed_latex_steps() -> None:
         "Simplify the antiderivative",
     ]
     assert payload.steps[0].after_latex.startswith(r"\int \frac{1}")
+    assert [note.label for note in payload.steps[0].notes] == [
+        "Standard identity",
+        "Coefficients in this denominator",
+        "Applied to this denominator",
+    ]
+    assert r"a \cdot x^{2}" in payload.steps[0].notes[0].expression_latex
     assert r"\arctan" in payload.steps[1].after_latex
+    assert [note.label for note in payload.steps[1].notes] == [
+        "Standard rule",
+        "Match the variables",
+        "Differential",
+    ]
+    assert payload.steps[1].notes[0].expression_latex.startswith(r"\int")
+    assert r"u = x - \frac{1}{2}" in payload.steps[1].notes[1].expression_latex
+    assert payload.steps[1].notes[2].expression_latex == r"\mathrm{d}u = \mathrm{d}x"
+    assert payload.result_latex is not None
+    assert payload.result_latex.endswith("+ C")
 
 
 def test_graphical_equation_solve_response() -> None:

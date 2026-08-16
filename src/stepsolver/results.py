@@ -30,6 +30,14 @@ class Verification:
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
+class StepNote:
+    """A labeled mathematical identity, rule, or substitution supporting a step."""
+
+    label: str
+    expression: Expression
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
 class SolutionStep:
     """One verified mathematical transformation."""
 
@@ -38,6 +46,7 @@ class SolutionStep:
     after: Expression
     explanation: str
     verification: Verification
+    notes: tuple[StepNote, ...] = ()
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)

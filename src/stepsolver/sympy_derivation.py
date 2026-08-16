@@ -1,5 +1,7 @@
 """Backend-local derivation strategies for human-readable solution steps."""
 
+from __future__ import annotations
+
 from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import TypeGuard, cast
@@ -19,7 +21,33 @@ class BackendIntegral:
     variable: sp.Symbol
 
 
-type BackendExpression = EquationBackendExpression | BackendIntegral
+@dataclass(frozen=True, slots=True, kw_only=True)
+class BackendDifferential:
+    """A displayed differential such as dx or du."""
+
+    variable: sp.Symbol
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class BackendIdentity:
+    """A displayed equality between two backend derivation expressions."""
+
+    left: BackendExpression
+    right: BackendExpression
+
+
+type BackendExpression = (
+    EquationBackendExpression | BackendIntegral | BackendDifferential | BackendIdentity
+)
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class BackendMathNote:
+    """A labeled mathematical annotation supporting a derivation step."""
+
+    label: str
+    expression: BackendExpression
+
 
 _LINEAR_DEGREE = 1
 _QUADRATIC_DEGREE = 2
@@ -42,6 +70,7 @@ class BackendDerivationStep:
     explanation: str
     verification_method: VerificationMethod
     verification_detail: str
+    notes: tuple[BackendMathNote, ...] = ()
 
 
 def _equivalent_step(
@@ -306,37 +335,153 @@ def derive_reciprocal_quadratic_integral(
         sp.Pow(radius, -1, evaluate=False),
         evaluate=False,
     )
+    raw_coefficient = sp.Mul(
+        prefactor,
+        sp.Pow(radius, -1, evaluate=False),
+        evaluate=False,
+    )
     formula = sp.Mul(
-        sp.simplify(prefactor / radius),
+        raw_coefficient,
         sp.atan(arctangent_argument),
         evaluate=False,
     )
+    integration_constant = sp.Symbol("C")
+    formula = sp.Add(formula, integration_constant, evaluate=False)
     if str(sp.simplify(sp.diff(formula, variable) - completed_integrand)) != "0":
         message = "the arctangent formula failed differentiation verification"
         raise ValueError(message)
     if str(sp.simplify(formula - result)) != "0":
         message = "the simplified antiderivative differs from the exact result"
         raise ValueError(message)
+    completed_polynomial = (
+        completed_denominator
+        if str(coefficient_a) == "1"
+        else sp.Mul(coefficient_a, completed_denominator, evaluate=False)
+    )
+    generic_coefficient_a = sp.Symbol("a", real=True)
+    generic_coefficient_b = sp.Symbol("b", real=True)
+    generic_coefficient_c = sp.Symbol("c", real=True)
+    generic_quadratic = sp.Add(
+        sp.Mul(generic_coefficient_a, variable**2, evaluate=False),
+        sp.Mul(generic_coefficient_b, variable, evaluate=False),
+        generic_coefficient_c,
+        evaluate=False,
+    )
+    generic_shift = sp.Add(
+        variable,
+        generic_coefficient_b / (2 * generic_coefficient_a),
+        evaluate=False,
+    )
+    generic_completed_quadratic = sp.Add(
+        sp.Mul(
+            generic_coefficient_a,
+            sp.Pow(generic_shift, 2, evaluate=False),
+            evaluate=False,
+        ),
+        sp.Add(
+            generic_coefficient_c,
+            -(generic_coefficient_b**2 / (4 * generic_coefficient_a)),
+            evaluate=False,
+        ),
+        evaluate=False,
+    )
+    generic_variable = sp.Symbol("u", real=True)
+    generic_radius = sp.Symbol("a", real=True)
+    generic_integrand = sp.Pow(
+        sp.Add(
+            sp.Pow(generic_variable, 2, evaluate=False),
+            sp.Pow(generic_radius, 2, evaluate=False),
+            evaluate=False,
+        ),
+        -1,
+        evaluate=False,
+    )
+    generic_result = sp.Add(
+        sp.Mul(
+            sp.Pow(generic_radius, -1, evaluate=False),
+            sp.atan(
+                sp.Mul(
+                    generic_variable,
+                    sp.Pow(generic_radius, -1, evaluate=False),
+                    evaluate=False,
+                )
+            ),
+            evaluate=False,
+        ),
+        integration_constant,
+        evaluate=False,
+    )
     steps = [
         BackendDerivationStep(
             rule="Complete the square",
             before=BackendIntegral(integrand=integrand, variable=variable),
             after=BackendIntegral(integrand=completed_integrand, variable=variable),
             explanation=(
-                "Rewrite the quadratic denominator as a shifted square plus a positive constant."
+                "Rewrite the quadratic denominator as a shifted square plus a positive constant "
+                "so it can match a standard integration rule."
             ),
             verification_method=VerificationMethod.SYMBOLIC_EQUIVALENCE,
             verification_detail="Simplifying the difference between the two integrands gives zero.",
+            notes=(
+                BackendMathNote(
+                    label="Standard identity",
+                    expression=BackendIdentity(
+                        left=generic_quadratic,
+                        right=generic_completed_quadratic,
+                    ),
+                ),
+                BackendMathNote(
+                    label="Coefficients in this denominator",
+                    expression=(
+                        sp.Eq(generic_coefficient_a, coefficient_a, evaluate=False),
+                        sp.Eq(generic_coefficient_b, coefficient_b, evaluate=False),
+                        sp.Eq(generic_coefficient_c, coefficient_c, evaluate=False),
+                    ),
+                ),
+                BackendMathNote(
+                    label="Applied to this denominator",
+                    expression=BackendIdentity(
+                        left=denominator,
+                        right=completed_polynomial,
+                    ),
+                ),
+            ),
         ),
         BackendDerivationStep(
             rule="Use the arctangent integral",
             before=BackendIntegral(integrand=completed_integrand, variable=variable),
             after=formula,
-            explanation="Apply the standard integral of 1 / (u² + a²).",
+            explanation="Match the completed denominator to the standard arctangent form.",
             verification_method=VerificationMethod.DIFFERENTIATION,
             verification_detail=(
                 "Differentiating this arctangent expression recovers "
                 "the completed-square integrand."
+            ),
+            notes=(
+                BackendMathNote(
+                    label="Standard rule",
+                    expression=BackendIdentity(
+                        left=BackendIntegral(
+                            integrand=generic_integrand,
+                            variable=generic_variable,
+                        ),
+                        right=generic_result,
+                    ),
+                ),
+                BackendMathNote(
+                    label="Match the variables",
+                    expression=(
+                        sp.Eq(generic_variable, shift, evaluate=False),
+                        sp.Eq(generic_radius, radius, evaluate=False),
+                    ),
+                ),
+                BackendMathNote(
+                    label="Differential",
+                    expression=BackendIdentity(
+                        left=BackendDifferential(variable=generic_variable),
+                        right=BackendDifferential(variable=variable),
+                    ),
+                ),
             ),
         ),
     ]
@@ -350,6 +495,24 @@ def derive_reciprocal_quadratic_integral(
                 verification_method=VerificationMethod.SYMBOLIC_EQUIVALENCE,
                 verification_detail=(
                     "Simplifying the difference between both antiderivative forms gives zero."
+                ),
+                notes=(
+                    BackendMathNote(
+                        label="Simplify the coefficient",
+                        expression=sp.Eq(
+                            raw_coefficient,
+                            sp.simplify(raw_coefficient),
+                            evaluate=False,
+                        ),
+                    ),
+                    BackendMathNote(
+                        label="Simplify the argument",
+                        expression=sp.Eq(
+                            arctangent_argument,
+                            sp.simplify(arctangent_argument),
+                            evaluate=False,
+                        ),
+                    ),
                 ),
             )
         )

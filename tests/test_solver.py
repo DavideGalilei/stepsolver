@@ -117,7 +117,19 @@ def test_reciprocal_quadratic_integral_has_worked_steps(solver: Solver) -> None:
         "Simplify the antiderivative",
     )
     assert all(step.before != step.after for step in result.steps)
+    assert tuple(note.label for note in result.steps[0].notes) == (
+        "Standard identity",
+        "Coefficients in this denominator",
+        "Applied to this denominator",
+    )
     assert result.steps[1].verification.method.value == "differentiation"
+    assert tuple(note.label for note in result.steps[1].notes) == (
+        "Standard rule",
+        "Match the variables",
+        "Differential",
+    )
+    assert "u²" not in result.steps[1].explanation
+    assert format_ascii(result).endswith("+ C")
 
 
 def test_inequality_solver(solver: Solver) -> None:

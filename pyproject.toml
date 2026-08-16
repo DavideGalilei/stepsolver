@@ -70,6 +70,7 @@ explicit-preview-rules = false
 "src/stepsolver/latex.py" = [
     "complex-structure",
     "magic-value-comparison",
+    "too-many-branches",
     "too-many-return-statements",
 ]
 "src/stepsolver/mathjson.py" = [
