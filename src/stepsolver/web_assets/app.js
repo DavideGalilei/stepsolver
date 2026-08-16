@@ -139,9 +139,15 @@ function addSystemRow() {
 function currentMathCellIsEmpty() {
   // MathLive 0.110 has no public current-cell API. Keep this adapter isolated.
   const model = expressionField._mathfield?.model;
-  const range = model?.getCellRange(model.position);
-  if (!range) return false;
-  return model.getValue(range, "latex-without-placeholders").trim() === "";
+  let atom = model?.at(model.position);
+  while (atom && !Array.isArray(atom.parentBranch)) atom = atom.parent;
+  if (!atom || !Array.isArray(atom.parentBranch)) return false;
+  const [row, column] = atom.parentBranch;
+  const cell = atom.parent?.getCell?.(row, column);
+  return (
+    Array.isArray(cell) &&
+    cell.every((cellAtom) => cellAtom.type === "first" || cellAtom.type === "placeholder")
+  );
 }
 
 function removeEmptySystemRow() {

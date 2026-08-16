@@ -266,8 +266,11 @@ def test_delete_removes_only_an_empty_system_row() -> None:
         script = client.get("/static/app.js")
     assert "function currentMathCellIsEmpty()" in script.text
     assert "expressionField._mathfield?.model" in script.text
-    assert "model?.getCellRange(model.position)" in script.text
-    assert 'model.getValue(range, "latex-without-placeholders")' in script.text
+    assert "model?.at(model.position)" in script.text
+    assert "Array.isArray(atom.parentBranch)" in script.text
+    assert "atom.parent?.getCell?.(row, column)" in script.text
+    assert 'cellAtom.type === "first"' in script.text
+    assert 'cellAtom.type === "placeholder"' in script.text
     assert "function removeEmptySystemRow()" in script.text
     assert 'expressionField.executeCommand("removeRow")' in script.text
     assert 'event.inputType === "deleteContentBackward"' in script.text
