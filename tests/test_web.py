@@ -198,6 +198,21 @@ def test_mobile_formula_gestures_preserve_vertical_page_scrolling() -> None:
     assert 'enableTouchMathScrolling(document.querySelector(".result-viewport"))' in script.text
 
 
+def test_mobile_native_keyboard_can_edit_and_extend_systems() -> None:
+    """Phone Backspace and Enter should reach MathLive even through the native proxy."""
+    with TestClient(create_app()) as client:
+        homepage = client.get("/")
+        script = client.get("/static/app.js")
+    assert 'enterkeyhint="enter"' in homepage.text
+    assert 'const mobileKeyboardSentinel = "\\u2060"' in script.text
+    assert "function resetMobileKeyboardProxy()" in script.text
+    assert 'expressionField.executeCommand("deleteBackward")' in script.text
+    assert 'expressionField.executeCommand("addRowAfter")' in script.text
+    assert "if (expressionField.value === before) form.requestSubmit()" in script.text
+    assert "if (!mobileKeyboardProxy.value)" in script.text
+    assert "now - lastNativeEnterAt < 250" in script.text
+
+
 def test_frontend_renders_domain_constraints_and_accepts_systems() -> None:
     """The graphical client should expose restrictions and system notation."""
     with TestClient(create_app()) as client:

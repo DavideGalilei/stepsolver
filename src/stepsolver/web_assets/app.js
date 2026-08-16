@@ -32,7 +32,9 @@ const nativeMathTemplates = new Map([
   ["^", "^{#0}"],
   ["_", "_{#0}"]
 ]);
+const mobileKeyboardSentinel = "\u2060";
 let composingNativeText = false;
+let lastNativeEnterAt = 0;
 
 function usesMobileKeyboard() {
   return mobileKeyboardQuery.matches;
@@ -42,7 +44,7 @@ function focusMobileKeyboard() {
   if (!usesMobileKeyboard()) return;
   hideMathVirtualKeyboard();
   mobileKeyboardProxy.focus({ preventScroll: true });
-  mobileKeyboardProxy.setSelectionRange(0, mobileKeyboardProxy.value.length);
+  resetMobileKeyboardProxy();
 }
 
 function insertNativeCharacter(character) {
@@ -59,8 +61,29 @@ function insertNativeText(text) {
   showNativeCaret(true);
 }
 
-function clearMobileKeyboardProxy() {
-  mobileKeyboardProxy.value = "";
+function mobileProxyText() {
+  return mobileKeyboardProxy.value.startsWith(mobileKeyboardSentinel)
+    ? mobileKeyboardProxy.value.slice(mobileKeyboardSentinel.length)
+    : mobileKeyboardProxy.value;
+}
+
+function resetMobileKeyboardProxy() {
+  mobileKeyboardProxy.value = mobileKeyboardSentinel;
+  mobileKeyboardProxy.setSelectionRange(
+    mobileKeyboardSentinel.length,
+    mobileKeyboardSentinel.length
+  );
+}
+
+function handleNativeEnter() {
+  const now = window.performance.now();
+  if (now - lastNativeEnterAt < 250) return;
+  lastNativeEnterAt = now;
+  const before = expressionField.value;
+  expressionField.executeCommand("addRowAfter");
+  resetMobileKeyboardProxy();
+  showNativeCaret(true);
+  if (expressionField.value === before) form.requestSubmit();
 }
 
 function showNativeCaret(show) {
@@ -81,71 +104,76 @@ mobileKeyboardProxy.addEventListener("pointerdown", (event) => {
 });
 mobileKeyboardProxy.addEventListener("focus", () => {
   expressionField.classList.add("is-mobile-editing");
+  resetMobileKeyboardProxy();
   showNativeCaret(true);
   hideMathVirtualKeyboard();
 });
 mobileKeyboardProxy.addEventListener("blur", () => {
   expressionField.classList.remove("is-mobile-editing");
   showNativeCaret(false);
-  clearMobileKeyboardProxy();
+  resetMobileKeyboardProxy();
 });
 mobileKeyboardProxy.addEventListener("compositionstart", () => {
   composingNativeText = true;
 });
 mobileKeyboardProxy.addEventListener("compositionend", (event) => {
   composingNativeText = false;
-  insertNativeText(event.data || mobileKeyboardProxy.value);
-  clearMobileKeyboardProxy();
+  insertNativeText(event.data || mobileProxyText());
+  resetMobileKeyboardProxy();
 });
 mobileKeyboardProxy.addEventListener("beforeinput", (event) => {
   if (event.inputType === "insertCompositionText" || composingNativeText) return;
   if (event.inputType === "insertLineBreak" || event.inputType === "insertParagraph") {
     event.preventDefault();
-    clearMobileKeyboardProxy();
-    form.requestSubmit();
+    handleNativeEnter();
     return;
   }
   if (event.inputType === "deleteContentBackward") {
     event.preventDefault();
     expressionField.executeCommand("deleteBackward");
+    resetMobileKeyboardProxy();
     showNativeCaret(true);
     return;
   }
   if (event.inputType === "deleteContentForward") {
     event.preventDefault();
     expressionField.executeCommand("deleteForward");
+    resetMobileKeyboardProxy();
     showNativeCaret(true);
     return;
   }
   if (event.inputType === "historyUndo" || event.inputType === "historyRedo") {
     event.preventDefault();
     expressionField.executeCommand(event.inputType === "historyUndo" ? "undo" : "redo");
+    resetMobileKeyboardProxy();
     showNativeCaret(true);
     return;
   }
   if (event.inputType.startsWith("insert") && event.data) {
     event.preventDefault();
     insertNativeText(event.data);
-    clearMobileKeyboardProxy();
+    resetMobileKeyboardProxy();
   }
 });
 mobileKeyboardProxy.addEventListener("keydown", (event) => {
   if (event.key !== "Enter" || event.isComposing) return;
   event.preventDefault();
-  clearMobileKeyboardProxy();
-  form.requestSubmit();
+  handleNativeEnter();
 });
 mobileKeyboardProxy.addEventListener("input", () => {
   if (composingNativeText) return;
-  insertNativeText(mobileKeyboardProxy.value);
-  clearMobileKeyboardProxy();
+  const text = mobileProxyText();
+  if (!mobileKeyboardProxy.value) expressionField.executeCommand("deleteBackward");
+  else insertNativeText(text);
+  resetMobileKeyboardProxy();
+  showNativeCaret(true);
 });
 mobileKeyboardProxy.addEventListener("paste", (event) => {
   const text = event.clipboardData?.getData("text/plain");
   if (!text) return;
   event.preventDefault();
   insertNativeText(text);
-  clearMobileKeyboardProxy();
+  resetMobileKeyboardProxy();
 });
 
 mathKeyboardButton.addEventListener("click", () => {
