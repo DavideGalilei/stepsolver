@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Visual step-by-step symbolic mathematics.">
+    <title>StepSolver</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <script type="module" src="/static/app.js"></script>
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="wordmark" href="/" aria-label="StepSolver home">
+        <span class="wordmark-symbol" aria-hidden="true">∫</span>
+        <span>StepSolver</span>
+      </a>
+      <p>Symbolic answers with the algebra shown</p>
+    </header>
+
+    <main class="workspace">
+      <section class="problem-panel" aria-labelledby="query-heading">
+        <header class="problem-heading">
+          <h1 id="query-heading">Enter a math problem</h1>
+          <p>Write the complete expression. StepSolver detects whether to solve, simplify, differentiate, or integrate.</p>
+        </header>
+
+        <form id="solve-form">
+          <label class="field-label" for="expression-field">Problem</label>
+          <math-field id="expression-field" class="primary-math-field"
+            math-virtual-keyboard-policy="manual"
+            smart-fence
+            placeholder="\text{Type an equation or expression}">x^2-4=0</math-field>
+
+          <div class="math-toolbar" aria-label="Mathematical symbol palette">
+            <section class="tool-group" aria-labelledby="structure-tools">
+              <h2 id="structure-tools">Structure</h2>
+              <div class="tool-row">
+                <button type="button" class="symbol-key" data-insert="\frac{#0}{#?}" title="Fraction"><math-field read-only>\frac{a}{b}</math-field></button>
+                <button type="button" class="symbol-key" data-insert="\sqrt{#0}" title="Square root"><math-field read-only>\sqrt{x}</math-field></button>
+                <button type="button" class="symbol-key" data-insert="^{#0}" title="Power"><math-field read-only>x^n</math-field></button>
+                <button type="button" class="symbol-key" data-insert="(#0)" title="Parentheses"><math-field read-only>(\ )</math-field></button>
+                <button type="button" class="symbol-key" data-insert="=" title="Equals"><math-field read-only>=</math-field></button>
+                <button type="button" class="symbol-key" data-insert="\le" title="Less than or equal"><math-field read-only>\le</math-field></button>
+                <button type="button" class="symbol-key" data-insert="\ge" title="Greater than or equal"><math-field read-only>\ge</math-field></button>
+              </div>
+            </section>
+
+            <section class="tool-group" aria-labelledby="function-tools">
+              <h2 id="function-tools">Functions</h2>
+              <div class="tool-row">
+                <button type="button" class="symbol-key" data-insert="\pi" title="Pi"><math-field read-only>\pi</math-field></button>
+                <button type="button" class="symbol-key" data-insert="\infty" title="Infinity"><math-field read-only>\infty</math-field></button>
+                <button type="button" class="symbol-key" data-insert="\sin(#0)" title="Sine"><math-field read-only>\sin</math-field></button>
+                <button type="button" class="symbol-key" data-insert="\cos(#0)" title="Cosine"><math-field read-only>\cos</math-field></button>
+                <button type="button" class="symbol-key" data-insert="\ln(#0)" title="Natural logarithm"><math-field read-only>\ln</math-field></button>
+                <button type="button" class="symbol-key" data-insert="e^{#0}" title="Exponential"><math-field read-only>e^x</math-field></button>
+              </div>
+            </section>
+
+            <section class="tool-group tool-group-calculus" aria-labelledby="calculus-tools">
+              <h2 id="calculus-tools">Calculus</h2>
+              <div class="tool-row">
+                <button type="button" class="symbol-key symbol-key-wide" data-insert="\int #0\,\mathrm{d}x" title="Indefinite integral"><math-field read-only>\int f\,dx</math-field></button>
+                <button type="button" class="symbol-key symbol-key-wide" data-insert="\int_{#?}^{#?}#0\,\mathrm{d}x" title="Definite integral"><math-field read-only>\int_a^b f\,dx</math-field></button>
+                <button type="button" class="symbol-key symbol-key-wide" data-insert="\frac{\mathrm{d}}{\mathrm{d}x}(#0)" title="Derivative"><math-field read-only>\frac{d}{dx}f</math-field></button>
+                <button type="button" class="symbol-key symbol-key-wide" data-insert="\lim_{x\to#?}#0" title="Limit"><math-field read-only>\lim_{x\to a}f</math-field></button>
+                <button type="button" class="symbol-key symbol-key-wide" data-insert="\sum_{n=#?}^{#?}#0" title="Sum"><math-field read-only>\sum_{n=a}^b f</math-field></button>
+                <button type="button" class="symbol-key symbol-key-wide" data-insert="\prod_{n=#?}^{#?}#0" title="Product"><math-field read-only>\prod_{n=a}^b f</math-field></button>
+              </div>
+            </section>
+          </div>
+
+          <footer class="problem-actions">
+            <div class="examples" aria-label="Example problems">
+              <span>Try an example:</span>
+              <button type="button" class="example" data-expression="x^2-4=0">quadratic</button>
+              <button type="button" class="example" data-expression="\frac{\mathrm{d}}{\mathrm{d}x}(\sin(x)e^x)">derivative</button>
+              <button type="button" class="example" data-expression="\int_0^\pi\sin(x)\,\mathrm{d}x">integral</button>
+              <button type="button" class="example" data-expression="\lim_{x\to0}\frac{\sin(x)}{x}">limit</button>
+              <button type="button" class="example" data-expression="\sum_{n=1}^{10}n^2">sum</button>
+            </div>
+            <button id="solve-button" class="solve-button" type="submit">Solve</button>
+          </footer>
+        </form>
+      </section>
+
+      <section id="result-section" class="solution-panel hidden" aria-live="polite">
+        <header class="solution-heading">
+          <div>
+            <h2>Solution</h2>
+            <p id="status-text" class="status-text">Exact answer</p>
+          </div>
+        </header>
+
+        <div id="error-box" class="error-box hidden"></div>
+        <div id="answer-block" class="answer-block">
+          <h3>Answer</h3>
+          <math-field id="result-latex" class="result-math" read-only></math-field>
+        </div>
+
+        <section id="working-block" class="working-block" aria-labelledby="working-heading">
+          <h3 id="working-heading">Working</h3>
+          <div id="steps" class="steps"></div>
+        </section>
+
+        <details class="ascii-panel">
+          <summary>Technical details</summary>
+          <pre id="ascii-output"></pre>
+        </details>
+      </section>
+    </main>
+  </body>
+</html>
