@@ -55,17 +55,89 @@ poetry run stepsolver "integrate(1/(sqrt(x)*(x+1)), x)"
 
 ## Python API
 
-```python
-from stepsolver import ExactResult, Solver
+The steps shown by the web app come from the library result. The frontend does not infer or rewrite them.
 
-result = Solver().solve("integrate(sin(x), x, 0, pi)")
+```python
+from stepsolver import ExactResult, Solver, format_expression
+
+result = Solver().solve("integrate(x*exp(x), x)")
 
 if isinstance(result, ExactResult):
     for step in result.steps:
         print(step.rule)
+        print(step.explanation)
+        print(format_expression(step.before), "->", format_expression(step.after))
+
+        for note in step.notes:
+            print(note.label, format_expression(note.expression))
+
+        print(step.verification.method.value)
+        print(step.verification.detail)
 ```
 
-Results and steps are immutable typed objects. Exact, divergent, and unsolved outcomes are separate result types.
+`SolutionStep` contains the rule name, prose explanation, before and after AST nodes, supporting identities or substitutions, and a verification record. Results and steps are immutable. Exact, divergent, and unsolved outcomes are separate result types.
+
+### Render steps like the web app
+
+`solve_payload()` is the presentation adapter used by the HTTP and browser runtimes. It converts the domain result into ASCII and LaTeX without changing the derivation.
+
+```python
+from stepsolver import Solver, solve_payload
+
+result = Solver().solve("integrate(x*exp(x), x)")
+payload = solve_payload(result)
+
+print(payload.status)
+print(payload.result_latex)
+
+for step in payload.steps:
+    print(step.number, step.rule)
+    print(step.explanation)
+    print(step.before_latex, r"\longrightarrow", step.after_latex)
+
+    for note in step.notes:
+        print(note.label, note.expression_latex)
+```
+
+`payload.as_dict()` returns standard Python containers suitable for JSON serialization.
+
+### Parse first, solve later
+
+The parser produces StepSolver's own immutable AST. A parsed `Query` can be inspected, stored, or passed to a solver.
+
+```python
+from stepsolver import Operation, Solver, parse
+
+query = parse("limit(sin(x)/x, x, 0)")
+
+assert query.operation is Operation.LIMIT
+print(query.arguments)
+
+result = Solver().solve(query)
+```
+
+### Choose a symbolic backend
+
+`Solver` is the orchestration layer. `SymbolicBackend` is its engine contract, and `SympyBackend` is the included implementation.
+
+```python
+from stepsolver import Solver, SymbolicBackend, SympyBackend
+
+backend: SymbolicBackend = SympyBackend()
+solver = Solver(backend=backend)
+result = solver.solve("factor(x^2 - 1)")
+```
+
+The main abstractions are:
+
+| Layer | Public API | Purpose |
+| --- | --- | --- |
+| Notation | `parse`, `parse_expression` | Convert ASCII into the custom AST |
+| Query model | `Query`, `Operation`, `Expression` | Represent mathematical intent without SymPy objects |
+| Orchestration | `Solver` | Accept source text or a parsed query and invoke an engine |
+| Engine boundary | `SymbolicBackend`, `SympyBackend` | Isolate symbolic computation behind a typed protocol |
+| Domain result | `SolveResult`, `SolutionStep`, `StepNote` | Return answers, derivations, explanations, and verification |
+| Presentation | `solve_payload`, `SolvePayload`, `StepPayload` | Render the same result as frontend-ready ASCII and LaTeX |
 
 ## Syntax
 
