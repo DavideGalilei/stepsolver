@@ -63,9 +63,6 @@ def test_homepage_and_assets_are_served() -> None:
     assert "firstElementChild" not in script.text
     assert "expressionField.insert" in script.text
     assert 'key.addEventListener("pointerdown"' not in script.text
-    assert "mathToolbar.addEventListener(" in script.text
-    assert 'target.closest(".symbol-key")' in script.text
-    assert "{ capture: true }" in script.text
     assert "insertSymbolTemplate(key)" in script.text
     assert 'behavior: "smooth"' not in script.text
     assert (
@@ -79,6 +76,20 @@ def test_homepage_and_assets_are_served() -> None:
     assert "--smart-fence-color: var(--ink)" in stylesheet.text
     assert 'table.className = "derivative-table"' in script.text
     assert "Differentiate each factor once" in script.text
+
+
+def test_desktop_palette_inserts_on_the_first_pointer_press() -> None:
+    """Mouse focus transfer should not consume the first symbol-palette interaction."""
+    with TestClient(create_app()) as client:
+        script = client.get("/static/app.js")
+    assert 'mathToolbar.addEventListener(\n  "pointerdown"' in script.text
+    assert 'event.pointerType !== "mouse"' in script.text
+    assert "event.button !== 0" in script.text
+    assert "function symbolKeyFromEvent(event)" in script.text
+    assert 'target.closest(".symbol-key")' in script.text
+    assert "lastMouseInsertion?.key === key" in script.text
+    assert "event.stopPropagation()" in script.text
+    assert "{ capture: true }" in script.text
 
 
 def test_header_has_a_github_star_link() -> None:

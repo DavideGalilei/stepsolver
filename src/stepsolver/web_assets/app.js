@@ -448,6 +448,13 @@ function insertSymbolTemplate(key) {
   }
 }
 
+function symbolKeyFromEvent(event) {
+  const target = event.target;
+  if (!(target instanceof Element)) return null;
+  const key = target.closest(".symbol-key");
+  return key instanceof HTMLButtonElement && mathToolbar.contains(key) ? key : null;
+}
+
 for (const key of document.querySelectorAll(".symbol-key")) {
   const label = key.querySelector("math-field");
   if (label) {
@@ -456,14 +463,36 @@ for (const key of document.querySelectorAll(".symbol-key")) {
   }
 }
 
+let lastMouseInsertion = null;
+mathToolbar.addEventListener(
+  "pointerdown",
+  (event) => {
+    if (event.pointerType !== "mouse" || event.button !== 0) return;
+    const key = symbolKeyFromEvent(event);
+    if (!key) return;
+    event.preventDefault();
+    event.stopPropagation();
+    lastMouseInsertion = { key, at: window.performance.now() };
+    insertSymbolTemplate(key);
+  },
+  { capture: true }
+);
+
 mathToolbar.addEventListener(
   "click",
   (event) => {
-    const target = event.target;
-    if (!(target instanceof Element)) return;
-    const key = target.closest(".symbol-key");
-    if (!(key instanceof HTMLButtonElement) || !mathToolbar.contains(key)) return;
+    const key = symbolKeyFromEvent(event);
+    if (!key) return;
     event.preventDefault();
+    event.stopPropagation();
+    if (
+      lastMouseInsertion?.key === key &&
+      window.performance.now() - lastMouseInsertion.at < 1000
+    ) {
+      lastMouseInsertion = null;
+      return;
+    }
+    lastMouseInsertion = null;
     insertSymbolTemplate(key);
   },
   { capture: true }
