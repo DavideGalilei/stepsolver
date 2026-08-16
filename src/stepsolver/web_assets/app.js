@@ -22,6 +22,60 @@ const resultLatex = document.querySelector("#result-latex");
 const stepsContainer = document.querySelector("#steps");
 const asciiOutput = document.querySelector("#ascii-output");
 const errorBox = document.querySelector("#error-box");
+const themeToggle = document.querySelector("#theme-toggle");
+const themePreference = window.matchMedia("(prefers-color-scheme: dark)");
+const themeStorageKey = "stepsolver-theme";
+
+function storedTheme() {
+  try {
+    const theme = window.localStorage.getItem(themeStorageKey);
+    return theme === "light" || theme === "dark" ? theme : null;
+  } catch (_) {
+    return null;
+  }
+}
+
+function effectiveTheme() {
+  return document.documentElement.dataset.theme ?? (themePreference.matches ? "dark" : "light");
+}
+
+function updateThemeToggle() {
+  const dark = effectiveTheme() === "dark";
+  const label = dark ? "Switch to light theme" : "Switch to dark theme";
+  themeToggle.setAttribute("aria-pressed", String(dark));
+  themeToggle.setAttribute("aria-label", label);
+  themeToggle.title = label;
+}
+
+function setTheme(theme) {
+  document.documentElement.dataset.theme = theme;
+  try {
+    window.localStorage.setItem(themeStorageKey, theme);
+  } catch (_) {
+    // The selected theme still applies for the current page.
+  }
+  updateThemeToggle();
+}
+
+themeToggle.addEventListener("click", () => {
+  setTheme(effectiveTheme() === "dark" ? "light" : "dark");
+});
+
+themePreference.addEventListener("change", () => {
+  if (storedTheme() === null) updateThemeToggle();
+});
+
+window.addEventListener("storage", (event) => {
+  if (event.key !== themeStorageKey) return;
+  if (event.newValue === "light" || event.newValue === "dark") {
+    document.documentElement.dataset.theme = event.newValue;
+  } else {
+    delete document.documentElement.dataset.theme;
+  }
+  updateThemeToggle();
+});
+
+updateThemeToggle();
 
 function hideMathVirtualKeyboard() {
   window.mathVirtualKeyboard?.hide();

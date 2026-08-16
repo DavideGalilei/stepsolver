@@ -235,15 +235,11 @@ def test_domain_sensitive_logarithmic_integrals_are_not_faked(
         "integrate(tan(log(x))^3/x,x)",
     ],
 )
-@pytest.mark.xfail(
-    strict=True,
-    reason="Tracked Tough Integrals benchmark family still needs a dedicated human derivation.",
-)
 def test_remaining_tough_integral_benchmarks_need_real_derivations(
     solver: Solver,
     query: str,
 ) -> None:
-    """Known benchmark gaps must not be mistaken for completed pedagogy coverage."""
+    """Advanced benchmark integrals should expose their actual classroom method."""
     result = solver.solve(query)
     assert isinstance(result, ExactResult)
     assert all(step.rule != "Compute exact result" for step in result.steps)

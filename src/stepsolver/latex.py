@@ -154,6 +154,25 @@ def _format_calculus_function(name: str, arguments: tuple[Expression, ...]) -> s
     return None
 
 
+def _format_system(arguments: tuple[Expression, ...]) -> str:
+    equations = r" \\ ".join(format_latex_expression(item) for item in arguments)
+    return rf"\begin{{cases}} {equations} \end{{cases}}"
+
+
+def _format_row_operation(arguments: tuple[Expression, ...]) -> str:
+    target, source, factor = arguments
+    target_latex = format_latex_expression(target)
+    source_latex = format_latex_expression(source)
+    factor_latex = format_latex_expression(factor)
+    sign = "+" if factor_latex.startswith("-") else "-"
+    magnitude = factor_latex.removeprefix("-")
+    coefficient = "" if magnitude == "1" else rf"{magnitude} \cdot "
+    return (
+        rf"R_{{{target_latex}}} \leftarrow R_{{{target_latex}}} "
+        rf"{sign} {coefficient}R_{{{source_latex}}}"
+    )
+
+
 def _format_function(expression: FunctionCall) -> str:
     name = str(expression.name)
     arguments = expression.arguments
@@ -212,6 +231,10 @@ def _format_function(expression: FunctionCall) -> str:
             rf"{variable} \approx {format_latex_expression(root)}" for root in arguments[1:]
         )
         return r"\quad\text{or}\quad ".join(approximations)
+    if name == "system" and arguments:
+        return _format_system(arguments)
+    if name == "row_operation" and len(arguments) == 3:
+        return _format_row_operation(arguments)
     rendered_arguments = ", ".join(format_latex_expression(item) for item in arguments)
     function = _NAMED_FUNCTIONS.get(name)
     if function is None:

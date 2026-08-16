@@ -1,5 +1,7 @@
 """Select and build detailed student-facing derivations."""
 
+from typing import cast
+
 import sympy as sp
 
 from stepsolver.ast import (
@@ -20,6 +22,7 @@ from stepsolver.derivation.definite_integrals import (
 )
 from stepsolver.derivation.derivatives import derive_derivative
 from stepsolver.derivation.equations import derive_polynomial_equation
+from stepsolver.derivation.integrals_benchmark import derive_advanced_substitution_integral
 from stepsolver.derivation.integrals_elementary import (
     derive_basic_antiderivative,
     derive_constant_multiple_integral,
@@ -40,13 +43,29 @@ from stepsolver.derivation.limits import derive_limit
 from stepsolver.derivation.model import BackendDerivationStep
 from stepsolver.derivation.reciprocal_quadratic import derive_reciprocal_quadratic_integral
 from stepsolver.derivation.sums import derive_sum
-from stepsolver.derivation.systems import derive_two_by_two_linear_system
+from stepsolver.derivation.systems import derive_linear_system
+from stepsolver.derivation.transcendental_equations import derive_transcendental_equation
 from stepsolver.results import (
     SolutionStep,
 )
 from stepsolver.sympy_conversion import SympyConverter
 from stepsolver.sympy_rendering import SympyDerivationRenderer
 from stepsolver.sympy_support import is_object_mapping, is_object_sequence
+
+_MIN_DERIVATIVE_ARGUMENTS = 2
+_MAX_DERIVATIVE_ARGUMENTS = 3
+
+
+def _derivative_order(query: Query) -> int | None:
+    if len(query.arguments) == _MIN_DERIVATIVE_ARGUMENTS:
+        return 1
+    order_expression = query.arguments[2]
+    if not isinstance(order_expression, Number):
+        return None
+    order = order_expression.value
+    if order.denominator != 1 or order <= 0:
+        return None
+    return order.numerator
 
 
 def _derive_indefinite_integral(
@@ -65,6 +84,7 @@ def _derive_indefinite_integral(
         derive_inverse_hyperbolic_integral,
         derive_trigonometric_power_integral,
         derive_integration_by_parts,
+        derive_advanced_substitution_integral,
         derive_gaussian_antiderivative,
         derive_reciprocal_quadratic_integral,
         derive_partial_fraction_integral,
@@ -228,15 +248,22 @@ class SympyStepBuilder:
             return ()
         roots = self.solution_roots(backend_value, variable)
         try:
-            domain_denominators = tuple(
-                self._converter.to_sympy(item) for item in _domain_denominators(equation_expression)
-            )
-            derivation = derive_polynomial_equation(
+            derivation = derive_transcendental_equation(
                 equation,
                 variable,
                 roots,
-                domain_denominators,
             )
+            if not derivation:
+                domain_denominators = tuple(
+                    self._converter.to_sympy(item)
+                    for item in _domain_denominators(equation_expression)
+                )
+                derivation = derive_polynomial_equation(
+                    equation,
+                    variable,
+                    roots,
+                    domain_denominators,
+                )
         except (sp.PolynomialError, TypeError, ValueError):
             return ()
         return tuple(self._renderer.solution_step(item) for item in derivation)
@@ -247,28 +274,22 @@ class SympyStepBuilder:
         variables: SequenceExpression,
         backend_value: object,
     ) -> tuple[SolutionStep, ...]:
-        """Build elimination steps for a two-by-two linear equation system."""
-        if len(equations.items) != 2 or len(variables.items) != 2:
+        """Build elimination and back-substitution steps for a linear system."""
+        if len(equations.items) < 2 or len(variables.items) < 2:
             return ()
         if not all(isinstance(item, Relation) for item in equations.items) or not all(
             isinstance(item, Symbol) for item in variables.items
         ):
             return ()
-        first_equation = self._converter.to_sympy(equations.items[0])
-        second_equation = self._converter.to_sympy(equations.items[1])
-        first_variable = self._converter.to_sympy(variables.items[0])
-        second_variable = self._converter.to_sympy(variables.items[1])
-        if not isinstance(first_equation, sp.Equality) or not isinstance(
-            second_equation, sp.Equality
-        ):
+        system_equations = tuple(self._converter.to_sympy(item) for item in equations.items)
+        system_variables = tuple(self._converter.to_sympy(item) for item in variables.items)
+        if not all(isinstance(item, sp.Equality) for item in system_equations):
             return ()
-        if not isinstance(first_variable, sp.Symbol) or not isinstance(second_variable, sp.Symbol):
+        if not all(isinstance(item, sp.Symbol) for item in system_variables):
             return ()
-        equation_pair = (first_equation, second_equation)
-        variable_pair = (first_variable, second_variable)
-        derivation = derive_two_by_two_linear_system(
-            equation_pair,
-            variable_pair,
+        derivation = derive_linear_system(
+            cast("tuple[sp.Equality, ...]", system_equations),
+            cast("tuple[sp.Symbol, ...]", system_variables),
             backend_value,
         )
         return tuple(self._renderer.solution_step(item) for item in derivation)
@@ -279,18 +300,29 @@ class SympyStepBuilder:
         backend_value: object,
     ) -> tuple[SolutionStep, ...]:
         """Build detailed steps for a supported derivative rule."""
-        if len(query.arguments) != 2 or not isinstance(backend_value, sp.Basic):
+        if len(query.arguments) not in {
+            _MIN_DERIVATIVE_ARGUMENTS,
+            _MAX_DERIVATIVE_ARGUMENTS,
+        } or not isinstance(backend_value, sp.Basic):
             return ()
-        expression_node, variable_node = query.arguments
+        expression_node, variable_node = query.arguments[:2]
         if not isinstance(variable_node, Symbol):
             return ()
         expression = self._converter.to_sympy(expression_node)
         variable = self._converter.to_sympy(variable_node)
-        if not isinstance(variable, sp.Symbol):
+        order = _derivative_order(query)
+        if not isinstance(variable, sp.Symbol) or order is None:
             return ()
         try:
-            derivation = derive_derivative(expression, variable, backend_value)
+            derivation: tuple[BackendDerivationStep, ...] = ()
+            current = expression
+            for _index in range(order):
+                differentiated = sp.diff(current, variable)
+                derivation = (*derivation, *derive_derivative(current, variable, differentiated))
+                current = differentiated
         except (sp.PolynomialError, TypeError, ValueError):
+            return ()
+        if sp.simplify(current - backend_value) != sp.Integer(0):
             return ()
         return tuple(self._renderer.solution_step(item) for item in derivation)
 

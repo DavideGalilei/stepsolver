@@ -105,14 +105,36 @@ def test_header_has_a_github_star_link() -> None:
     assert ".github-star" in stylesheet.text
 
 
+def test_theme_toggle_honors_device_preference_and_persists_choice() -> None:
+    """The theme should follow the OS until the visitor explicitly chooses one."""
+    with TestClient(create_app()) as client:
+        homepage = client.get("/")
+        stylesheet = client.get("/static/style.css")
+        script = client.get("/static/app.js")
+    assert 'id="theme-toggle"' in homepage.text
+    assert 'aria-pressed="false"' in homepage.text
+    assert 'aria-label="Switch to dark theme"' in homepage.text
+    assert 'localStorage.getItem("stepsolver-theme")' in homepage.text
+    assert "document.documentElement.dataset.theme = theme" in homepage.text
+    assert "@media (prefers-color-scheme: dark)" in stylesheet.text
+    assert ':root:not([data-theme="light"])' in stylesheet.text
+    assert ':root[data-theme="dark"]' in stylesheet.text
+    assert ':root[data-theme="light"] { color-scheme: light; }' in stylesheet.text
+    assert 'window.matchMedia("(prefers-color-scheme: dark)")' in script.text
+    assert "window.localStorage.setItem(themeStorageKey, theme)" in script.text
+    assert 'themePreference.addEventListener("change"' in script.text
+    assert 'themeToggle.setAttribute("aria-pressed", String(dark))' in script.text
+    assert 'dark ? "Switch to light theme" : "Switch to dark theme"' in script.text
+
+
 def test_mathfield_selection_uses_a_light_neutral_palette() -> None:
     """Focused selections should stay readable even when the device prefers dark mode."""
     with TestClient(create_app()) as client:
         stylesheet = client.get("/static/style.css")
     assert "--selection-color: var(--ink)" in stylesheet.text
-    assert "--selection-background-color: #e3e4e7" in stylesheet.text
+    assert "--selection-background-color: var(--selection)" in stylesheet.text
     assert "--contains-highlight-color: var(--ink)" in stylesheet.text
-    assert "--contains-highlight-background-color: #f0f1f2" in stylesheet.text
+    assert "--contains-highlight-background-color: var(--selection-soft)" in stylesheet.text
 
 
 def test_desktop_solution_uses_the_available_width_with_internal_gutters() -> None:

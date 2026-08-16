@@ -183,6 +183,22 @@ class BackendIdentity:
     right: BackendExpression
 
 
+@dataclass(frozen=True, slots=True, kw_only=True)
+class BackendSystem:
+    """A group of equations displayed with a single system brace."""
+
+    equations: tuple[sp.Basic, ...]
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class BackendRowOperation:
+    """One elementary row replacement used during elimination."""
+
+    target: int
+    source: int
+    factor: sp.Basic
+
+
 type BackendExpression = (
     EquationBackendExpression
     | BackendIntegral
@@ -201,6 +217,8 @@ type BackendExpression = (
     | BackendUndefined
     | BackendLimit
     | BackendNotEqual
+    | BackendSystem
+    | BackendRowOperation
     | BackendSum
     | BackendProduct
     | BackendQuotient

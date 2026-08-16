@@ -1,5 +1,7 @@
 """Translate backend derivations into the public step model."""
 
+import sympy as sp
+
 from stepsolver.ast import (
     BinaryExpression,
     BinaryOperator,
@@ -33,8 +35,10 @@ from stepsolver.derivation.model import (
     BackendProduct,
     BackendQuadraticSolutions,
     BackendQuotient,
+    BackendRowOperation,
     BackendSigma,
     BackendSum,
+    BackendSystem,
     BackendUndefined,
 )
 from stepsolver.results import (
@@ -162,6 +166,20 @@ class SympyDerivationRenderer:
                 operator=RelationOperator.NOT_EQUAL,
                 left=self.derivation_expression(value.left),
                 right=self.derivation_expression(value.right),
+            )
+        if isinstance(value, BackendSystem):
+            return FunctionCall(
+                name=Identifier("system"),
+                arguments=tuple(self._converter.from_sympy(item) for item in value.equations),
+            )
+        if isinstance(value, BackendRowOperation):
+            return FunctionCall(
+                name=Identifier("row_operation"),
+                arguments=(
+                    self._converter.from_sympy(sp.Integer(value.target)),
+                    self._converter.from_sympy(sp.Integer(value.source)),
+                    self._converter.from_sympy(value.factor),
+                ),
             )
         if isinstance(value, BackendSum):
             expressions = tuple(self.derivation_expression(term) for term in value.terms)

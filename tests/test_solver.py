@@ -238,6 +238,95 @@ def test_inconsistent_system_is_no_solution(solver: Solver) -> None:
     assert format_ascii(result).endswith("Result: No solution")
 
 
+def test_dependent_system_explains_its_free_variable(solver: Solver) -> None:
+    """A dependent system should explain its solution family instead of invoking the backend."""
+    result = solver.solve("solve([x+y=2,2*x+2*y=4],[x,y])")
+    assert isinstance(result, ExactResult)
+    assert tuple(step.rule for step in result.steps) == (
+        "Eliminate x",
+        "Write the solution family",
+    )
+    assert "free" in result.steps[-1].explanation
+
+
+def test_three_by_three_system_uses_elimination_and_back_substitution(
+    solver: Solver,
+) -> None:
+    """A three-variable system should expose the same algebra a student writes by hand."""
+    result = solver.solve("solve([x+y+z=6,x-y+z=2,2*x+y-z=1],[x,y,z])")
+    assert isinstance(result, ExactResult)
+    rules = tuple(step.rule for step in result.steps)
+    assert rules[:3] == (
+        "Eliminate x from equation 2",
+        "Eliminate x from equation 3",
+        "Eliminate y from equation 3",
+    )
+    assert rules[-3:] == ("Solve for z", "Solve for y", "Substitute back for x")
+    assert all(step.rule != "Compute exact result" for step in result.steps)
+
+
+@pytest.mark.parametrize(
+    ("query", "expected_rules"),
+    [
+        (
+            "solve([y=2,x+y=3],[x,y])",
+            ("Use the equation without x", "Substitute back to find x"),
+        ),
+        (
+            "solve([x+y+z=3,2*x+2*y+2*z=6,x-y=0],[x,y,z])",
+            (
+                "Recognize a dependent equation",
+                "Eliminate x from equation 3",
+                "Move an equation with y into position",
+                "Write the solution family",
+            ),
+        ),
+        (
+            "solve([x+y=2,x-y=0,2*x=2],[x,y])",
+            (
+                "Eliminate x from equation 2",
+                "Eliminate x from equation 3",
+                "Recognize a dependent equation",
+                "Solve for y",
+                "Substitute back for x",
+            ),
+        ),
+    ],
+)
+def test_linear_system_edge_cases_keep_student_facing_steps(
+    solver: Solver,
+    query: str,
+    expected_rules: tuple[str, ...],
+) -> None:
+    """Zero pivots, dependent rows, and extra equations should remain worked solutions."""
+    result = solver.solve(query)
+    assert isinstance(result, ExactResult)
+    assert tuple(step.rule for step in result.steps) == expected_rules
+    assert all(step.rule != "Compute exact result" for step in result.steps)
+
+
+def test_system_derivations_use_braces_and_readable_row_operations(solver: Solver) -> None:
+    """System steps should look like systems, not backend lists or raw row symbols."""
+    result = solver.solve("solve([x+y+z=6,x-y+z=2,2*x+y-z=1],[x,y,z])")
+    assert isinstance(result, ExactResult)
+    first_step_latex = format_latex_expression(result.steps[0].before)
+    row_operation_latex = format_latex_expression(result.steps[0].notes[0].expression)
+    assert first_step_latex.startswith(r"\begin{cases}")
+    assert first_step_latex.endswith(r"\end{cases}")
+    assert row_operation_latex == r"R_{2} \leftarrow R_{2} - R_{1}"
+
+
+def test_two_by_two_elimination_uses_smallest_integer_multipliers(solver: Solver) -> None:
+    """Elimination should avoid needlessly doubling both scaled equations."""
+    result = solver.solve("solve([2*x+3*y=13,4*x-y=5],[x,y])")
+    assert isinstance(result, ExactResult)
+    scaled = tuple(format_latex_expression(note.expression) for note in result.steps[0].notes)
+    assert scaled == (
+        r"4 \cdot x + 6 \cdot y = 26",
+        r"-4 \cdot x + y = -5",
+    )
+
+
 @pytest.mark.parametrize(
     ("query", "rules"),
     [
@@ -284,12 +373,31 @@ def test_equations_have_verified_detailed_derivations(
     )
 
 
-def test_unsupported_derivation_has_an_honest_fallback(solver: Solver) -> None:
-    """Unsupported equation families should not invent a fake worked derivation."""
+def test_exponential_linear_equation_uses_lambert_w_steps(solver: Solver) -> None:
+    """A standard Lambert W equation should show the substitutions that produce its answer."""
     result = solver.solve("solve(exp(x)+x=0,x)")
     assert isinstance(result, ExactResult)
-    assert len(result.steps) == 1
-    assert result.steps[0].rule == "Compute exact result"
+    assert tuple(step.rule for step in result.steps) == (
+        "Isolate the exponential",
+        "Substitute the negative variable",
+        "Create the Lambert W pattern",
+        "Apply the Lambert W function",
+        "Substitute back",
+    )
+    assert all(step.rule != "Compute exact result" for step in result.steps)
+    assert result.steps[3].notes[0].label == "Lambert W identity"
+
+
+@pytest.mark.parametrize("query", ["diff(x^4,x,2)", "diff(x^3,x,2)"])
+def test_higher_derivatives_repeat_the_human_rule(solver: Solver, query: str) -> None:
+    """Higher derivatives should show each differentiation instead of a backend jump."""
+    result = solver.solve(query)
+    assert isinstance(result, ExactResult)
+    assert tuple(step.rule for step in result.steps) == (
+        "Use the power rule",
+        "Use the power rule",
+    )
+    assert all(step.rule != "Compute exact result" for step in result.steps)
 
 
 def test_rational_equation_reducing_to_cubic_has_human_steps(solver: Solver) -> None:

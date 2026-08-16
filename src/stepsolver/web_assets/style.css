@@ -13,9 +13,60 @@
   --success: #18794e;
   --error: #bf2435;
   --error-wash: #fff1f2;
+  --field: #ffffff;
+  --selection: #e3e4e7;
+  --selection-soft: #f0f1f2;
+  --accent-active: #ffe2e6;
+  --button-on-accent: #ffffff;
   --sans: "Avenir Next", Avenir, "Nunito Sans", "Segoe UI", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
   --mono: "SFMono-Regular", "Cascadia Mono", Consolas, "Liberation Mono", monospace;
 }
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --background: #18181a;
+    --sheet: #18181a;
+    --toolbar: #222225;
+    --ink: #f1f1f3;
+    --muted: #aaaab1;
+    --line: #35353a;
+    --line-strong: #4b4b52;
+    --accent: #ff5362;
+    --accent-hover: #ff7180;
+    --accent-wash: #381f24;
+    --success: #6ed6a4;
+    --error: #ff7b88;
+    --error-wash: #351f23;
+    --field: #18181a;
+    --selection: #55565d;
+    --selection-soft: #38383e;
+    --accent-active: #4a242b;
+  }
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --background: #18181a;
+  --sheet: #18181a;
+  --toolbar: #222225;
+  --ink: #f1f1f3;
+  --muted: #aaaab1;
+  --line: #35353a;
+  --line-strong: #4b4b52;
+  --accent: #ff5362;
+  --accent-hover: #ff7180;
+  --accent-wash: #381f24;
+  --success: #6ed6a4;
+  --error: #ff7b88;
+  --error-wash: #351f23;
+  --field: #18181a;
+  --selection: #55565d;
+  --selection-soft: #38383e;
+  --accent-active: #4a242b;
+}
+
+:root[data-theme="light"] { color-scheme: light; }
 
 * { box-sizing: border-box; }
 
@@ -90,6 +141,51 @@ button { font: inherit; }
   color: var(--muted);
   font-size: 13px;
   font-weight: 500;
+}
+
+.header-actions {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 8px;
+}
+
+.theme-toggle {
+  display: inline-grid;
+  width: 36px;
+  min-width: 36px;
+  height: 36px;
+  place-items: center;
+  border: 1px solid var(--line-strong);
+  border-radius: 3px;
+  background: var(--toolbar);
+  color: var(--ink);
+  padding: 0;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.theme-icon {
+  grid-area: 1 / 1;
+  width: 17px;
+  height: 17px;
+  fill: none;
+  stroke: currentcolor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.7;
+}
+
+.theme-icon-sun,
+.theme-toggle[aria-pressed="true"] .theme-icon-moon { display: none; }
+.theme-toggle[aria-pressed="true"] .theme-icon-sun { display: block; }
+
+.theme-toggle:hover,
+.theme-toggle:focus-visible {
+  border-color: var(--accent);
+  background: var(--accent-wash);
+  color: var(--accent-hover);
+  outline: none;
 }
 
 .github-star {
@@ -216,7 +312,7 @@ h1,
   gap: 7px;
   border: 1px solid var(--line-strong);
   border-radius: 3px;
-  background: #fff;
+  background: var(--field);
   color: var(--ink);
   padding: 7px 10px;
   font-size: 12px;
@@ -247,9 +343,9 @@ math-field {
   --primary: var(--accent);
   --caret-color: var(--accent);
   --selection-color: var(--ink);
-  --selection-background-color: #e3e4e7;
+  --selection-background-color: var(--selection);
   --contains-highlight-color: var(--ink);
-  --contains-highlight-background-color: #f0f1f2;
+  --contains-highlight-background-color: var(--selection-soft);
   --smart-fence-color: var(--ink);
   display: block;
   width: 100%;
@@ -264,7 +360,7 @@ math-field {
   min-height: 120px;
   border: 0;
   border-bottom: 2px solid var(--ink);
-  background: #fff;
+  background: var(--field);
   padding: 26px 4px 30px;
   font-size: clamp(31px, 5vw, 48px);
   transition: border-color 140ms ease;
@@ -370,7 +466,7 @@ math-field {
   outline: none;
 }
 
-.symbol-key:active { background: #ffe2e6; }
+.symbol-key:active { background: var(--accent-active); }
 
 .problem-actions {
   display: flex;
@@ -406,7 +502,7 @@ math-field {
   border: 0;
   border-radius: 3px;
   background: var(--accent);
-  color: #fff;
+  color: var(--button-on-accent);
   padding: 14px 26px;
   font-weight: 700;
   cursor: pointer;
@@ -706,6 +802,7 @@ pre { overflow-x: auto; color: var(--muted); font: 12px/1.65 var(--mono); white-
   .header-copy { align-items: flex-start; flex-direction: column; gap: 2px; }
   .site-header p { font-size: 12px; }
   .github-star { min-height: 34px; padding: 6px 8px; }
+  .theme-toggle { width: 34px; min-width: 34px; height: 34px; }
   .problem-heading {
     padding: 36px var(--mobile-inset-right) 19px var(--mobile-inset-left);
   }
@@ -779,6 +876,7 @@ pre { overflow-x: auto; color: var(--muted); font: 12px/1.65 var(--mono); white-
     margin-left: 0;
   }
   .examples { gap: 7px 12px; }
+  .github-star span { display: none; }
   .solution-heading h2 { font-size: 30px; }
 }
 
