@@ -63,7 +63,9 @@ def test_homepage_and_assets_are_served() -> None:
     assert "firstElementChild" not in script.text
     assert "expressionField.insert" in script.text
     assert 'key.addEventListener("pointerdown"' not in script.text
-    assert 'key.addEventListener("click", () => insertSymbolTemplate(key))' in script.text
+    assert "mathToolbar.addEventListener(" in script.text
+    assert 'target.closest(".symbol-key")' in script.text
+    assert "{ capture: true }" in script.text
     assert "insertSymbolTemplate(key)" in script.text
     assert 'behavior: "smooth"' not in script.text
     assert (

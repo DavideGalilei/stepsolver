@@ -9,6 +9,7 @@ MathfieldElement.soundsDirectory = null;
 const computeEngine = new ComputeEngine();
 const solverClient = createSolverClient();
 const form = document.querySelector("#solve-form");
+const mathToolbar = document.querySelector(".math-toolbar");
 const expressionField = document.querySelector("#expression-field");
 const mobileKeyboardProxy = document.querySelector("#mobile-keyboard-proxy");
 const mathKeyboardButton = document.querySelector("#math-keyboard-button");
@@ -453,8 +454,20 @@ for (const key of document.querySelectorAll(".symbol-key")) {
     label.tabIndex = -1;
     label.setAttribute("aria-hidden", "true");
   }
-  key.addEventListener("click", () => insertSymbolTemplate(key));
 }
+
+mathToolbar.addEventListener(
+  "click",
+  (event) => {
+    const target = event.target;
+    if (!(target instanceof Element)) return;
+    const key = target.closest(".symbol-key");
+    if (!(key instanceof HTMLButtonElement) || !mathToolbar.contains(key)) return;
+    event.preventDefault();
+    insertSymbolTemplate(key);
+  },
+  { capture: true }
+);
 
 for (const example of document.querySelectorAll(".example")) {
   example.addEventListener("click", () => {
