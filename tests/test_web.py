@@ -35,6 +35,7 @@ def test_homepage_and_assets_are_served() -> None:
         favicon = client.get("/static/favicon.svg")
     assert homepage.status_code == _HTTP_OK
     assert "StepSolver" in homepage.text
+    assert "minimum-scale=1, shrink-to-fit=no, viewport-fit=cover" in homepage.text
     assert "<title>∬ StepSolver</title>" in homepage.text
     assert '<span class="wordmark-symbol" aria-hidden="true">∬</span>' in homepage.text
     assert "math-field" in homepage.text
@@ -61,9 +62,8 @@ def test_homepage_and_assets_are_served() -> None:
     assert 'fetch("./api/solve"' in runtime.text
     assert "firstElementChild" not in script.text
     assert "expressionField.insert" in script.text
-    assert 'key.addEventListener("pointerdown"' in script.text
-    assert "event.preventDefault()" in script.text
-    assert "event.detail === 0" in script.text
+    assert 'key.addEventListener("pointerdown"' not in script.text
+    assert 'key.addEventListener("click", () => insertSymbolTemplate(key))' in script.text
     assert "insertSymbolTemplate(key)" in script.text
     assert 'behavior: "smooth"' not in script.text
     assert (
@@ -79,6 +79,19 @@ def test_homepage_and_assets_are_served() -> None:
     assert "Differentiate each factor once" in script.text
 
 
+def test_header_has_a_github_star_link() -> None:
+    """The header should link directly to the public repository."""
+    with TestClient(create_app()) as client:
+        homepage = client.get("/")
+        stylesheet = client.get("/static/style.css")
+    assert 'class="github-star"' in homepage.text
+    assert 'href="https://github.com/DavideGalilei/stepsolver"' in homepage.text
+    assert 'aria-label="Star StepSolver on GitHub"' in homepage.text
+    assert 'target="_blank" rel="noopener noreferrer"' in homepage.text
+    assert "Star on GitHub" in homepage.text
+    assert ".github-star" in stylesheet.text
+
+
 def test_frontend_handles_large_math_and_warms_the_browser_runtime() -> None:
     """Large formulas should scroll, while browser startup happens outside the main thread."""
     with TestClient(create_app()) as client:
@@ -89,6 +102,7 @@ def test_frontend_handles_large_math_and_warms_the_browser_runtime() -> None:
     assert 'class="math-viewport result-viewport"' in homepage.text
     assert 'aria-label="Scrollable answer"' in homepage.text
     assert 'id="mobile-keyboard-proxy"' in homepage.text
+    assert 'id="math-keyboard-button"' in homepage.text
     assert 'inputmode="text"' in homepage.text
     assert "createMathViewport" in script.text
     assert "solverClient.warmup()" in script.text
@@ -99,20 +113,102 @@ def test_frontend_handles_large_math_and_warms_the_browser_runtime() -> None:
     assert 'mobileKeyboardProxy.addEventListener("keydown"' in script.text
     assert 'mobileKeyboardProxy.addEventListener("paste"' in script.text
     assert 'expressionField.executeCommand("deleteBackward")' in script.text
+    assert '["^", "^{#0}"]' in script.text
+    assert '["_", "_{#0}"]' in script.text
+    assert 'selectionMode: template ? "placeholder" : "after"' in script.text
+    assert "for (const character of text) insertNativeCharacter(character)" in script.text
+    assert "if (usesMobileKeyboard()) mobileKeyboardProxy.blur();" in script.text
+    assert "window.mathVirtualKeyboard?.show()" in script.text
+    assert "querySelector('[part=\"content\"]')" in script.text
+    assert 'classList.add("ML__focused")' in script.text
     assert "window.mathVirtualKeyboard?.hide()" in script.text
     assert "async warmup()" in runtime.text
     assert ".math-viewport" in stylesheet.text
     assert ".primary-math-field::part(virtual-keyboard-toggle)" in stylesheet.text
     assert ".mobile-keyboard-proxy" in stylesheet.text
     assert "font-size: 16px" in stylesheet.text
-    assert "max-width: calc(100dvw - 20px)" in stylesheet.text
+    assert "max-width: calc(100dvw" not in stylesheet.text
+    assert "margin-right: 10px" in stylesheet.text
     assert "contain: inline-size" in stylesheet.text
     assert "-webkit-text-size-adjust: 100%" in stylesheet.text
+    assert "@media (hover: none) and (pointer: coarse)" in stylesheet.text
+    assert ".primary-math-field { pointer-events: none; }" in stylesheet.text
+    assert ".math-keyboard-button { display: inline-flex; }" in stylesheet.text
+    assert 'viewBox="0 0 24 24"' in homepage.text
+    assert "expressionField.getOffsetFromPoint(event.clientX, event.clientY" in script.text
+    assert (
+        "expressionField.position = offset >= 0 ? offset : expressionField.lastOffset"
+        in script.text
+    )
     assert "overscroll-behavior-inline: contain" in stylesheet.text
-    assert "touch-action: pan-x" in stylesheet.text
+    assert "touch-action: pan-x pan-y pinch-zoom" in stylesheet.text
+    assert "touch-action: pan-x;" not in stylesheet.text
     assert "pointer-events: none" in stylesheet.text
     assert "user-select: none" in stylesheet.text
     assert "-webkit-overflow-scrolling: touch" in stylesheet.text
+
+
+def test_mobile_workspace_uses_the_full_viewport_width() -> None:
+    """Mobile solver content should be full bleed except for hardware safe areas."""
+    with TestClient(create_app()) as client:
+        stylesheet = client.get("/static/style.css")
+    assert ".workspace {\n    width: 100%;" in stylesheet.text
+    assert "padding-right: env(safe-area-inset-right, 0)" in stylesheet.text
+    assert "padding-left: env(safe-area-inset-left, 0)" in stylesheet.text
+
+
+def test_frontend_renders_domain_constraints_and_accepts_systems() -> None:
+    """The graphical client should expose restrictions and system notation."""
+    with TestClient(create_app()) as client:
+        homepage = client.get("/")
+        stylesheet = client.get("/static/style.css")
+        script = client.get("/static/app.js")
+    assert 'title="System of equations"' in homepage.text
+    assert r'data-insert="\begin{cases}#0\\#?\end{cases}"' in homepage.text
+    assert "createConstraints(step)" in script.text
+    assert "Domain restrictions introduced here" in script.text
+    assert "step.introduced_constraints" in script.text
+    assert ".step-constraints" in stylesheet.text
+
+    with TestClient(create_app()) as client:
+        response = client.post(
+            "/api/solve",
+            json={
+                "latex": r"\begin{cases}x+y=3\\x-y=1\end{cases}",
+                "math_json": [
+                    "List",
+                    ["Equal", ["Add", "x", "y"], 3],
+                    ["Equal", ["Subtract", "x", "y"], 1],
+                ],
+            },
+        )
+    payload = SolveResponse.model_validate_json(response.text)
+    assert payload.status == "exact"
+    assert tuple(step.rule for step in payload.steps) == (
+        "Eliminate x",
+        "Solve for y",
+        "Substitute back to find x",
+    )
+
+
+def test_web_no_solution_payload_keeps_domain_restrictions() -> None:
+    """The web answer should say no solution and retain the excluded value."""
+    with TestClient(create_app()) as client:
+        response = client.post(
+            "/api/solve",
+            json={
+                "latex": r"\frac{x-1}{x-1}=x",
+                "math_json": [
+                    "Equal",
+                    ["Divide", ["Subtract", "x", 1], ["Subtract", "x", 1]],
+                    "x",
+                ],
+            },
+        )
+    payload = SolveResponse.model_validate_json(response.text)
+    assert payload.status == "exact"
+    assert payload.result_latex == r"\text{No solution}"
+    assert payload.steps[0].introduced_constraints[1].expression_latex == r"x \ne 1"
 
 
 def test_browser_runtime_serializes_the_same_solver_payload() -> None:
@@ -125,6 +221,29 @@ def test_browser_runtime_serializes_the_same_solver_payload() -> None:
     assert payload.result_latex == "2"
     assert payload.steps
     assert payload.steps[0].before_latex.startswith(r"\int_{0}^{\pi}")
+
+
+def test_undefined_sum_payload_never_exposes_backend_complex_infinity() -> None:
+    """An included singular term should cross the API as a typed undefined result."""
+    with TestClient(create_app()) as client:
+        response = client.post(
+            "/api/solve",
+            json={
+                "latex": r"\sum_{n=0}^{\infty}\frac{1}{n^6}",
+                "math_json": [
+                    "Sum",
+                    ["Divide", 1, ["Power", "n", 6]],
+                    ["Tuple", "n", 0, "PositiveInfinity"],
+                ],
+            },
+        )
+    payload = SolveResponse.model_validate_json(response.text)
+    assert payload.status == "undefined"
+    assert payload.result_latex == r"\text{Undefined}"
+    assert payload.reason is not None
+    assert "n = 0" in payload.reason
+    assert "zoo" not in response.text
+    assert payload.steps[0].introduced_constraints[1].expression_latex == r"n \ne 0"
 
 
 def test_exact_solve_response_contains_latex_steps() -> None:
@@ -330,9 +449,7 @@ def test_graphical_equation_solve_response() -> None:
     payload = SolveResponse.model_validate_json(response.text)
     assert response.status_code == _HTTP_OK
     assert payload.status == "exact"
-    assert payload.result_latex == (
-        r"\left[\left\{x \mapsto -2\right\}, \left\{x \mapsto 2\right\}\right]"
-    )
+    assert payload.result_latex == r"x = -2\quad\text{or}\quad x = 2"
     assert [step.rule for step in payload.steps] == [
         "Factor the quadratic",
         "Apply the zero-product property",

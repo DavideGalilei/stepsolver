@@ -54,6 +54,20 @@ def test_multivariable_equation_infers_a_variable_sequence() -> None:
     assert all(isinstance(item, Symbol) for item in variables.items)
 
 
+def test_equation_list_infers_a_system_solve() -> None:
+    """Graphical cases notation should become one system query."""
+    query = query_from_mathjson(
+        [
+            "List",
+            ["Equal", ["Add", "x", "y"], 3],
+            ["Equal", ["Subtract", "x", "y"], 1],
+        ]
+    )
+    assert query.operation is Operation.SOLVE
+    assert isinstance(query.arguments[0], SequenceExpression)
+    assert isinstance(query.arguments[1], SequenceExpression)
+
+
 def test_indefinite_integral_can_infer_its_variable() -> None:
     """A single-symbol integrand should not need an explicit differential."""
     query = query_from_mathjson(["Integrate", ["Power", "x", 2]])

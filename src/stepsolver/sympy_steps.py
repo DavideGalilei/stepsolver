@@ -3,9 +3,14 @@
 import sympy as sp
 
 from stepsolver.ast import (
+    BinaryExpression,
+    BinaryOperator,
+    Expression,
+    Number,
     Operation,
     Query,
     Relation,
+    SequenceExpression,
     Symbol,
 )
 from stepsolver.derivation.definite_integrals import (
@@ -34,6 +39,8 @@ from stepsolver.derivation.integrals_special import (
 from stepsolver.derivation.limits import derive_limit
 from stepsolver.derivation.model import BackendDerivationStep
 from stepsolver.derivation.reciprocal_quadratic import derive_reciprocal_quadratic_integral
+from stepsolver.derivation.sums import derive_sum
+from stepsolver.derivation.systems import derive_two_by_two_linear_system
 from stepsolver.results import (
     SolutionStep,
 )
@@ -66,6 +73,28 @@ def _derive_indefinite_integral(
         derivation = strategy(integrand, variable, result)
         if derivation:
             return derivation
+    return ()
+
+
+def _domain_denominators(expression: Expression) -> tuple[Expression, ...]:
+    """Collect denominator expressions whose zeros are outside the input domain."""
+    if isinstance(expression, BinaryExpression):
+        nested = _domain_denominators(expression.left) + _domain_denominators(expression.right)
+        if expression.operator is BinaryOperator.DIVIDE:
+            return (expression.right, *nested)
+        if (
+            expression.operator is BinaryOperator.POWER
+            and isinstance(expression.right, Number)
+            and expression.right.value < 0
+        ):
+            return (expression.left, *nested)
+        return nested
+    if isinstance(expression, Relation):
+        return _domain_denominators(expression.left) + _domain_denominators(expression.right)
+    if isinstance(expression, SequenceExpression):
+        return tuple(
+            denominator for item in expression.items for denominator in _domain_denominators(item)
+        )
     return ()
 
 
@@ -113,7 +142,32 @@ class SympyStepBuilder:
             return self.detailed_integral_steps(query, backend_value)
         if query.operation is Operation.LIMIT:
             return self.detailed_limit_steps(query, backend_value)
+        if query.operation is Operation.SUM:
+            return self.detailed_sum_steps(query, backend_value)
         return ()
+
+    def detailed_sum_steps(
+        self,
+        query: Query,
+        backend_value: object,
+    ) -> tuple[SolutionStep, ...]:
+        """Build human-readable steps for common finite and infinite sums."""
+        if len(query.arguments) != 4 or not isinstance(backend_value, sp.Basic):
+            return ()
+        expression_node, variable_node, lower_node, upper_node = query.arguments
+        if not isinstance(variable_node, Symbol):
+            return ()
+        expression = self._converter.to_sympy(expression_node)
+        variable = self._converter.to_sympy(variable_node)
+        lower = self._converter.to_sympy(lower_node)
+        upper = self._converter.to_sympy(upper_node)
+        if not isinstance(variable, sp.Symbol):
+            return ()
+        try:
+            derivation = derive_sum(expression, variable, lower, upper, backend_value)
+        except (sp.PolynomialError, TypeError, ValueError):
+            return ()
+        return tuple(self._renderer.solution_step(item) for item in derivation)
 
     def detailed_limit_steps(
         self,
@@ -155,6 +209,14 @@ class SympyStepBuilder:
         if len(query.arguments) != 2:
             return ()
         equation_expression, variable_expression = query.arguments
+        if isinstance(equation_expression, SequenceExpression) and isinstance(
+            variable_expression, SequenceExpression
+        ):
+            return self.detailed_system_steps(
+                equation_expression,
+                variable_expression,
+                backend_value,
+            )
         if not isinstance(equation_expression, Relation) or not isinstance(
             variable_expression,
             Symbol,
@@ -166,9 +228,49 @@ class SympyStepBuilder:
             return ()
         roots = self.solution_roots(backend_value, variable)
         try:
-            derivation = derive_polynomial_equation(equation, variable, roots)
+            domain_denominators = tuple(
+                self._converter.to_sympy(item) for item in _domain_denominators(equation_expression)
+            )
+            derivation = derive_polynomial_equation(
+                equation,
+                variable,
+                roots,
+                domain_denominators,
+            )
         except (sp.PolynomialError, TypeError, ValueError):
             return ()
+        return tuple(self._renderer.solution_step(item) for item in derivation)
+
+    def detailed_system_steps(
+        self,
+        equations: SequenceExpression,
+        variables: SequenceExpression,
+        backend_value: object,
+    ) -> tuple[SolutionStep, ...]:
+        """Build elimination steps for a two-by-two linear equation system."""
+        if len(equations.items) != 2 or len(variables.items) != 2:
+            return ()
+        if not all(isinstance(item, Relation) for item in equations.items) or not all(
+            isinstance(item, Symbol) for item in variables.items
+        ):
+            return ()
+        first_equation = self._converter.to_sympy(equations.items[0])
+        second_equation = self._converter.to_sympy(equations.items[1])
+        first_variable = self._converter.to_sympy(variables.items[0])
+        second_variable = self._converter.to_sympy(variables.items[1])
+        if not isinstance(first_equation, sp.Equality) or not isinstance(
+            second_equation, sp.Equality
+        ):
+            return ()
+        if not isinstance(first_variable, sp.Symbol) or not isinstance(second_variable, sp.Symbol):
+            return ()
+        equation_pair = (first_equation, second_equation)
+        variable_pair = (first_variable, second_variable)
+        derivation = derive_two_by_two_linear_system(
+            equation_pair,
+            variable_pair,
+            backend_value,
+        )
         return tuple(self._renderer.solution_step(item) for item in derivation)
 
     def detailed_derivative_steps(

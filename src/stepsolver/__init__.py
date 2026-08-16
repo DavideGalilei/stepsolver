@@ -10,7 +10,13 @@ from stepsolver.errors import BackendError, ParseError, QueryError, StepSolverEr
 from stepsolver.formatter import format_ascii, format_expression
 from stepsolver.latex import format_latex_expression, format_latex_value
 from stepsolver.parser import parse, parse_expression
-from stepsolver.presentation import SolvePayload, StepNotePayload, StepPayload, solve_payload
+from stepsolver.presentation import (
+    SolvePayload,
+    StepConstraintPayload,
+    StepNotePayload,
+    StepPayload,
+    solve_payload,
+)
 from stepsolver.results import (
     BooleanValue,
     DivergenceKind,
@@ -20,11 +26,14 @@ from stepsolver.results import (
     MappingValue,
     MathValue,
     MatrixValue,
+    NoSolutionValue,
     ScalarValue,
     SequenceValue,
     SolutionStep,
     SolveResult,
+    StepConstraint,
     StepNote,
+    UndefinedResult,
     UnsolvedResult,
     Verification,
     VerificationMethod,
@@ -43,6 +52,7 @@ __all__ = [
     "MappingValue",
     "MathValue",
     "MatrixValue",
+    "NoSolutionValue",
     "Operation",
     "ParseError",
     "Query",
@@ -53,12 +63,15 @@ __all__ = [
     "SolvePayload",
     "SolveResult",
     "Solver",
+    "StepConstraint",
+    "StepConstraintPayload",
     "StepNote",
     "StepNotePayload",
     "StepPayload",
     "StepSolverError",
     "SymbolicBackend",
     "SympyBackend",
+    "UndefinedResult",
     "UnsolvedResult",
     "Verification",
     "VerificationMethod",

@@ -28,5 +28,15 @@
     "latex": "\\sum_{n=1}^{10}n^2",
     "math_json": ["Sum", ["Power", "n", 2], ["Tuple", "n", 1, 10]],
     "result_latex": "385"
+  },
+  {
+    "name": "linear equation system",
+    "latex": "\\begin{cases}x+y=3\\\\x-y=1\\end{cases}",
+    "math_json": [
+      "List",
+      ["Equal", ["Add", "x", "y"], 3],
+      ["Equal", ["Subtract", "x", "y"], 1]
+    ],
+    "result_latex": "\\left[\\left\\{x \\mapsto 2, y \\mapsto 1\\right\\}\\right]"
   }
 ]

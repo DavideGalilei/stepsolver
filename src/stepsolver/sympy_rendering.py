@@ -18,6 +18,7 @@ from stepsolver.derivation.model import (
     BackendDifference,
     BackendDifferential,
     BackendEvaluationAtBounds,
+    BackendEvaluationAtIndex,
     BackendExpression,
     BackendIdentity,
     BackendIntegral,
@@ -27,10 +28,13 @@ from stepsolver.derivation.model import (
     BackendProduct,
     BackendQuadraticSolutions,
     BackendQuotient,
+    BackendSigma,
     BackendSum,
+    BackendUndefined,
 )
 from stepsolver.results import (
     SolutionStep,
+    StepConstraint,
     StepNote,
     Verification,
 )
@@ -62,6 +66,13 @@ class SympyDerivationRenderer:
                 )
                 for note in step.notes
             ),
+            introduced_constraints=tuple(
+                StepConstraint(
+                    explanation=constraint.explanation,
+                    expression=self.derivation_expression(constraint.expression),
+                )
+                for constraint in step.introduced_constraints
+            ),
         )
 
     def derivation_expression(
@@ -87,6 +98,27 @@ class SympyDerivationRenderer:
                     self.derivation_expression(value.denominator),
                 ),
             )
+        if isinstance(value, BackendSigma):
+            return FunctionCall(
+                name=Identifier(Operation.SUM.value),
+                arguments=(
+                    self.derivation_expression(value.expression),
+                    self._converter.from_sympy(value.variable),
+                    self._converter.from_sympy(value.lower),
+                    self._converter.from_sympy(value.upper),
+                ),
+            )
+        if isinstance(value, BackendEvaluationAtIndex):
+            return FunctionCall(
+                name=Identifier("evaluate_at_index"),
+                arguments=(
+                    self.derivation_expression(value.expression),
+                    self._converter.from_sympy(value.variable),
+                    self._converter.from_sympy(value.index),
+                ),
+            )
+        if isinstance(value, BackendUndefined):
+            return FunctionCall(name=Identifier("undefined"), arguments=())
         if isinstance(value, BackendNotEqual):
             return Relation(
                 operator=RelationOperator.NOT_EQUAL,

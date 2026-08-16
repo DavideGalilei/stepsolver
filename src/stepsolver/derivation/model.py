@@ -66,6 +66,30 @@ class BackendEvaluationAtBounds:
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
+class BackendEvaluationAtIndex:
+    """A sequence term evaluated at one index."""
+
+    expression: BackendExpression
+    variable: sp.Symbol
+    index: sp.Basic
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class BackendSigma:
+    """A displayed finite or infinite summation."""
+
+    expression: BackendExpression
+    variable: sp.Symbol
+    lower: sp.Basic
+    upper: sp.Basic
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class BackendUndefined:
+    """A displayed undefined mathematical value."""
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
 class BackendLimit:
     """A displayed one- or two-sided limit."""
 
@@ -129,6 +153,9 @@ type BackendExpression = (
     | BackendIntegrationByPartsRule
     | BackendQuadraticSolutions
     | BackendEvaluationAtBounds
+    | BackendEvaluationAtIndex
+    | BackendSigma
+    | BackendUndefined
     | BackendLimit
     | BackendNotEqual
     | BackendSum
@@ -148,6 +175,14 @@ class BackendMathNote:
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
+class BackendStepConstraint:
+    """A domain condition introduced by a backend derivation step."""
+
+    explanation: str
+    expression: BackendExpression
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
 class BackendDerivationStep:
     """One backend-native transformation awaiting conversion to the public AST."""
 
@@ -158,3 +193,4 @@ class BackendDerivationStep:
     verification_method: VerificationMethod
     verification_detail: str
     notes: tuple[BackendMathNote, ...] = ()
+    introduced_constraints: tuple[BackendStepConstraint, ...] = ()

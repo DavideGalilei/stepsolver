@@ -5,7 +5,7 @@ from fractions import Fraction
 from stepsolver import ExactResult, Solver, format_latex_expression, format_latex_value
 from stepsolver.ast import ApproximateNumber, Number, OpaqueExpression, SequenceExpression
 from stepsolver.parser import parse_expression
-from stepsolver.results import BooleanValue, ScalarValue
+from stepsolver.results import BooleanValue, NoSolutionValue, ScalarValue
 
 
 def test_fraction_power_and_function_latex() -> None:
@@ -54,6 +54,7 @@ def test_boolean_and_scalar_values_latex() -> None:
     assert format_latex_value(BooleanValue(value=False)) == r"\mathrm{false}"
     scalar = ScalarValue(expression=Number(value=Fraction(2, 3)))
     assert format_latex_value(scalar) == r"\frac{2}{3}"
+    assert format_latex_value(NoSolutionValue()) == r"\text{No solution}"
 
 
 def test_solver_operations_use_conventional_notation() -> None:

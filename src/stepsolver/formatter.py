@@ -23,9 +23,11 @@ from stepsolver.results import (
     ExactResult,
     MappingValue,
     MathValue,
+    NoSolutionValue,
     ScalarValue,
     SequenceValue,
     SolveResult,
+    UndefinedResult,
 )
 
 _PRECEDENCE: dict[BinaryOperator, int] = {
@@ -91,6 +93,8 @@ def format_expression(expression: Expression, *, parent_precedence: int = 0) -> 
 
 
 def _format_value(value: MathValue) -> str:
+    if isinstance(value, NoSolutionValue):
+        return "No solution"
     if isinstance(value, ScalarValue):
         return format_expression(value.expression)
     if isinstance(value, BooleanValue):
@@ -122,10 +126,17 @@ def format_ascii(result: SolveResult) -> str:
             )
         )
         lines.extend(f"  {note.label}: {format_expression(note.expression)}" for note in step.notes)
+        lines.extend(
+            f"  Domain constraint: {format_expression(constraint.expression)} "
+            f"({constraint.explanation})"
+            for constraint in step.introduced_constraints
+        )
     if isinstance(result, ExactResult):
         lines.append(f"Result: {_format_value(result.value)}")
     elif isinstance(result, DivergentResult):
         lines.append(f"Diverges: {result.reason}")
+    elif isinstance(result, UndefinedResult):
+        lines.append(f"Undefined: {result.reason}")
     else:
         lines.append(f"Unsolved: {result.reason}")
     return "\n".join(lines)

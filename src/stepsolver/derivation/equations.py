@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
+from dataclasses import dataclass
 from typing import TypeGuard, cast
 
 import sympy as sp
@@ -11,7 +12,9 @@ from stepsolver.derivation.model import (
     BackendDerivationStep,
     BackendIdentity,
     BackendMathNote,
+    BackendNotEqual,
     BackendQuadraticSolutions,
+    BackendStepConstraint,
     EquationBackendExpression,
 )
 from stepsolver.results import VerificationMethod
@@ -19,6 +22,13 @@ from stepsolver.results import VerificationMethod
 _LINEAR_DEGREE = 1
 _QUADRATIC_DEGREE = 2
 _CONSTANT_DEGREE = 0
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class _DomainRestrictions:
+    denominators: tuple[sp.Basic, ...]
+    excluded_values: tuple[sp.Basic, ...]
+    displayed: tuple[BackendStepConstraint, ...]
 
 
 def _is_basic_sequence(value: object) -> TypeGuard[Sequence[sp.Basic]]:
@@ -35,8 +45,12 @@ def _equivalent_step(
     after: EquationBackendExpression,
     explanation: str,
     variable: sp.Symbol,
+    excluded_values: tuple[sp.Basic, ...] = (),
+    introduced_constraints: tuple[BackendStepConstraint, ...] = (),
 ) -> BackendDerivationStep:
-    if _solution_set(before, variable) != _solution_set(after, variable):
+    if _solution_set(before, variable, excluded_values) != _solution_set(
+        after, variable, excluded_values
+    ):
         message = "a proposed derivation step changed the equation's solution set"
         raise ValueError(message)
     return BackendDerivationStep(
@@ -45,13 +59,19 @@ def _equivalent_step(
         after=after,
         explanation=explanation,
         verification_method=VerificationMethod.SOLUTION_SET_EQUIVALENCE,
-        verification_detail="Both forms have the same solution set for the target variable.",
+        verification_detail=(
+            "Both forms have the same solution set under the stated domain restrictions."
+            if excluded_values
+            else "Both forms have the same solution set for the target variable."
+        ),
+        introduced_constraints=introduced_constraints,
     )
 
 
 def _solution_set(
     expression: EquationBackendExpression,
     variable: sp.Symbol,
+    excluded_values: tuple[sp.Basic, ...] = (),
 ) -> frozenset[str]:
     equations = expression if isinstance(expression, tuple) else (expression,)
     roots: set[str] = set()
@@ -60,12 +80,57 @@ def _solution_set(
         if not _is_basic_sequence(solved):
             message = "equation verification did not produce a root sequence"
             raise TypeError(message)
-        roots.update(str(sp.simplify(root)) for root in solved)
+        roots.update(
+            str(sp.simplify(root))
+            for root in solved
+            if not any(
+                sp.simplify(root - excluded) == sp.Integer(0) for excluded in excluded_values
+            )
+        )
     return frozenset(roots)
 
 
 def _relations(variable: sp.Symbol, roots: tuple[sp.Basic, ...]) -> tuple[sp.Basic, ...]:
     return tuple(sp.Eq(variable, root) for root in roots)
+
+
+def _domain_restrictions(
+    denominator: sp.Basic,
+    supplied_denominators: tuple[sp.Basic, ...],
+    variable: sp.Symbol,
+) -> _DomainRestrictions:
+    denominators = list(supplied_denominators)
+    if not denominators and denominator != sp.Integer(1):
+        denominators.append(denominator)
+    unique_text = tuple(dict.fromkeys(str(item) for item in denominators))
+    unique_denominators = tuple(
+        next(item for item in denominators if str(item) == text) for text in unique_text
+    )
+    exclusions: list[sp.Basic] = []
+    for domain_denominator in unique_denominators:
+        solved = sp.solve(domain_denominator, variable)
+        if _is_basic_sequence(solved):
+            exclusions.extend(solved)
+    excluded_values = tuple(dict.fromkeys(exclusions))
+    denominator_constraints = tuple(
+        BackendStepConstraint(
+            explanation="An original denominator cannot equal zero.",
+            expression=BackendNotEqual(left=item, right=sp.Integer(0)),
+        )
+        for item in unique_denominators
+    )
+    exclusion_constraints = tuple(
+        BackendStepConstraint(
+            explanation="This value is outside the domain of the original equation.",
+            expression=BackendNotEqual(left=variable, right=value),
+        )
+        for value in excluded_values
+    )
+    return _DomainRestrictions(
+        denominators=unique_denominators,
+        excluded_values=excluded_values,
+        displayed=denominator_constraints + exclusion_constraints,
+    )
 
 
 def _append_if_changed(
@@ -76,6 +141,8 @@ def _append_if_changed(
     after: EquationBackendExpression,
     explanation: str,
     variable: sp.Symbol,
+    excluded_values: tuple[sp.Basic, ...] = (),
+    introduced_constraints: tuple[BackendStepConstraint, ...] = (),
 ) -> EquationBackendExpression:
     if str(before) == str(after):
         return before
@@ -86,6 +153,8 @@ def _append_if_changed(
             after=after,
             explanation=explanation,
             variable=variable,
+            excluded_values=excluded_values,
+            introduced_constraints=introduced_constraints,
         )
     )
     return after
@@ -96,6 +165,7 @@ def _linear_steps(
     variable: sp.Symbol,
     polynomial: sp.Poly,
     roots: tuple[sp.Basic, ...],
+    excluded_values: tuple[sp.Basic, ...],
 ) -> tuple[BackendDerivationStep, ...]:
     steps: list[BackendDerivationStep] = []
     coefficient = polynomial.coeff_monomial(variable)
@@ -111,18 +181,31 @@ def _linear_steps(
             "Move every variable term to one side and every constant term to the other side."
         ),
         variable=variable,
+        excluded_values=excluded_values,
     )
-    final: EquationBackendExpression = (
-        sp.Eq(variable, roots[0]) if len(roots) == _LINEAR_DEGREE else _relations(variable, roots)
-    )
-    _append_if_changed(
+    candidate = sp.simplify(-constant / coefficient)
+    candidate_relation = sp.Eq(variable, candidate)
+    current = _append_if_changed(
         steps,
         rule="Divide by the coefficient",
         before=current,
-        after=final,
+        after=candidate_relation,
         explanation="Divide both sides by the coefficient of the variable.",
         variable=variable,
+        excluded_values=excluded_values,
     )
+    if not roots:
+        _append_if_changed(
+            steps,
+            rule="Apply the domain restriction",
+            before=current,
+            after=(),
+            explanation=(
+                "The algebraic candidate makes an original denominator zero, so reject it."
+            ),
+            variable=variable,
+            excluded_values=excluded_values,
+        )
     return tuple(steps)
 
 
@@ -131,6 +214,7 @@ def _quadratic_steps(
     variable: sp.Symbol,
     polynomial: sp.Poly,
     roots: tuple[sp.Basic, ...],
+    excluded_values: tuple[sp.Basic, ...],
 ) -> tuple[BackendDerivationStep, ...]:
     steps: list[BackendDerivationStep] = []
     expression = polynomial.as_expr()
@@ -154,6 +238,7 @@ def _quadratic_steps(
             after=factored_equation,
             explanation="Rewrite the quadratic as a product of linear factors.",
             variable=variable,
+            excluded_values=excluded_values,
         )
         factor_equations = tuple(sp.Eq(factor, 0) for factor in factor_bases)
         separated_factors: EquationBackendExpression = (
@@ -174,20 +259,34 @@ def _quadratic_steps(
                 else "A product is zero only when at least one of its factors is zero."
             ),
             variable=variable,
+            excluded_values=excluded_values,
         )
         factor_roots = tuple(
             -sp.Poly(factor, variable).coeff_monomial(1)
             / sp.Poly(factor, variable).coeff_monomial(variable)
             for factor in factor_bases
         )
-        _append_if_changed(
+        current = _append_if_changed(
             steps,
             rule="Solve each factor",
             before=current,
             after=_relations(variable, factor_roots),
             explanation="Solve each resulting linear equation and combine the solutions.",
             variable=variable,
+            excluded_values=excluded_values,
         )
+        if set(map(str, factor_roots)) != set(map(str, roots)):
+            _append_if_changed(
+                steps,
+                rule="Apply the domain restrictions",
+                before=current,
+                after=_relations(variable, roots),
+                explanation=(
+                    "Discard every candidate that makes an original denominator equal to zero."
+                ),
+                variable=variable,
+                excluded_values=excluded_values,
+            )
         return tuple(steps)
 
     coefficient_a = polynomial.coeff_monomial(variable**2)
@@ -307,15 +406,18 @@ def derive_polynomial_equation(
     equation: sp.Equality,
     variable: sp.Symbol,
     roots: tuple[sp.Basic, ...],
+    domain_denominators: tuple[sp.Basic, ...] = (),
 ) -> tuple[BackendDerivationStep, ...]:
     """Derive detailed steps for rational, linear, and quadratic equations."""
     steps: list[BackendDerivationStep] = []
     difference = sp.together(equation.lhs - equation.rhs)
     numerator, denominator = sp.fraction(difference)
+    restrictions = _domain_restrictions(denominator, domain_denominators, variable)
+    excluded_values = restrictions.excluded_values
     expanded = sp.expand(numerator)
     normalized = sp.Eq(expanded, 0, evaluate=False)
     current: EquationBackendExpression = equation
-    if str(denominator) != "1":
+    if restrictions.denominators:
         current = _append_if_changed(
             steps,
             rule="Clear the denominators",
@@ -323,6 +425,8 @@ def derive_polynomial_equation(
             after=normalized,
             explanation=("Multiply through by the common denominator, which must be nonzero."),
             variable=variable,
+            excluded_values=excluded_values,
+            introduced_constraints=restrictions.displayed,
         )
     polynomial = sp.Poly(expanded, variable)
     degree = polynomial.degree()
@@ -334,6 +438,7 @@ def derive_polynomial_equation(
             after=normalized,
             explanation="Combine like terms on both sides.",
             variable=variable,
+            excluded_values=excluded_values,
         )
         steps.append(
             BackendDerivationStep(
@@ -347,7 +452,13 @@ def derive_polynomial_equation(
         )
         return tuple(steps)
     if degree == _LINEAR_DEGREE:
-        detail = _linear_steps(normalized if steps else equation, variable, polynomial, roots)
+        detail = _linear_steps(
+            normalized if steps else equation,
+            variable,
+            polynomial,
+            roots,
+            excluded_values,
+        )
     elif degree == _QUADRATIC_DEGREE:
         normalized_current = normalized
         if not steps:
@@ -361,10 +472,17 @@ def derive_polynomial_equation(
                     after=normalized,
                     explanation="Move every term to one side and combine like terms.",
                     variable=variable,
+                    excluded_values=excluded_values,
                 )
                 if isinstance(current, sp.Equality):
                     normalized_current = current
-        detail = _quadratic_steps(normalized_current, variable, polynomial, roots)
+        detail = _quadratic_steps(
+            normalized_current,
+            variable,
+            polynomial,
+            roots,
+            excluded_values,
+        )
     else:
         return ()
     steps.extend(detail)

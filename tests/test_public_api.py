@@ -40,6 +40,14 @@ def test_presentation_adapter_renders_domain_steps_as_latex() -> None:
     assert payload.as_dict()["steps"]
 
 
+def test_presentation_adapter_renders_equation_solutions_for_students() -> None:
+    """Single-variable mappings should be presented as equations joined by 'or'."""
+    result = Solver().solve("solve(x^2-4=0,x)")
+    assert isinstance(result, ExactResult)
+    payload = solve_payload(result)
+    assert payload.result_latex == r"x = -2\quad\text{or}\quad x = 2"
+
+
 def test_parser_and_backend_can_be_composed_explicitly() -> None:
     """Parsing, orchestration, and symbolic execution should remain separate layers."""
     query = parse("limit(sin(x)/x, x, 0)")

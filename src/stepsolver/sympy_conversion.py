@@ -87,7 +87,7 @@ class SympyConverter:
             if expression.operator is BinaryOperator.MULTIPLY:
                 return left * right
             if expression.operator is BinaryOperator.DIVIDE:
-                return left / right
+                return sp.Mul(left, sp.Pow(right, -1, evaluate=False), evaluate=False)
             if expression.operator is BinaryOperator.POWER:
                 return left**right
             assert_never(expression.operator)

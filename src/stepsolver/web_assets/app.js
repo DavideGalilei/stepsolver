@@ -11,6 +11,7 @@ const solverClient = createSolverClient();
 const form = document.querySelector("#solve-form");
 const expressionField = document.querySelector("#expression-field");
 const mobileKeyboardProxy = document.querySelector("#mobile-keyboard-proxy");
+const mathKeyboardButton = document.querySelector("#math-keyboard-button");
 const solveButton = document.querySelector("#solve-button");
 const resultSection = document.querySelector("#result-section");
 const statusText = document.querySelector("#status-text");
@@ -23,9 +24,14 @@ const errorBox = document.querySelector("#error-box");
 
 function hideMathVirtualKeyboard() {
   window.mathVirtualKeyboard?.hide();
+  mathKeyboardButton.setAttribute("aria-pressed", "false");
 }
 
 const mobileKeyboardQuery = window.matchMedia("(hover: none) and (pointer: coarse)");
+const nativeMathTemplates = new Map([
+  ["^", "^{#0}"],
+  ["_", "_{#0}"]
+]);
 let composingNativeText = false;
 
 function usesMobileKeyboard() {
@@ -39,26 +45,48 @@ function focusMobileKeyboard() {
   mobileKeyboardProxy.setSelectionRange(0, mobileKeyboardProxy.value.length);
 }
 
+function insertNativeCharacter(character) {
+  const template = nativeMathTemplates.get(character);
+  expressionField.insert(template ?? character, {
+    insertionMode: "replaceSelection",
+    selectionMode: template ? "placeholder" : "after"
+  });
+}
+
 function insertNativeText(text) {
   if (!text) return;
-  expressionField.insert(text, {
-    insertionMode: "replaceSelection",
-    selectionMode: "after"
-  });
+  for (const character of text) insertNativeCharacter(character);
+  showNativeCaret(true);
 }
 
 function clearMobileKeyboardProxy() {
   mobileKeyboardProxy.value = "";
 }
 
+function showNativeCaret(show) {
+  const mathfieldContent = expressionField.shadowRoot?.querySelector('[part="content"]');
+  mathfieldContent?.classList.toggle("ML__focused", show);
+  if (!show) return;
+  window.requestAnimationFrame(() => {
+    const renderedContent = expressionField.shadowRoot?.querySelector('[part="content"]');
+    renderedContent?.classList.add("ML__focused");
+  });
+}
+
 expressionField.addEventListener("pointerup", focusMobileKeyboard);
-expressionField.addEventListener("focusin", hideMathVirtualKeyboard);
+mobileKeyboardProxy.addEventListener("pointerdown", (event) => {
+  const offset = expressionField.getOffsetFromPoint(event.clientX, event.clientY, { bias: 0 });
+  expressionField.position = offset >= 0 ? offset : expressionField.lastOffset;
+  showNativeCaret(true);
+});
 mobileKeyboardProxy.addEventListener("focus", () => {
   expressionField.classList.add("is-mobile-editing");
+  showNativeCaret(true);
   hideMathVirtualKeyboard();
 });
 mobileKeyboardProxy.addEventListener("blur", () => {
   expressionField.classList.remove("is-mobile-editing");
+  showNativeCaret(false);
   clearMobileKeyboardProxy();
 });
 mobileKeyboardProxy.addEventListener("compositionstart", () => {
@@ -80,16 +108,19 @@ mobileKeyboardProxy.addEventListener("beforeinput", (event) => {
   if (event.inputType === "deleteContentBackward") {
     event.preventDefault();
     expressionField.executeCommand("deleteBackward");
+    showNativeCaret(true);
     return;
   }
   if (event.inputType === "deleteContentForward") {
     event.preventDefault();
     expressionField.executeCommand("deleteForward");
+    showNativeCaret(true);
     return;
   }
   if (event.inputType === "historyUndo" || event.inputType === "historyRedo") {
     event.preventDefault();
     expressionField.executeCommand(event.inputType === "historyUndo" ? "undo" : "redo");
+    showNativeCaret(true);
     return;
   }
   if (event.inputType.startsWith("insert") && event.data) {
@@ -115,6 +146,13 @@ mobileKeyboardProxy.addEventListener("paste", (event) => {
   event.preventDefault();
   insertNativeText(text);
   clearMobileKeyboardProxy();
+});
+
+mathKeyboardButton.addEventListener("click", () => {
+  mobileKeyboardProxy.blur();
+  expressionField.focus({ preventScroll: true });
+  window.mathVirtualKeyboard?.show();
+  mathKeyboardButton.setAttribute("aria-pressed", "true");
 });
 
 function createReadonlyMath(latex, className) {
@@ -188,6 +226,24 @@ function createNotes(step) {
   return notes;
 }
 
+function createConstraints(step) {
+  const constraints = document.createElement("div");
+  constraints.className = "step-constraints";
+  const heading = document.createElement("h4");
+  heading.textContent = "Domain restrictions introduced here";
+  constraints.append(heading);
+  for (const constraint of step.introduced_constraints) {
+    const item = document.createElement("div");
+    item.className = "step-constraint";
+    const math = createReadonlyMath(constraint.expression_latex, "step-constraint-math");
+    const explanation = document.createElement("p");
+    explanation.textContent = constraint.explanation;
+    item.append(createMathViewport(math, "step-note-viewport"), explanation);
+    constraints.append(item);
+  }
+  return constraints;
+}
+
 function createStep(step) {
   const article = document.createElement("article");
   article.className = "step";
@@ -219,6 +275,7 @@ function createStep(step) {
   verificationDetail.textContent = `${step.verification_method}: ${step.verification_detail}`;
   verification.append(verificationSummary, verificationDetail);
   body.append(heading, explanation);
+  if (step.introduced_constraints.length > 0) body.append(createConstraints(step));
   if (step.notes.length > 0) body.append(notes);
   body.append(transformation, verification);
   article.append(number, body);
@@ -232,6 +289,8 @@ function buildPayload() {
 }
 
 async function solve() {
+  if (usesMobileKeyboard()) mobileKeyboardProxy.blur();
+  hideMathVirtualKeyboard();
   solveButton.disabled = true;
   solveButton.textContent = "Solving…";
   resultSection.classList.remove("hidden");
@@ -245,8 +304,12 @@ async function solve() {
       statusText.classList.add("is-loading");
     });
     statusText.classList.remove("is-loading");
-    const completed = payload.status === "exact" || payload.status === "divergent";
+    const completed =
+      payload.status === "exact" ||
+      payload.status === "divergent" ||
+      payload.status === "undefined";
     if (payload.status === "divergent") statusText.textContent = "Diverges";
+    else if (payload.status === "undefined") statusText.textContent = "Undefined";
     else if (payload.status === "exact") statusText.textContent = "Exact answer";
     else statusText.textContent = "No exact answer";
     asciiOutput.textContent = payload.formatted_ascii;
@@ -298,13 +361,7 @@ for (const key of document.querySelectorAll(".symbol-key")) {
     label.tabIndex = -1;
     label.setAttribute("aria-hidden", "true");
   }
-  key.addEventListener("pointerdown", (event) => {
-    event.preventDefault();
-    insertSymbolTemplate(key);
-  });
-  key.addEventListener("click", (event) => {
-    if (event.detail === 0) insertSymbolTemplate(key);
-  });
+  key.addEventListener("click", () => insertSymbolTemplate(key));
 }
 
 for (const example of document.querySelectorAll(".example")) {

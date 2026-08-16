@@ -340,6 +340,21 @@ def query_from_mathjson(value: JsonValue) -> Query:
         if head == "Product":
             return _bounded_query(node, Operation.PRODUCT)
     expression = expression_from_mathjson(value)
+    if (
+        isinstance(expression, SequenceExpression)
+        and expression.items
+        and all(
+            isinstance(item, Relation) and item.operator is RelationOperator.EQUAL
+            for item in expression.items
+        )
+    ):
+        symbols = tuple(sorted(_symbols(expression), key=lambda item: item.name))
+        if not symbols:
+            raise _error("a system must contain at least one variable")
+        system_variables: Expression = (
+            symbols[0] if len(symbols) == 1 else SequenceExpression(items=symbols)
+        )
+        return _query(Operation.SOLVE, (expression, system_variables))
     if isinstance(expression, Relation):
         symbols = tuple(sorted(_symbols(expression), key=lambda item: item.name))
         if not symbols:

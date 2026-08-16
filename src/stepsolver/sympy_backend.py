@@ -16,13 +16,16 @@ from stepsolver.ast import (
     UnaryExpression,
     UnaryOperator,
 )
+from stepsolver.derivation.sums import find_undefined_summation
 from stepsolver.errors import BackendError, QueryError
 from stepsolver.results import (
     DivergenceKind,
     DivergentResult,
     ExactResult,
+    NoSolutionValue,
     SolutionStep,
     SolveResult,
+    UndefinedResult,
     UnsolvedResult,
     Verification,
     VerificationMethod,
@@ -43,6 +46,7 @@ from stepsolver.sympy_verification import SympyVerifier
 
 _EQUATION_ARITY = 2
 _DEFINITE_INTEGRAL_ARITY = 4
+_BOUNDED_OPERATION_ARITY = 4
 
 
 class SympyBackend:
@@ -72,17 +76,14 @@ class SympyBackend:
         integral_domain_reason = self._integral_domain_reason(query)
         if integral_domain_reason is not None:
             return UnsolvedResult(query=query, reason=integral_domain_reason, steps=())
+        undefined_sum = self._undefined_sum_result(query)
+        if undefined_sum is not None:
+            return undefined_sum
         backend_value = self._executor.execute(query)
         detailed_steps = self._steps.detailed_steps(query, backend_value)
         divergence = self._divergence_kind(query, backend_value, detailed_steps)
         if divergence is not None:
-            reasons = {
-                DivergenceKind.POSITIVE_INFINITY: ("The improper integral diverges to +infinity."),
-                DivergenceKind.NEGATIVE_INFINITY: ("The improper integral diverges to -infinity."),
-                DivergenceKind.NONFINITE: (
-                    "The improper integral does not converge to a finite value."
-                ),
-            }
+            reasons = self._divergence_reasons(query.operation)
             return DivergentResult(
                 query=query,
                 kind=divergence,
@@ -96,7 +97,11 @@ class SympyBackend:
                 reason=non_exact_reason,
                 steps=detailed_steps,
             )
-        value = self._converter.to_value(backend_value)
+        value = (
+            NoSolutionValue()
+            if query.operation is Operation.SOLVE and backend_value == []
+            else self._converter.to_value(backend_value)
+        )
         if detailed_steps:
             return ExactResult(query=query, value=value, steps=detailed_steps)
         after = self._converter.step_expression(backend_value)
@@ -112,12 +117,57 @@ class SympyBackend:
         return ExactResult(query=query, value=value, steps=(step,))
 
     @staticmethod
+    def _divergence_reasons(operation: Operation) -> dict[DivergenceKind, str]:
+        noun = "series" if operation is Operation.SUM else "improper integral"
+        return {
+            DivergenceKind.POSITIVE_INFINITY: f"The {noun} diverges to +infinity.",
+            DivergenceKind.NEGATIVE_INFINITY: f"The {noun} diverges to -infinity.",
+            DivergenceKind.NONFINITE: f"The {noun} does not converge to a finite value.",
+        }
+
+    def _undefined_sum_result(self, query: Query) -> UndefinedResult | None:
+        if query.operation is not Operation.SUM or len(query.arguments) != _BOUNDED_OPERATION_ARITY:
+            return None
+        expression_node, variable_node, lower_node, upper_node = query.arguments
+        if not isinstance(variable_node, Symbol):
+            return None
+        expression = self._converter.to_sympy(expression_node)
+        variable = self._converter.to_sympy(variable_node)
+        if not isinstance(variable, sp.Symbol):
+            return None
+        lower = self._converter.to_sympy(lower_node)
+        upper = self._converter.to_sympy(upper_node)
+        undefined = find_undefined_summation(expression, variable, lower, upper)
+        if undefined is None:
+            return None
+        steps = tuple(self._renderer.solution_step(item) for item in undefined.steps)
+        return UndefinedResult(
+            query=query,
+            reason=(
+                f"The summand is undefined at {variable} = {undefined.index} because its "
+                "denominator is zero."
+            ),
+            steps=steps,
+        )
+
     def _divergence_kind(
+        self,
         query: Query,
         backend_value: object,
         detailed_steps: tuple[SolutionStep, ...],
     ) -> DivergenceKind | None:
         """Classify a definite integral whose non-convergence was established."""
+        if query.operation is Operation.SUM and len(query.arguments) == _BOUNDED_OPERATION_ARITY:
+            if backend_value == sp.oo:
+                return DivergenceKind.POSITIVE_INFINITY
+            if backend_value == -sp.oo:
+                return DivergenceKind.NEGATIVE_INFINITY
+            if backend_value in {sp.nan, sp.zoo}:
+                return DivergenceKind.NONFINITE
+            if contains_unevaluated_operation(backend_value) and self._is_divergent_geometric_sum(
+                query
+            ):
+                return DivergenceKind.NONFINITE
         if (
             query.operation is Operation.INTEGRATE
             and len(query.arguments) == _DEFINITE_INTEGRAL_ARITY
@@ -134,6 +184,27 @@ class SympyBackend:
             if backend_value in {sp.nan, sp.zoo}:
                 return DivergenceKind.NONFINITE
         return None
+
+    def _is_divergent_geometric_sum(self, query: Query) -> bool:
+        expression_node, variable_node, lower_node, upper_node = query.arguments
+        if not isinstance(variable_node, Symbol):
+            return False
+        expression = self._converter.to_sympy(expression_node)
+        variable = self._converter.to_sympy(variable_node)
+        lower = self._converter.to_sympy(lower_node)
+        upper = self._converter.to_sympy(upper_node)
+        if (
+            not isinstance(variable, sp.Symbol)
+            or lower.is_integer is not True
+            or upper != sp.oo
+            or not expression.is_Pow
+            or len(expression.args) != _EQUATION_ARITY
+        ):
+            return False
+        ratio, exponent = expression.args
+        if exponent != variable:
+            return False
+        return sp.simplify(sp.Ge(sp.Abs(ratio), sp.Integer(1))) == sp.true
 
     @staticmethod
     def _non_exact_reason(backend_value: object) -> str | None:

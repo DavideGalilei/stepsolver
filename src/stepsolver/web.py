@@ -41,6 +41,16 @@ class StepNoteResponse(BaseModel):
     expression_latex: str
 
 
+class StepConstraintResponse(BaseModel):
+    """One domain restriction introduced by a solution step."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    explanation: str
+    expression_ascii: str
+    expression_latex: str
+
+
 class StepResponse(BaseModel):
     """One browser-renderable verified solution step."""
 
@@ -56,6 +66,7 @@ class StepResponse(BaseModel):
     verification_method: str
     verification_detail: str
     notes: tuple[StepNoteResponse, ...]
+    introduced_constraints: tuple[StepConstraintResponse, ...]
 
 
 class SolveResponse(BaseModel):
@@ -63,7 +74,7 @@ class SolveResponse(BaseModel):
 
     model_config = ConfigDict(extra="forbid", frozen=True)
 
-    status: Literal["exact", "divergent", "unsolved"]
+    status: Literal["exact", "divergent", "undefined", "unsolved"]
     source: str
     formatted_ascii: str
     result_latex: str | None

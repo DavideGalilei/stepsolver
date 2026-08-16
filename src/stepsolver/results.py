@@ -46,6 +46,14 @@ class StepNote:
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
+class StepConstraint:
+    """A domain restriction introduced by one transformation."""
+
+    explanation: str
+    expression: Expression
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
 class SolutionStep:
     """One verified mathematical transformation."""
 
@@ -55,6 +63,7 @@ class SolutionStep:
     explanation: str
     verification: Verification
     notes: tuple[StepNote, ...] = ()
+    introduced_constraints: tuple[StepConstraint, ...] = ()
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -100,7 +109,14 @@ class BooleanValue:
     value: bool
 
 
-type MathValue = ScalarValue | SequenceValue | MappingValue | MatrixValue | BooleanValue
+@dataclass(frozen=True, slots=True, kw_only=True)
+class NoSolutionValue:
+    """The empty solution set for an equation or system."""
+
+
+type MathValue = (
+    ScalarValue | SequenceValue | MappingValue | MatrixValue | BooleanValue | NoSolutionValue
+)
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -131,4 +147,13 @@ class DivergentResult:
     steps: tuple[SolutionStep, ...]
 
 
-type SolveResult = ExactResult | DivergentResult | UnsolvedResult
+@dataclass(frozen=True, slots=True, kw_only=True)
+class UndefinedResult:
+    """A valid query whose expression is undefined on the requested domain."""
+
+    query: Query
+    reason: str
+    steps: tuple[SolutionStep, ...]
+
+
+type SolveResult = ExactResult | DivergentResult | UndefinedResult | UnsolvedResult

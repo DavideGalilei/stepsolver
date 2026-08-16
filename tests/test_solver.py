@@ -6,7 +6,9 @@ from stepsolver import (
     DivergenceKind,
     DivergentResult,
     ExactResult,
+    NoSolutionValue,
     Solver,
+    UndefinedResult,
     UnsolvedResult,
     format_ascii,
     format_latex_expression,
@@ -56,11 +58,184 @@ def test_supported_queries_have_exact_results(
     assert expected in format_ascii(result)
 
 
+@pytest.mark.parametrize(
+    ("query", "index", "denominator"),
+    [
+        ("sum(1/n^6,n,0,oo)", "n \\ne 0", "n^{6} \\ne 0"),
+        ("sum(1/(n-2),n,0,4)", "n \\ne 2", "n - 2 \\ne 0"),
+        (
+            "sum(1/(n*(n-1)),n,1,5)",
+            "n \\ne 1",
+            "n \\cdot \\left(n - 1\\right) \\ne 0",
+        ),
+    ],
+)
+def test_sums_with_included_singular_terms_are_undefined(
+    solver: Solver,
+    query: str,
+    index: str,
+    denominator: str,
+) -> None:
+    """A pole at an included index must never leak SymPy's `zoo` sentinel."""
+    result = solver.solve(query)
+    assert isinstance(result, UndefinedResult)
+    rendered = format_ascii(result)
+    assert "zoo" not in rendered
+    assert "denominator is zero" in result.reason
+    constraints = result.steps[0].introduced_constraints
+    assert tuple(format_latex_expression(item.expression) for item in constraints) == (
+        denominator,
+        index,
+    )
+
+
+def test_pole_outside_sum_range_does_not_make_series_undefined(solver: Solver) -> None:
+    """Only singular terms actually included in the index range invalidate a sum."""
+    result = solver.solve("sum(1/(n-2),n,3,oo)")
+    assert isinstance(result, DivergentResult)
+    assert result.kind is DivergenceKind.POSITIVE_INFINITY
+    assert "series" in result.reason
+    assert tuple(step.rule for step in result.steps) == (
+        "Shift the summation index",
+        "Apply the p-series test",
+    )
+
+
+def test_shifted_convergent_p_series_reduces_to_the_standard_identity(
+    solver: Solver,
+) -> None:
+    """An index shift should expose the standard p-series instead of hiding the method."""
+    result = solver.solve("sum(1/(n-2)^2,n,3,oo)")
+    assert isinstance(result, ExactResult)
+    assert tuple(step.rule for step in result.steps) == (
+        "Shift the summation index",
+        "Recognize a convergent p-series",
+        "Use the exact value of zeta(2)",
+    )
+    assert result.steps[0].notes[0].label == "Index substitution"
+    assert format_ascii(result).endswith("Result: pi ^ 2 / 6")
+
+
+def test_constant_zero_denominator_is_undefined_for_every_term(solver: Solver) -> None:
+    """A summand that divides by zero everywhere must not be called divergent."""
+    result = solver.solve("sum(1/0,n,0,3)")
+    assert isinstance(result, UndefinedResult)
+    rendered = format_ascii(result)
+    assert "zero denominator at every index" in result.steps[0].explanation
+    assert "1 / 0" in rendered
+    assert "zoo" not in rendered
+
+
+@pytest.mark.parametrize(
+    ("query", "rules", "answer"),
+    [
+        (
+            "sum(1/n^6,n,1,oo)",
+            ("Recognize a convergent p-series", "Use the exact value of zeta(6)"),
+            "Result: pi ^ 6 / 945",
+        ),
+        (
+            "sum(1/n^3,n,1,oo)",
+            ("Recognize a convergent p-series",),
+            "Result: zeta(3)",
+        ),
+        (
+            "sum(n^2,n,1,10)",
+            ("Use the sum of squares identity", "Simplify the arithmetic"),
+            "Result: 385",
+        ),
+        (
+            "sum((1/2)^n,n,0,oo)",
+            ("Apply the infinite geometric-series identity",),
+            "Result: 2",
+        ),
+        (
+            "sum((1/2)^n,n,1,oo)",
+            ("Apply the infinite geometric-series identity",),
+            "Result: 1",
+        ),
+    ],
+)
+def test_common_sums_show_human_first_identities(
+    solver: Solver,
+    query: str,
+    rules: tuple[str, ...],
+    answer: str,
+) -> None:
+    """Common sums should state the reusable identity before giving the answer."""
+    result = solver.solve(query)
+    assert isinstance(result, ExactResult)
+    assert tuple(step.rule for step in result.steps) == rules
+    assert result.steps[0].notes
+    assert all(step.before != step.after for step in result.steps)
+    assert format_ascii(result).endswith(answer)
+
+
+@pytest.mark.parametrize(
+    ("query", "kind", "rule"),
+    [
+        ("sum(1/n,n,1,oo)", DivergenceKind.POSITIVE_INFINITY, "Apply the p-series test"),
+        (
+            "sum(2^n,n,0,oo)",
+            DivergenceKind.POSITIVE_INFINITY,
+            "Apply the geometric-series convergence test",
+        ),
+        (
+            "sum((-1)^n,n,0,oo)",
+            DivergenceKind.NONFINITE,
+            "Apply the geometric-series convergence test",
+        ),
+        (
+            "sum((-1)^n,n,1,oo)",
+            DivergenceKind.NONFINITE,
+            "Apply the geometric-series convergence test",
+        ),
+    ],
+)
+def test_divergent_series_are_classified_with_a_human_test(
+    solver: Solver,
+    query: str,
+    kind: DivergenceKind,
+    rule: str,
+) -> None:
+    """Known divergent families should not become exact or unevaluated answers."""
+    result = solver.solve(query)
+    assert isinstance(result, DivergentResult)
+    assert result.kind is kind
+    assert result.steps[0].rule == rule
+    assert "series" in result.reason
+    assert "Sum(" not in format_ascii(result)
+
+
 def test_equation_system_returns_typed_mappings(solver: Solver) -> None:
     """Equation systems should return structured solution mappings."""
     result = solver.solve("solve([x+y=3,x-y=1],[x,y])")
     assert isinstance(result, ExactResult)
     assert "Result: [{x: 2, y: 1}]" in format_ascii(result)
+
+
+def test_linear_system_has_elimination_and_substitution_steps(solver: Solver) -> None:
+    """A two-by-two system should be solved the way a student would solve it."""
+    result = solver.solve("solve([x+y=3,x-y=1],[x,y])")
+    assert isinstance(result, ExactResult)
+    assert tuple(step.rule for step in result.steps) == (
+        "Eliminate x",
+        "Solve for y",
+        "Substitute back to find x",
+    )
+    assert tuple(note.label for note in result.steps[0].notes) == (
+        "Scaled first equation",
+        "Scaled second equation",
+    )
+
+
+def test_inconsistent_system_is_no_solution(solver: Solver) -> None:
+    """A contradictory elimination row should produce a typed empty solution set."""
+    result = solver.solve("solve([x+y=1,x+y=2],[x,y])")
+    assert isinstance(result, ExactResult)
+    assert isinstance(result.value, NoSolutionValue)
+    assert result.steps[-1].rule == "Conclude the system is inconsistent"
+    assert format_ascii(result).endswith("Result: No solution")
 
 
 @pytest.mark.parametrize(
@@ -257,7 +432,45 @@ def test_no_real_solution_is_rendered_as_the_empty_set(solver: Solver) -> None:
     """A negative discriminant should end with mathematical empty-set notation."""
     result = solver.solve("solve(x^2+1=0,x)")
     assert isinstance(result, ExactResult)
+    assert isinstance(result.value, NoSolutionValue)
     assert format_latex_expression(result.steps[-1].after) == r"\varnothing"
+
+
+def test_denominator_restrictions_are_explicit_and_filter_candidates(
+    solver: Solver,
+) -> None:
+    """Clearing a denominator must record and enforce the original domain."""
+    result = solver.solve("solve((x-1)/(x-1)=x,x)")
+    assert isinstance(result, ExactResult)
+    assert isinstance(result.value, NoSolutionValue)
+    restrictions = result.steps[0].introduced_constraints
+    assert tuple(format_latex_expression(item.expression) for item in restrictions) == (
+        r"x - 1 \ne 0",
+        r"x \ne 1",
+    )
+    assert result.steps[-1].rule == "Apply the domain restriction"
+
+
+def test_each_original_denominator_adds_an_explicit_restriction(solver: Solver) -> None:
+    """A rational equation should retain each excluded value without redundant products."""
+    result = solver.solve("solve(1/(x-1)+1/(x+1)=0,x)")
+    assert isinstance(result, ExactResult)
+    restrictions = result.steps[0].introduced_constraints
+    assert tuple(format_latex_expression(item.expression) for item in restrictions) == (
+        r"x - 1 \ne 0",
+        r"x + 1 \ne 0",
+        r"x \ne 1",
+        r"x \ne -1",
+    )
+
+
+def test_negative_power_introduces_a_denominator_restriction(solver: Solver) -> None:
+    """Writing a reciprocal as a negative power must preserve the same domain."""
+    result = solver.solve("solve((x-1)^-1=1,x)")
+    assert isinstance(result, ExactResult)
+    assert tuple(
+        format_latex_expression(item.expression) for item in result.steps[0].introduced_constraints
+    ) == (r"x - 1 \ne 0", r"x \ne 1")
 
 
 def test_scaled_dirichlet_integral_reduces_to_the_standard_case(solver: Solver) -> None:

@@ -21,6 +21,7 @@ from stepsolver.results import (
     BooleanValue,
     MappingValue,
     MathValue,
+    NoSolutionValue,
     ScalarValue,
     SequenceValue,
 )
@@ -64,6 +65,7 @@ _NAMED_FUNCTIONS: dict[str, str] = {
     "log": r"\log",
     "exp": r"\exp",
     "gamma": r"\Gamma",
+    "zeta": r"\zeta",
     "erf": r"\operatorname{erf}",
     "asinh": r"\operatorname{arsinh}",
 }
@@ -98,9 +100,7 @@ def _format_evaluation_at_bounds(arguments: tuple[Expression, ...]) -> str:
     return rf"\left[{value}\right]_{{{lower}}}^{{{upper}}}"
 
 
-def _format_function(expression: FunctionCall) -> str:
-    name = str(expression.name)
-    arguments = expression.arguments
+def _format_calculus_function(name: str, arguments: tuple[Expression, ...]) -> str | None:
     if name == "integrate" and len(arguments) in {2, 4}:
         integrand = format_latex_expression(arguments[0])
         variable = format_latex_expression(arguments[1])
@@ -133,6 +133,15 @@ def _format_function(expression: FunctionCall) -> str:
             if direction is not None:
                 point = rf"{point}^{{{direction}}}"
         return rf"\lim_{{{variable} \to {point}}} {value}"
+    return None
+
+
+def _format_function(expression: FunctionCall) -> str:
+    name = str(expression.name)
+    arguments = expression.arguments
+    calculus = _format_calculus_function(name, arguments)
+    if calculus is not None:
+        return calculus
     if name in {"sum", "product"} and len(arguments) == 4:
         value = format_latex_expression(arguments[0])
         variable = format_latex_expression(arguments[1])
@@ -156,6 +165,11 @@ def _format_function(expression: FunctionCall) -> str:
         return rf"\mathrm{{d}}{format_latex_expression(arguments[0])}"
     if name == "evaluate_at_bounds" and len(arguments) == 4:
         return _format_evaluation_at_bounds(arguments)
+    if name == "evaluate_at_index" and len(arguments) == 3:
+        value, variable, index = (format_latex_expression(argument) for argument in arguments)
+        return rf"\left.{value}\right|_{{{variable}={index}}}"
+    if name == "undefined" and not arguments:
+        return r"\text{undefined}"
     if name == "integration_by_parts_rule" and not arguments:
         return r"\int u\,\mathrm{d}v = uv - \int v\,\mathrm{d}u"
     if name == "quadratic_solutions" and len(arguments) == 4:
@@ -250,6 +264,8 @@ def format_latex_expression(expression: Expression, *, parent_precedence: int = 
 
 def format_latex_value(value: MathValue) -> str:
     """Render a typed solver value as LaTeX."""
+    if isinstance(value, NoSolutionValue):
+        return r"\text{No solution}"
     if isinstance(value, ScalarValue):
         return format_latex_expression(value.expression)
     if isinstance(value, BooleanValue):
