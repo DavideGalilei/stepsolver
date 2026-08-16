@@ -100,7 +100,7 @@ explicit-preview-rules = false
     "too-many-return-statements",
     "too-many-statements",
 ]
-"src/stepsolver/sympy_derivation.py" = ["too-many-arguments"]
+"src/stepsolver/sympy_derivation.py" = ["too-many-arguments", "too-many-locals"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"

@@ -1,7 +1,10 @@
 "use strict";
 
-import "https://esm.run/mathlive";
+import { MathfieldElement } from "https://esm.run/mathlive@0.110.0";
 import { ComputeEngine } from "https://esm.run/@cortex-js/compute-engine";
+
+MathfieldElement.fontsDirectory = "https://cdn.jsdelivr.net/npm/mathlive@0.110.0/fonts/";
+MathfieldElement.soundsDirectory = null;
 
 const computeEngine = new ComputeEngine();
 const form = document.querySelector("#solve-form");
@@ -64,7 +67,7 @@ function buildPayload() {
 
 async function solve() {
   solveButton.disabled = true;
-  solveButton.firstElementChild.textContent = "Solving…";
+  solveButton.textContent = "Solving…";
   resultSection.classList.remove("hidden");
   errorBox.classList.add("hidden");
   statusText.classList.remove("is-error");
@@ -100,7 +103,7 @@ async function solve() {
     errorBox.classList.remove("hidden");
   } finally {
     solveButton.disabled = false;
-    solveButton.firstElementChild.textContent = "Solve";
+    solveButton.textContent = "Solve";
   }
 }
 

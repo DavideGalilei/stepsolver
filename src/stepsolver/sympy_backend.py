@@ -44,7 +44,13 @@ from stepsolver.results import (
     Verification,
     VerificationMethod,
 )
-from stepsolver.sympy_derivation import BackendDerivationStep, derive_polynomial_equation
+from stepsolver.sympy_derivation import (
+    BackendDerivationStep,
+    BackendExpression,
+    BackendIntegral,
+    derive_polynomial_equation,
+    derive_reciprocal_quadratic_integral,
+)
 
 _INTEGER_PATTERN = re.compile(r"^-?[0-9]+$")
 _RATIONAL_PATTERN = re.compile(r"^-?[0-9]+/[0-9]+$")
@@ -152,7 +158,18 @@ class SympyBackend:
         query: Query,
         backend_value: object,
     ) -> tuple[SolutionStep, ...]:
-        if query.operation is not Operation.SOLVE or len(query.arguments) != 2:
+        if query.operation is Operation.SOLVE:
+            return self._detailed_equation_steps(query, backend_value)
+        if query.operation is Operation.INTEGRATE:
+            return self._detailed_integral_steps(query, backend_value)
+        return ()
+
+    def _detailed_equation_steps(
+        self,
+        query: Query,
+        backend_value: object,
+    ) -> tuple[SolutionStep, ...]:
+        if len(query.arguments) != 2:
             return ()
         equation_expression, variable_expression = query.arguments
         if not isinstance(equation_expression, Relation) or not isinstance(
@@ -169,6 +186,30 @@ class SympyBackend:
             return ()
         try:
             derivation = derive_polynomial_equation(equation, variable, roots)
+        except (sp.PolynomialError, TypeError, ValueError):
+            return ()
+        return tuple(self._solution_step(item) for item in derivation)
+
+    def _detailed_integral_steps(
+        self,
+        query: Query,
+        backend_value: object,
+    ) -> tuple[SolutionStep, ...]:
+        if len(query.arguments) != 2 or not isinstance(backend_value, sp.Basic):
+            return ()
+        integrand_expression, variable_expression = query.arguments
+        if not isinstance(variable_expression, Symbol):
+            return ()
+        integrand = self._to_sympy(integrand_expression)
+        variable = self._to_sympy(variable_expression)
+        if not isinstance(variable, sp.Symbol):
+            return ()
+        try:
+            derivation = derive_reciprocal_quadratic_integral(
+                integrand,
+                variable,
+                backend_value,
+            )
         except (sp.PolynomialError, TypeError, ValueError):
             return ()
         return tuple(self._solution_step(item) for item in derivation)
@@ -204,8 +245,16 @@ class SympyBackend:
 
     def _derivation_expression(
         self,
-        value: sp.Basic | tuple[sp.Basic, ...],
+        value: BackendExpression,
     ) -> Expression:
+        if isinstance(value, BackendIntegral):
+            return FunctionCall(
+                name=Identifier(Operation.INTEGRATE.value),
+                arguments=(
+                    self._from_sympy(value.integrand),
+                    self._from_sympy(value.variable),
+                ),
+            )
         if isinstance(value, tuple):
             return SequenceExpression(items=tuple(self._from_sympy(item) for item in value))
         return self._from_sympy(value)

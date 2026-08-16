@@ -44,6 +44,9 @@ def test_homepage_and_assets_are_served() -> None:
     assert "text-transform: uppercase" not in stylesheet.text
     assert script.status_code == _HTTP_OK
     assert "ComputeEngine" in script.text
+    assert "MathfieldElement.fontsDirectory" in script.text
+    assert "mathlive@0.110.0/fonts/" in script.text
+    assert "firstElementChild" not in script.text
     assert 'behavior: "smooth"' not in script.text
 
 
@@ -63,6 +66,35 @@ def test_exact_solve_response_contains_latex_steps() -> None:
     assert payload.result_latex == "2"
     assert payload.steps
     assert payload.steps[0].before_latex.startswith(r"\int_{0}^{\pi}")
+
+
+def test_reciprocal_quadratic_integral_contains_detailed_latex_steps() -> None:
+    """The browser should receive the completed-square integration derivation."""
+    with TestClient(create_app()) as client:
+        response = client.post(
+            "/api/solve",
+            json={
+                "latex": r"\int\frac{1}{x^2-x+1}\,\mathrm{d}x",
+                "math_json": [
+                    "Integrate",
+                    [
+                        "Divide",
+                        1,
+                        ["Add", ["Subtract", ["Power", "x", 2], "x"], 1],
+                    ],
+                    "x",
+                ],
+            },
+        )
+    payload = SolveResponse.model_validate_json(response.text)
+    assert response.status_code == _HTTP_OK
+    assert [step.rule for step in payload.steps] == [
+        "Complete the square",
+        "Use the arctangent integral",
+        "Simplify the antiderivative",
+    ]
+    assert payload.steps[0].after_latex.startswith(r"\int \frac{1}")
+    assert r"\arctan" in payload.steps[1].after_latex
 
 
 def test_graphical_equation_solve_response() -> None:

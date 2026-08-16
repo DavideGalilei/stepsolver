@@ -1,4 +1,4 @@
-"""Backend-local equation derivation strategies for human-readable steps."""
+"""Backend-local derivation strategies for human-readable solution steps."""
 
 from collections.abc import Sequence
 from dataclasses import dataclass
@@ -8,7 +8,18 @@ import sympy as sp
 
 from stepsolver.results import VerificationMethod
 
-type BackendExpression = sp.Basic | tuple[sp.Basic, ...]
+type EquationBackendExpression = sp.Basic | tuple[sp.Basic, ...]
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class BackendIntegral:
+    """An unevaluated backend integral used only for derivation display."""
+
+    integrand: sp.Basic
+    variable: sp.Symbol
+
+
+type BackendExpression = EquationBackendExpression | BackendIntegral
 
 _LINEAR_DEGREE = 1
 _QUADRATIC_DEGREE = 2
@@ -36,8 +47,8 @@ class BackendDerivationStep:
 def _equivalent_step(
     *,
     rule: str,
-    before: BackendExpression,
-    after: BackendExpression,
+    before: EquationBackendExpression,
+    after: EquationBackendExpression,
     explanation: str,
     variable: sp.Symbol,
 ) -> BackendDerivationStep:
@@ -54,7 +65,10 @@ def _equivalent_step(
     )
 
 
-def _solution_set(expression: BackendExpression, variable: sp.Symbol) -> frozenset[str]:
+def _solution_set(
+    expression: EquationBackendExpression,
+    variable: sp.Symbol,
+) -> frozenset[str]:
     equations = expression if isinstance(expression, tuple) else (expression,)
     roots: set[str] = set()
     for equation in equations:
@@ -74,11 +88,11 @@ def _append_if_changed(
     steps: list[BackendDerivationStep],
     *,
     rule: str,
-    before: BackendExpression,
-    after: BackendExpression,
+    before: EquationBackendExpression,
+    after: EquationBackendExpression,
     explanation: str,
     variable: sp.Symbol,
-) -> BackendExpression:
+) -> EquationBackendExpression:
     if str(before) == str(after):
         return before
     steps.append(
@@ -103,7 +117,7 @@ def _linear_steps(
     coefficient = polynomial.coeff_monomial(variable)
     constant = polynomial.coeff_monomial(1)
     isolated_term = sp.Eq(coefficient * variable, -constant)
-    current: BackendExpression = equation
+    current: EquationBackendExpression = equation
     current = _append_if_changed(
         steps,
         rule="Collect variable terms",
@@ -114,7 +128,7 @@ def _linear_steps(
         ),
         variable=variable,
     )
-    final: BackendExpression = (
+    final: EquationBackendExpression = (
         sp.Eq(variable, roots[0]) if len(roots) == _LINEAR_DEGREE else _relations(variable, roots)
     )
     _append_if_changed(
@@ -137,7 +151,7 @@ def _quadratic_steps(
     steps: list[BackendDerivationStep] = []
     expression = polynomial.as_expr()
     factored = sp.factor(expression)
-    current: BackendExpression = equation
+    current: EquationBackendExpression = equation
     if str(factored) != str(expression) and factored.is_Mul:
         factored_equation = sp.Eq(factored, 0)
         current = _append_if_changed(
@@ -216,7 +230,7 @@ def derive_polynomial_equation(
     numerator, denominator = sp.fraction(difference)
     expanded = sp.expand(numerator)
     normalized = sp.Eq(expanded, 0)
-    current: BackendExpression = equation
+    current: EquationBackendExpression = equation
     if str(denominator) != "1":
         current = _append_if_changed(
             steps,
@@ -247,4 +261,96 @@ def derive_polynomial_equation(
     else:
         return ()
     steps.extend(detail)
+    return tuple(steps)
+
+
+def derive_reciprocal_quadratic_integral(
+    integrand: sp.Basic,
+    variable: sp.Symbol,
+    result: sp.Basic,
+) -> tuple[BackendDerivationStep, ...]:
+    """Derive a completed-square arctangent integral when applicable."""
+    numerator, denominator = sp.fraction(sp.together(integrand))
+    if numerator.has(variable):
+        return ()
+    polynomial = sp.Poly(denominator, variable)
+    if polynomial.degree() != _QUADRATIC_DEGREE:
+        return ()
+    coefficient_a = polynomial.coeff_monomial(variable**2)
+    coefficient_b = polynomial.coeff_monomial(variable)
+    coefficient_c = polynomial.coeff_monomial(1)
+    center = sp.simplify(-coefficient_b / (2 * coefficient_a))
+    radius_squared = sp.simplify(
+        coefficient_c / coefficient_a - coefficient_b**2 / (4 * coefficient_a**2)
+    )
+    if radius_squared.is_positive is not True:
+        return ()
+    prefactor = sp.simplify(numerator / coefficient_a)
+    shift = sp.Add(variable, -center, evaluate=False)
+    completed_denominator = sp.Add(
+        sp.Pow(shift, 2, evaluate=False),
+        radius_squared,
+        evaluate=False,
+    )
+    completed_integrand = sp.Mul(
+        prefactor,
+        sp.Pow(completed_denominator, -1, evaluate=False),
+        evaluate=False,
+    )
+    if str(sp.simplify(integrand - completed_integrand)) != "0":
+        message = "completing the square changed the integrand"
+        raise ValueError(message)
+    radius = sp.sqrt(radius_squared)
+    arctangent_argument = sp.Mul(
+        shift,
+        sp.Pow(radius, -1, evaluate=False),
+        evaluate=False,
+    )
+    formula = sp.Mul(
+        sp.simplify(prefactor / radius),
+        sp.atan(arctangent_argument),
+        evaluate=False,
+    )
+    if str(sp.simplify(sp.diff(formula, variable) - completed_integrand)) != "0":
+        message = "the arctangent formula failed differentiation verification"
+        raise ValueError(message)
+    if str(sp.simplify(formula - result)) != "0":
+        message = "the simplified antiderivative differs from the exact result"
+        raise ValueError(message)
+    steps = [
+        BackendDerivationStep(
+            rule="Complete the square",
+            before=BackendIntegral(integrand=integrand, variable=variable),
+            after=BackendIntegral(integrand=completed_integrand, variable=variable),
+            explanation=(
+                "Rewrite the quadratic denominator as a shifted square plus a positive constant."
+            ),
+            verification_method=VerificationMethod.SYMBOLIC_EQUIVALENCE,
+            verification_detail="Simplifying the difference between the two integrands gives zero.",
+        ),
+        BackendDerivationStep(
+            rule="Use the arctangent integral",
+            before=BackendIntegral(integrand=completed_integrand, variable=variable),
+            after=formula,
+            explanation="Apply the standard integral of 1 / (u² + a²).",
+            verification_method=VerificationMethod.DIFFERENTIATION,
+            verification_detail=(
+                "Differentiating this arctangent expression recovers "
+                "the completed-square integrand."
+            ),
+        ),
+    ]
+    if str(formula) != str(result):
+        steps.append(
+            BackendDerivationStep(
+                rule="Simplify the antiderivative",
+                before=formula,
+                after=result,
+                explanation="Simplify the constant factor and the arctangent argument.",
+                verification_method=VerificationMethod.SYMBOLIC_EQUIVALENCE,
+                verification_detail=(
+                    "Simplifying the difference between both antiderivative forms gives zero."
+                ),
+            )
+        )
     return tuple(steps)

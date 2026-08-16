@@ -107,6 +107,19 @@ def test_unsupported_derivation_has_an_honest_fallback(solver: Solver) -> None:
     assert result.steps[0].rule == "Compute exact result"
 
 
+def test_reciprocal_quadratic_integral_has_worked_steps(solver: Solver) -> None:
+    """A completed-square integral should expose its arctangent derivation."""
+    result = solver.solve("integrate(1/(x^2-x+1),x)")
+    assert isinstance(result, ExactResult)
+    assert tuple(step.rule for step in result.steps) == (
+        "Complete the square",
+        "Use the arctangent integral",
+        "Simplify the antiderivative",
+    )
+    assert all(step.before != step.after for step in result.steps)
+    assert result.steps[1].verification.method.value == "differentiation"
+
+
 def test_inequality_solver(solver: Solver) -> None:
     """A real univariate inequality should produce an exact interval condition."""
     result = solver.solve("solve_inequality(x^2<4,x)")
