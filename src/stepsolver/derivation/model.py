@@ -71,6 +71,14 @@ class BackendNewtonRule:
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
+class BackendNewtonIterations:
+    """Successive Newton approximations with indexed variables."""
+
+    variable: sp.Symbol
+    values: tuple[sp.Basic, ...]
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
 class BackendApproximateSolutions:
     """One or more numerical roots displayed with approximation signs."""
 
@@ -184,6 +192,7 @@ type BackendExpression = (
     | BackendQuadraticSolutions
     | BackendCardanoSolution
     | BackendNewtonRule
+    | BackendNewtonIterations
     | BackendApproximateSolutions
     | BackendCrossedOut
     | BackendEvaluationAtBounds

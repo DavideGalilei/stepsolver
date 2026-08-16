@@ -94,6 +94,11 @@ def _exact_result_latex(result: ExactResult) -> str:
             final_step = result.steps[-1]
             if (
                 isinstance(final_step.after, FunctionCall)
+                and str(final_step.after.name) == "approximate_solutions"
+            ):
+                return format_latex_expression(final_step.after)
+            if (
+                isinstance(final_step.after, FunctionCall)
                 and str(final_step.after.name) == "cardano_solution"
             ):
                 exact = format_latex_expression(final_step.after)

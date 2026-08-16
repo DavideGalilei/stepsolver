@@ -102,6 +102,18 @@ def test_mathfield_selection_uses_a_light_neutral_palette() -> None:
     assert "--contains-highlight-background-color: #f0f1f2" in stylesheet.text
 
 
+def test_desktop_solution_uses_the_available_width_with_internal_gutters() -> None:
+    """Wide screens should give worked solutions more room without widening the editor."""
+    with TestClient(create_app()) as client:
+        stylesheet = client.get("/static/style.css")
+    assert "@media (min-width: 1100px)" in stylesheet.text
+    assert "width: min(1600px, calc(100vw - 64px))" in stylesheet.text
+    assert "padding-right: clamp(32px, 3vw, 52px)" in stylesheet.text
+    assert "padding-left: clamp(32px, 3vw, 52px)" in stylesheet.text
+    assert "border-right: 1px solid var(--line)" in stylesheet.text
+    assert "border-left: 1px solid var(--line)" in stylesheet.text
+
+
 def test_frontend_handles_large_math_and_warms_the_browser_runtime() -> None:
     """Large formulas should scroll, while browser startup happens outside the main thread."""
     with TestClient(create_app()) as client:
@@ -490,8 +502,8 @@ def test_graphical_equation_solve_response() -> None:
     assert all(r"\mathtt" not in step.after_latex for step in payload.steps)
 
 
-def test_rational_cubic_response_uses_student_facing_cardano_steps() -> None:
-    """The browser should receive domain, reduction, identity, and approximation details."""
+def test_rational_cubic_response_uses_a_student_facing_numerical_method() -> None:
+    """The browser should lead with rational-root checks and Newton iteration."""
     with TestClient(create_app()) as client:
         response = client.post(
             "/api/solve",
@@ -510,8 +522,7 @@ def test_rational_cubic_response_uses_student_facing_cardano_steps() -> None:
         "Multiply both sides by the denominator",
         "Cancel the common factors",
         "Expand and collect like terms",
-        "Depress the cubic",
-        "Apply Cardano's formula",
+        "Approximate the real root",
     )
     assert payload.steps[0].introduced_constraints[1].expression_latex == r"x \ne -1"
     assert payload.steps[1].before_latex == (
@@ -519,17 +530,30 @@ def test_rational_cubic_response_uses_student_facing_cardano_steps() -> None:
         r" = \frac{\color{#e93242}{\cancel{x + 1}}}"
         r"{\color{#e93242}{\cancel{x + 1}}}"
     )
-    assert payload.steps[3].notes[0].label == "General substitution"
-    assert payload.steps[3].notes[0].expression_latex == r"x = t - \frac{b}{3 \cdot a}"
-    assert payload.steps[4].notes[0].label == "Discriminant formula"
-    assert payload.steps[4].notes[0].expression_latex == (
-        r"\Delta = \frac{p^{3}}{27} + \frac{q^{2}}{4}"
+    assert tuple(note.label for note in payload.steps[3].notes) == (
+        "Rational-root test",
+        "Bracket the root",
+        "Newton iteration",
+        "Successive estimates",
+        "Exact form (optional)",
     )
-    assert payload.steps[-1].after_latex.startswith(r"x = \frac{-1}{3} + \sqrt[3]")
-    assert payload.result_latex is not None
-    assert r"x \approx 2.079596" in payload.result_latex
-    assert r"\sqrt[3]" in payload.result_latex
-    assert r"\mathrm{i}" not in payload.result_latex
+    assert payload.steps[3].notes[1].expression_latex == (
+        r"\left[f\left(2\right) = -1, f\left(3\right) = 19\right]"
+    )
+    assert payload.steps[3].notes[2].expression_latex == (
+        r"x_{k+1} = x_k - \frac{f\left(x_k\right)}{f'\left(x_k\right)}"
+    )
+    assert payload.steps[-1].after_latex == r"x \approx 2.079596"
+    assert payload.result_latex == r"x \approx 2.079596"
+    assert payload.steps[-1].notes[-1].expression_latex.startswith(r"x = \frac{-1}{3} + \sqrt[3]")
+
+
+def test_frontend_labels_approximate_results_as_numerical() -> None:
+    """An approximate displayed answer should not be labeled as exact."""
+    with TestClient(create_app()) as client:
+        script = client.get("/static/app.js")
+    assert 'payload.result_latex?.includes("\\\\approx")' in script.text
+    assert '"Numerical answer"' in script.text
 
 
 def test_invalid_syntax_returns_validation_error() -> None:

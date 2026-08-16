@@ -27,6 +27,7 @@ from stepsolver.derivation.model import (
     BackendIntegral,
     BackendIntegrationByPartsRule,
     BackendLimit,
+    BackendNewtonIterations,
     BackendNewtonRule,
     BackendNotEqual,
     BackendProduct,
@@ -119,6 +120,14 @@ class SympyDerivationRenderer:
             )
         if isinstance(value, BackendNewtonRule):
             return FunctionCall(name=Identifier("newton_rule"), arguments=())
+        if isinstance(value, BackendNewtonIterations):
+            return FunctionCall(
+                name=Identifier("newton_iterations"),
+                arguments=(
+                    self._converter.from_sympy(value.variable),
+                    *(self._converter.from_sympy(item) for item in value.values),
+                ),
+            )
         if isinstance(value, BackendApproximateSolutions):
             return FunctionCall(
                 name=Identifier("approximate_solutions"),

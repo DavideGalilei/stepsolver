@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 from dataclasses import dataclass
+from math import ceil, floor, isqrt
 from typing import TypeGuard, cast
 
 import sympy as sp
@@ -16,6 +17,7 @@ from stepsolver.derivation.model import (
     BackendExpression,
     BackendIdentity,
     BackendMathNote,
+    BackendNewtonIterations,
     BackendNewtonRule,
     BackendNotEqual,
     BackendProduct,
@@ -32,6 +34,9 @@ _QUADRATIC_DEGREE = 2
 _CUBIC_DEGREE = 3
 _CONSTANT_DEGREE = 0
 _ROOT_VERIFICATION_DIGITS = 12
+_DISPLAY_DIGITS = 7
+_NEWTON_ITERATION_COUNT = 3
+_MAX_RATIONAL_ROOT_CANDIDATES = 12
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -136,6 +141,66 @@ def _solution_set(
 
 def _relations(variable: sp.Symbol, roots: tuple[sp.Basic, ...]) -> tuple[sp.Basic, ...]:
     return tuple(sp.Eq(variable, root) for root in roots)
+
+
+def _positive_divisors(value: int) -> tuple[int, ...]:
+    small: list[int] = []
+    large: list[int] = []
+    for candidate in range(1, isqrt(value) + 1):
+        if value % candidate != 0:
+            continue
+        small.append(candidate)
+        paired = value // candidate
+        if paired != candidate:
+            large.append(paired)
+    return (*small, *reversed(large))
+
+
+def _rational_sort_key(value: sp.Rational) -> float:
+    return float(str(value))
+
+
+def _rational_root_candidates(
+    polynomial: sp.Poly,
+    variable: sp.Symbol,
+) -> tuple[sp.Rational, ...]:
+    leading_coefficient = polynomial.coeff_monomial(variable ** polynomial.degree())
+    constant_coefficient = polynomial.coeff_monomial(1)
+    if not isinstance(leading_coefficient, sp.Integer) or not isinstance(
+        constant_coefficient, sp.Integer
+    ):
+        return ()
+    leading = abs(int(str(leading_coefficient)))
+    constant = abs(int(str(constant_coefficient)))
+    if leading == 0 or constant == 0:
+        return ()
+    candidates: set[sp.Rational] = {
+        sp.Rational(sign * numerator, denominator)
+        for numerator in _positive_divisors(constant)
+        for denominator in _positive_divisors(leading)
+        for sign in (-1, 1)
+    }
+    return tuple(sorted(candidates, key=_rational_sort_key))
+
+
+def _newton_values(
+    expression: sp.Basic,
+    variable: sp.Symbol,
+    initial: sp.Basic,
+) -> tuple[sp.Basic, ...]:
+    derivative = sp.diff(expression, variable)
+    current = sp.N(initial, _DISPLAY_DIGITS)
+    values: list[sp.Basic] = [current]
+    for _index in range(_NEWTON_ITERATION_COUNT):
+        slope = sp.N(derivative.subs(variable, current), _DISPLAY_DIGITS + 2)
+        if slope == sp.Integer(0):
+            break
+        current = sp.N(
+            current - expression.subs(variable, current) / slope,
+            _DISPLAY_DIGITS,
+        )
+        values.append(current)
+    return tuple(values)
 
 
 def _domain_restrictions(
@@ -556,6 +621,7 @@ def _cubic_steps(
     )
     if factored:
         return factored
+    expression = polynomial.as_expr()
     coefficient_a = polynomial.coeff_monomial(variable**3)
     coefficient_b = polynomial.coeff_monomial(variable**2)
     coefficient_c = polynomial.coeff_monomial(variable)
@@ -574,101 +640,80 @@ def _cubic_steps(
     discriminant = sp.simplify((depressed_constant / 2) ** 2 + (depressed_linear / 3) ** 3)
     if discriminant.is_positive is not True or len(roots) != 1:
         return ()
-    reduced_variable = sp.Symbol("t", real=True)
     shift = sp.simplify(-coefficient_b / (3 * coefficient_a))
-    depressed_equation = sp.Eq(
-        reduced_variable**3 + depressed_linear * reduced_variable + depressed_constant,
-        0,
-        evaluate=False,
-    )
     first_radicand = sp.simplify(-depressed_constant / 2 + sp.sqrt(discriminant))
     second_radicand = sp.simplify(-depressed_constant / 2 - sp.sqrt(discriminant))
-    generic_p = sp.Symbol("p", real=True)
-    generic_q = sp.Symbol("q", real=True)
-    generic_a = sp.Symbol("a", real=True, nonzero=True)
-    generic_b = sp.Symbol("b", real=True)
-    generic_discriminant = (generic_q / 2) ** 2 + (generic_p / 3) ** 3
     cardano_solution = BackendCardanoSolution(
         variable=variable,
         shift=shift,
         first_radicand=first_radicand,
         second_radicand=second_radicand,
     )
+    candidates = _rational_root_candidates(polynomial, variable)
+    function = sp.Function("f")
+    candidate_checks = tuple(
+        sp.Eq(
+            function(candidate),
+            sp.simplify(expression.subs(variable, candidate)),
+            evaluate=False,
+        )
+        for candidate in candidates
+    )
+    numerical_root = sp.N(roots[0], _DISPLAY_DIGITS)
+    numerical_root_float = float(str(numerical_root))
+    lower = sp.Integer(floor(numerical_root_float))
+    upper = sp.Integer(ceil(numerical_root_float))
+    bracket_checks = tuple(
+        sp.Eq(
+            function(point),
+            sp.simplify(expression.subs(variable, point)),
+            evaluate=False,
+        )
+        for point in (lower, upper)
+    )
+    derivative = sp.diff(expression, variable)
+    initial = lower if derivative.subs(variable, lower) != sp.Integer(0) else upper
+    notes: list[BackendMathNote] = []
+    if candidate_checks and len(candidate_checks) <= _MAX_RATIONAL_ROOT_CANDIDATES:
+        notes.append(
+            BackendMathNote(
+                label="Rational-root test",
+                expression=candidate_checks,
+            )
+        )
+    notes.extend(
+        (
+            BackendMathNote(label="Bracket the root", expression=bracket_checks),
+            BackendMathNote(label="Newton iteration", expression=BackendNewtonRule()),
+            BackendMathNote(
+                label="Successive estimates",
+                expression=BackendNewtonIterations(
+                    variable=variable,
+                    values=_newton_values(expression, variable, initial),
+                ),
+            ),
+            BackendMathNote(label="Exact form (optional)", expression=cardano_solution),
+        )
+    )
     return (
         BackendDerivationStep(
-            rule="Depress the cubic",
+            rule="Approximate the real root",
             before=equation,
-            after=depressed_equation,
-            explanation=(
-                "Shift the variable to remove the squared term, producing the standard "
-                "form t^3 + pt + q = 0."
+            after=BackendApproximateSolutions(
+                variable=variable,
+                roots=(numerical_root,),
             ),
-            verification_method=VerificationMethod.SUBSTITUTION,
-            verification_detail="Substituting the displayed variable shift gives this cubic.",
-            notes=(
-                BackendMathNote(
-                    label="General substitution",
-                    expression=BackendIdentity(
-                        left=variable,
-                        right=reduced_variable - generic_b / (3 * generic_a),
-                    ),
-                ),
-                BackendMathNote(
-                    label="For this cubic",
-                    expression=BackendIdentity(
-                        left=variable,
-                        right=reduced_variable + shift,
-                    ),
-                ),
-                BackendMathNote(
-                    label="Coefficient p",
-                    expression=BackendIdentity(left=generic_p, right=depressed_linear),
-                ),
-                BackendMathNote(
-                    label="Coefficient q",
-                    expression=BackendIdentity(left=generic_q, right=depressed_constant),
-                ),
-            ),
-        ),
-        BackendDerivationStep(
-            rule="Apply Cardano's formula",
-            before=depressed_equation,
-            after=cardano_solution,
             explanation=(
-                "The Cardano discriminant is positive, so the cubic has one real root. "
-                "Substitute p and q into the real-root formula."
+                "None of the rational-root candidates is a root, so grouping does not give "
+                "a rational factorization. Bracket the one real root, then refine it with "
+                "Newton's method."
             ),
             verification_method=VerificationMethod.BACKEND_IDENTITY,
-            verification_detail="Substitution of the displayed radical expression gives zero.",
-            notes=(
-                BackendMathNote(
-                    label="Discriminant formula",
-                    expression=BackendIdentity(
-                        left=sp.Symbol("Delta"),
-                        right=generic_discriminant,
-                    ),
-                ),
-                BackendMathNote(
-                    label="For this cubic",
-                    expression=BackendIdentity(
-                        left=sp.Symbol("Delta"),
-                        right=discriminant,
-                    ),
-                ),
-                BackendMathNote(
-                    label="Real-root formula",
-                    expression=BackendCardanoSolution(
-                        variable=reduced_variable,
-                        shift=sp.Integer(0),
-                        first_radicand=-generic_q / 2 + sp.sqrt(generic_discriminant),
-                        second_radicand=-generic_q / 2 - sp.sqrt(generic_discriminant),
-                    ),
-                ),
-                BackendMathNote(
-                    label="Decimal check",
-                    expression=BackendIdentity(left=variable, right=sp.N(roots[0], 7)),
-                ),
+            verification_detail=(
+                "Substitution gives a residual consistent with the displayed precision; the "
+                "exact Cardano form is retained as an optional note."
             ),
+            notes=tuple(notes),
         ),
     )
 

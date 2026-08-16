@@ -293,15 +293,14 @@ def test_unsupported_derivation_has_an_honest_fallback(solver: Solver) -> None:
 
 
 def test_rational_equation_reducing_to_cubic_has_human_steps(solver: Solver) -> None:
-    """A rational cubic should retain its domain and show the standard cubic method."""
+    """An irreducible rational cubic should use a practical human-first method."""
     result = solver.solve("solve(x^2-4=1/(x+1),x)")
     assert isinstance(result, ExactResult)
     assert tuple(step.rule for step in result.steps) == (
         "Multiply both sides by the denominator",
         "Cancel the common factors",
         "Expand and collect like terms",
-        "Depress the cubic",
-        "Apply Cardano's formula",
+        "Approximate the real root",
     )
     assert tuple(
         format_latex_expression(item.expression) for item in result.steps[0].introduced_constraints
@@ -319,22 +318,25 @@ def test_rational_equation_reducing_to_cubic_has_human_steps(solver: Solver) -> 
         r"\left(x + 1\right) \cdot \left(x^{2} - 4\right) = 1"
     )
     assert tuple(note.label for note in result.steps[3].notes) == (
-        "General substitution",
-        "For this cubic",
-        "Coefficient p",
-        "Coefficient q",
-    )
-    assert tuple(note.label for note in result.steps[4].notes) == (
-        "Discriminant formula",
-        "For this cubic",
-        "Real-root formula",
-        "Decimal check",
+        "Rational-root test",
+        "Bracket the root",
+        "Newton iteration",
+        "Successive estimates",
+        "Exact form (optional)",
     )
     assert format_latex_expression(result.steps[3].notes[0].expression) == (
-        r"x = t - \frac{b}{3 \cdot a}"
+        r"\left[f\left(-5\right) = -85, f\left(-1\right) = -1, "
+        r"f\left(1\right) = -7, f\left(5\right) = 125\right]"
     )
-    assert format_latex_expression(result.steps[4].notes[0].expression) == (
-        r"\Delta = \frac{p^{3}}{27} + \frac{q^{2}}{4}"
+    assert format_latex_expression(result.steps[3].notes[1].expression) == (
+        r"\left[f\left(2\right) = -1, f\left(3\right) = 19\right]"
+    )
+    assert format_latex_expression(result.steps[3].notes[2].expression) == (
+        r"x_{k+1} = x_k - \frac{f\left(x_k\right)}{f'\left(x_k\right)}"
+    )
+    assert format_latex_expression(result.steps[3].after) == r"x \approx 2.079596"
+    assert format_latex_expression(result.steps[3].notes[-1].expression).startswith(
+        r"x = \frac{-1}{3} + \sqrt[3]"
     )
     assert "sqrt[3]" not in format_ascii(result)
 

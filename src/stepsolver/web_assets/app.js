@@ -352,7 +352,11 @@ async function solve() {
       payload.status === "undefined";
     if (payload.status === "divergent") statusText.textContent = "Diverges";
     else if (payload.status === "undefined") statusText.textContent = "Undefined";
-    else if (payload.status === "exact") statusText.textContent = "Exact answer";
+    else if (payload.status === "exact") {
+      statusText.textContent = payload.result_latex?.includes("\\approx")
+        ? "Numerical answer"
+        : "Exact answer";
+    }
     else statusText.textContent = "No exact answer";
     asciiOutput.textContent = payload.formatted_ascii;
     if (completed) {

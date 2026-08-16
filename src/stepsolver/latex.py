@@ -199,6 +199,13 @@ def _format_function(expression: FunctionCall) -> str:
         return rf"\color{{#e93242}}{{\cancel{{{value}}}}}"
     if name == "newton_rule" and not arguments:
         return r"x_{k+1} = x_k - \frac{f\left(x_k\right)}{f'\left(x_k\right)}"
+    if name == "newton_iterations" and len(arguments) >= 2:
+        variable = format_latex_expression(arguments[0])
+        iterations = (
+            rf"{variable}_{{{index}}} \approx {format_latex_expression(value)}"
+            for index, value in enumerate(arguments[1:])
+        )
+        return r",\quad ".join(iterations)
     if name == "approximate_solutions" and len(arguments) >= 2:
         variable = format_latex_expression(arguments[0])
         approximations = (
