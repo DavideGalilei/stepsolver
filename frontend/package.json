@@ -3,7 +3,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "node build.mjs"
+    "build": "node build.mjs",
+    "build:pages": "node build-pages.mjs"
   },
   "dependencies": {
     "@cortex-js/compute-engine": "0.113.0",

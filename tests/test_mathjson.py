@@ -3,11 +3,10 @@
 from fractions import Fraction
 
 import pytest
-from pydantic import JsonValue
 
 from stepsolver.ast import Number, Operation, Query, SequenceExpression, Symbol
 from stepsolver.errors import QueryError
-from stepsolver.mathjson import expression_from_mathjson, query_from_mathjson
+from stepsolver.mathjson import JsonValue, expression_from_mathjson, query_from_mathjson
 
 
 @pytest.mark.parametrize(

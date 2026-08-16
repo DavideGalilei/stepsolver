@@ -288,6 +288,8 @@ math-field {
 }
 
 .status-text::before { content: "✓"; margin-right: 6px; }
+.status-text.is-loading { color: var(--muted); }
+.status-text.is-loading::before { content: "◌"; }
 .status-text.is-error { color: var(--error); }
 .status-text.is-error::before { content: "×"; }
 

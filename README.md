@@ -11,7 +11,7 @@
 
 <div align="center">
 
-[Website](https://davidegalilei.github.io/stepsolver/) · [Run it](#run-it) · [Syntax](#syntax)
+[Open the solver](https://davidegalilei.github.io/stepsolver/) · [Run it locally](#run-it) · [Syntax](#syntax)
 
 [![Python 3.12–3.14](https://img.shields.io/badge/Python-3.12%E2%80%933.14-3776AB?logo=python&logoColor=white)](https://www.python.org/)
 [![Poetry](https://img.shields.io/badge/Poetry-managed-60A5FA?logo=poetry&logoColor=white)](https://python-poetry.org/)

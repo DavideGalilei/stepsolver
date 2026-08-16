@@ -1,11 +1,13 @@
 """Web frontend and API tests."""
 
+import json
 from dataclasses import dataclass
 
 import pytest
 from fastapi.testclient import TestClient
 
 from stepsolver import web
+from stepsolver.browser import solve_mathjson_json
 from stepsolver.web import SolveResponse, create_app
 
 _HTTP_OK = 200
@@ -29,6 +31,7 @@ def test_homepage_and_assets_are_served() -> None:
         homepage = client.get("/")
         stylesheet = client.get("/static/style.css")
         script = client.get("/static/app.js")
+        runtime = client.get("/static/runtime.mjs")
     assert homepage.status_code == _HTTP_OK
     assert "StepSolver" in homepage.text
     assert '<span class="wordmark-symbol" aria-hidden="true">∬</span>' in homepage.text
@@ -46,8 +49,11 @@ def test_homepage_and_assets_are_served() -> None:
     assert "text-transform: uppercase" not in stylesheet.text
     assert script.status_code == _HTTP_OK
     assert "ComputeEngine" in script.text
-    assert 'from "/static/vendor.mjs"' in script.text
-    assert 'MathfieldElement.fontsDirectory = "/static/fonts/"' in script.text
+    assert 'from "./vendor.mjs"' in script.text
+    assert 'from "./runtime.mjs"' in script.text
+    assert 'new URL("./fonts/", import.meta.url).href' in script.text
+    assert runtime.status_code == _HTTP_OK
+    assert 'fetch("./api/solve"' in runtime.text
     assert "firstElementChild" not in script.text
     assert "expressionField.insert" in script.text
     assert 'key.addEventListener("pointerdown"' in script.text
@@ -67,6 +73,18 @@ def test_homepage_and_assets_are_served() -> None:
     assert "--smart-fence-color: var(--ink)" in stylesheet.text
     assert 'table.className = "derivative-table"' in script.text
     assert "Differentiate each factor once" in script.text
+
+
+def test_browser_runtime_serializes_the_same_solver_payload() -> None:
+    """The Pyodide boundary should expose real answers and worked steps as JSON."""
+    source = json.dumps(
+        ["Integrate", ["Sin", "x"], ["Tuple", "x", 0, "Pi"]],
+    )
+    payload = SolveResponse.model_validate_json(solve_mathjson_json(source))
+    assert payload.status == "exact"
+    assert payload.result_latex == "2"
+    assert payload.steps
+    assert payload.steps[0].before_latex.startswith(r"\int_{0}^{\pi}")
 
 
 def test_exact_solve_response_contains_latex_steps() -> None:

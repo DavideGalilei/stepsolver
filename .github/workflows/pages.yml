@@ -1,11 +1,8 @@
-name: Deploy project site
+name: Deploy solver
 
 on:
   push:
     branches: [main]
-    paths:
-      - "docs/**"
-      - ".github/workflows/pages.yml"
   workflow_dispatch:
 
 permissions:
@@ -27,13 +24,35 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v7
 
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+
+      - name: Install Poetry
+        run: pipx install poetry==2.3.3
+
+      - name: Build Python package
+        run: poetry build --format wheel
+
+      - name: Assemble browser solver
+        run: |
+          wheel_path="$(find dist -maxdepth 1 -name '*.whl' -print -quit)"
+          test -n "$wheel_path"
+          STEPSOLVER_WHEEL="$wheel_path" npm --prefix frontend run build:pages
+
       - name: Configure Pages
         uses: actions/configure-pages@v6
 
-      - name: Upload static site
+      - name: Upload solver
         uses: actions/upload-pages-artifact@v5
         with:
-          path: docs
+          path: _site
 
       - name: Deploy to GitHub Pages
         id: deployment

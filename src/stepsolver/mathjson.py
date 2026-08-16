@@ -2,8 +2,6 @@
 
 from fractions import Fraction
 
-from pydantic import JsonValue
-
 from stepsolver.ast import (
     ApproximateNumber,
     BinaryExpression,
@@ -25,6 +23,8 @@ from stepsolver.ast import (
 )
 from stepsolver.errors import QueryError
 from stepsolver.formatter import format_expression
+
+type JsonValue = bool | int | float | str | list[JsonValue] | dict[str, JsonValue] | None
 
 _CONSTANTS: dict[str, ConstantName] = {
     "Pi": ConstantName.PI,

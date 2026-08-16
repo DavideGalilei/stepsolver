@@ -1,11 +1,13 @@
 "use strict";
 
-import { ComputeEngine, MathfieldElement } from "/static/vendor.mjs";
+import { createSolverClient } from "./runtime.mjs";
+import { ComputeEngine, MathfieldElement } from "./vendor.mjs";
 
-MathfieldElement.fontsDirectory = "/static/fonts/";
+MathfieldElement.fontsDirectory = new URL("./fonts/", import.meta.url).href;
 MathfieldElement.soundsDirectory = null;
 
 const computeEngine = new ComputeEngine();
+const solverClient = createSolverClient();
 const form = document.querySelector("#solve-form");
 const expressionField = document.querySelector("#expression-field");
 const solveButton = document.querySelector("#solve-button");
@@ -125,13 +127,12 @@ async function solve() {
   statusText.classList.remove("is-error");
   stepsContainer.replaceChildren();
   try {
-    const response = await fetch("/api/solve", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(buildPayload())
+    const payload = await solverClient.solve(buildPayload(), (message) => {
+      solveButton.textContent = message;
+      statusText.textContent = message.replace("…", "");
+      statusText.classList.add("is-loading");
     });
-    const payload = await response.json();
-    if (!response.ok) throw new Error(payload.detail ?? "The server could not solve this query.");
+    statusText.classList.remove("is-loading");
     const completed = payload.status === "exact" || payload.status === "divergent";
     if (payload.status === "divergent") statusText.textContent = "Diverges";
     else if (payload.status === "exact") statusText.textContent = "Exact answer";
@@ -150,6 +151,7 @@ async function solve() {
     workingBlock.classList.toggle("hidden", payload.steps.length === 0);
     resultSection.scrollIntoView({ block: "start" });
   } catch (error) {
+    statusText.classList.remove("is-loading");
     answerBlock.classList.add("hidden");
     workingBlock.classList.add("hidden");
     statusText.textContent = "Input error";

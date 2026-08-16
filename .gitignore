@@ -4,6 +4,7 @@
 /.ruff_cache/
 /.hypothesis/
 /dist/
+/_site/
 /frontend/node_modules/
 /htmlcov/
 /.coverage

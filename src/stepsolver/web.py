@@ -8,14 +8,11 @@ import uvicorn
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
-from pydantic import BaseModel, ConfigDict, Field, JsonValue
+from pydantic import BaseModel, ConfigDict, Field
 
-from stepsolver.ast import OpaqueExpression
 from stepsolver.errors import QueryError
-from stepsolver.formatter import format_ascii, format_expression
-from stepsolver.latex import format_latex_expression, format_latex_value
-from stepsolver.mathjson import query_from_mathjson
-from stepsolver.results import DivergenceKind, DivergentResult, ExactResult, SolveResult
+from stepsolver.mathjson import JsonValue, query_from_mathjson
+from stepsolver.presentation import solve_payload
 from stepsolver.solver import Solver
 
 _ASSET_DIRECTORY = Path(__file__).with_name("web_assets")
@@ -74,75 +71,6 @@ class SolveResponse(BaseModel):
     steps: tuple[StepResponse, ...]
 
 
-def _step_responses(result: SolveResult) -> tuple[StepResponse, ...]:
-    final_step_number = len(result.steps)
-    return tuple(
-        StepResponse(
-            number=index,
-            rule=step.rule,
-            explanation=step.explanation,
-            before_ascii=format_expression(step.before),
-            after_ascii=format_expression(step.after),
-            before_latex=format_latex_expression(step.before),
-            after_latex=(
-                format_latex_value(result.value)
-                if (
-                    isinstance(result, ExactResult)
-                    and index == final_step_number
-                    and isinstance(step.after, OpaqueExpression)
-                )
-                else format_latex_expression(step.after)
-            ),
-            verification_method=step.verification.method.value,
-            verification_detail=step.verification.detail,
-            notes=tuple(
-                StepNoteResponse(
-                    label=note.label,
-                    expression_ascii=format_expression(note.expression),
-                    expression_latex=format_latex_expression(note.expression),
-                )
-                for note in step.notes
-            ),
-        )
-        for index, step in enumerate(result.steps, start=1)
-    )
-
-
-def _solve_response(result: SolveResult) -> SolveResponse:
-    steps = _step_responses(result)
-    if isinstance(result, ExactResult):
-        return SolveResponse(
-            status="exact",
-            source=result.query.source,
-            formatted_ascii=format_ascii(result),
-            result_latex=format_latex_value(result.value),
-            reason=None,
-            steps=steps,
-        )
-    if isinstance(result, DivergentResult):
-        divergence_latex = {
-            DivergenceKind.POSITIVE_INFINITY: r"\text{Diverges to }+\infty",
-            DivergenceKind.NEGATIVE_INFINITY: r"\text{Diverges to }-\infty",
-            DivergenceKind.NONFINITE: r"\text{Does not converge}",
-        }
-        return SolveResponse(
-            status="divergent",
-            source=result.query.source,
-            formatted_ascii=format_ascii(result),
-            result_latex=divergence_latex[result.kind],
-            reason=result.reason,
-            steps=steps,
-        )
-    return SolveResponse(
-        status="unsolved",
-        source=result.query.source,
-        formatted_ascii=format_ascii(result),
-        result_latex=None,
-        reason=result.reason,
-        steps=steps,
-    )
-
-
 def homepage() -> HTMLResponse:
     """Serve the StepSolver single-page frontend."""
     return HTMLResponse(_INDEX_FILE.read_text(encoding="utf-8"))
@@ -154,7 +82,7 @@ def solve_endpoint(payload: SolveRequest) -> SolveResponse:
         result = Solver().solve(query_from_mathjson(payload.math_json))
     except QueryError as error:
         raise HTTPException(status_code=422, detail=str(error)) from error
-    return _solve_response(result)
+    return SolveResponse.model_validate(solve_payload(result).as_dict())
 
 
 def create_app() -> FastAPI:
