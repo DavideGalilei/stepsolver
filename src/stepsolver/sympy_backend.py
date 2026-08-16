@@ -48,14 +48,38 @@ from stepsolver.results import (
 from stepsolver.sympy_derivation import (
     BackendDerivationStep,
     BackendDerivative,
+    BackendDifference,
     BackendDifferential,
+    BackendEvaluationAtBounds,
     BackendExpression,
     BackendIdentity,
     BackendIntegral,
+    BackendIntegrationByPartsRule,
     BackendLimit,
+    BackendNotEqual,
+    BackendProduct,
+    BackendQuadraticSolutions,
+    BackendQuotient,
+    BackendSum,
+    derive_basic_antiderivative,
+    derive_constant_multiple_integral,
+    derive_definite_integral,
+    derive_derivative,
     derive_dirichlet_integral,
+    derive_function_substitution_integral,
+    derive_gaussian_antiderivative,
+    derive_improper_integral,
+    derive_integration_by_parts,
+    derive_inverse_hyperbolic_integral,
+    derive_limit,
+    derive_log_derivative_integral,
+    derive_partial_fraction_integral,
     derive_polynomial_equation,
+    derive_polynomial_sum_integral,
     derive_reciprocal_quadratic_integral,
+    derive_shifted_semicircle_integral,
+    derive_square_root_rational_integral,
+    derive_trigonometric_power_integral,
 )
 
 _INTEGER_PATTERN = re.compile(r"^-?[0-9]+$")
@@ -73,6 +97,90 @@ def _is_object_sequence(value: object) -> TypeGuard[Sequence[object]]:
 
 def _query_expression(query: Query) -> FunctionCall:
     return FunctionCall(name=Identifier(query.operation.value), arguments=query.arguments)
+
+
+def _derive_indefinite_integral(
+    integrand: sp.Basic,
+    variable: sp.Symbol,
+    result: sp.Basic,
+) -> tuple[BackendDerivationStep, ...]:
+    strategies = (
+        derive_basic_antiderivative,
+        derive_log_derivative_integral,
+        derive_polynomial_sum_integral,
+        derive_constant_multiple_integral,
+        derive_function_substitution_integral,
+        derive_square_root_rational_integral,
+        derive_shifted_semicircle_integral,
+        derive_inverse_hyperbolic_integral,
+        derive_trigonometric_power_integral,
+        derive_integration_by_parts,
+        derive_gaussian_antiderivative,
+        derive_reciprocal_quadratic_integral,
+        derive_partial_fraction_integral,
+    )
+    for strategy in strategies:
+        derivation = strategy(integrand, variable, result)
+        if derivation:
+            return derivation
+    return ()
+
+
+def _derive_definite_integral(
+    integrand: sp.Basic,
+    variable: sp.Symbol,
+    lower: sp.Basic,
+    upper: sp.Basic,
+    result: sp.Basic,
+) -> tuple[BackendDerivationStep, ...]:
+    derivation = derive_dirichlet_integral(
+        integrand,
+        variable,
+        lower,
+        upper,
+        result,
+    )
+    if derivation:
+        return derivation
+    derivation = derive_improper_integral(integrand, variable, lower, upper, result)
+    if derivation:
+        return derivation
+    return derive_definite_integral(integrand, variable, lower, upper, result)
+
+
+def _evaluate_indefinite_integral(
+    integrand: sp.Basic,
+    variable: sp.Basic,
+) -> sp.Basic:
+    integration_constant = sp.Symbol("C")
+    antiderivative = sp.integrate(integrand, variable)
+    if isinstance(variable, sp.Symbol):
+        sine_square = sp.sin(variable) ** 2
+        cosine_square = sp.cos(variable) ** 2
+        if sp.simplify(integrand - sine_square) == sp.Integer(0):
+            return sp.Add(
+                variable / 2,
+                -sp.sin(2 * variable) / 4,
+                integration_constant,
+                evaluate=False,
+            )
+        if sp.simplify(integrand - cosine_square) == sp.Integer(0):
+            return sp.Add(
+                variable / 2,
+                sp.sin(2 * variable) / 4,
+                integration_constant,
+                evaluate=False,
+            )
+        if integrand.is_rational_function(variable) and not antiderivative.has(sp.log):
+            decomposition = sp.apart(integrand, variable)
+            terms = tuple(decomposition.as_ordered_terms())
+            if str(decomposition) != str(integrand) and len(terms) > 1:
+                return sp.Add(
+                    *(sp.integrate(term, variable) for term in terms),
+                    integration_constant,
+                    evaluate=False,
+                )
+    return antiderivative + integration_constant
 
 
 def _expect_arity(query: Query, *allowed: int) -> None:
@@ -142,6 +250,12 @@ class SympyBackend:
     def _solve(self, query: Query) -> SolveResult:
         if query.operation is Operation.CONTOUR_INTEGRATE:
             return self._solve_contour(query)
+        identity_reason = self._identity_equation_reason(query)
+        if identity_reason is not None:
+            return UnsolvedResult(query=query, reason=identity_reason, steps=())
+        integral_domain_reason = self._integral_domain_reason(query)
+        if integral_domain_reason is not None:
+            return UnsolvedResult(query=query, reason=integral_domain_reason, steps=())
         backend_value = self._execute(query)
         value = self._to_value(backend_value)
         detailed_steps = self._detailed_steps(query, backend_value)
@@ -159,6 +273,52 @@ class SympyBackend:
         )
         return ExactResult(query=query, value=value, steps=(step,))
 
+    def _integral_domain_reason(self, query: Query) -> str | None:
+        if query.operation is not Operation.INTEGRATE or len(query.arguments) != 2:
+            return None
+        variable_node = query.arguments[1]
+        if not isinstance(variable_node, Symbol):
+            return None
+        integrand = self._to_sympy(query.arguments[0])
+        variable = self._to_sympy(variable_node)
+        if not isinstance(variable, sp.Symbol) or not integrand.is_rational_function(variable):
+            return None
+        _numerator, denominator = sp.fraction(sp.together(integrand))
+        try:
+            denominator_polynomial = sp.Poly(denominator, variable)
+        except sp.PolynomialError:
+            return None
+        roots = sp.solve(denominator_polynomial.as_expr(), variable)
+        if not _is_object_sequence(roots):
+            return None
+        has_real_pole = any(
+            isinstance(root, sp.Basic) and root.is_real is True for root in roots
+        )
+        if not has_real_pole or not sp.integrate(integrand, variable).has(sp.log):
+            return None
+        return (
+            "This antiderivative requires logarithms of absolute values and explicit domain "
+            "intervals around real poles. The current result model cannot represent those "
+            "domain conditions safely yet."
+        )
+
+    def _identity_equation_reason(self, query: Query) -> str | None:
+        if query.operation is not Operation.SOLVE or len(query.arguments) != 2:
+            return None
+        equation, variable = query.arguments
+        if not isinstance(equation, Relation) or not isinstance(variable, Symbol):
+            return None
+        difference = sp.simplify(
+            self._to_sympy(equation.left) - self._to_sympy(equation.right)
+        )
+        if difference != sp.Integer(0):
+            return None
+        return (
+            "This equation is true for every value in its domain. The current result model "
+            "cannot yet represent a universal solution set together with possible domain "
+            "exclusions."
+        )
+
     def _detailed_steps(
         self,
         query: Query,
@@ -166,9 +326,43 @@ class SympyBackend:
     ) -> tuple[SolutionStep, ...]:
         if query.operation is Operation.SOLVE:
             return self._detailed_equation_steps(query, backend_value)
+        if query.operation is Operation.DIFFERENTIATE:
+            return self._detailed_derivative_steps(query, backend_value)
         if query.operation is Operation.INTEGRATE:
             return self._detailed_integral_steps(query, backend_value)
+        if query.operation is Operation.LIMIT:
+            return self._detailed_limit_steps(query, backend_value)
         return ()
+
+    def _detailed_limit_steps(
+        self,
+        query: Query,
+        backend_value: object,
+    ) -> tuple[SolutionStep, ...]:
+        if len(query.arguments) not in {3, 4} or not isinstance(backend_value, sp.Basic):
+            return ()
+        expression_node, variable_node, point_node = query.arguments[:3]
+        if not isinstance(variable_node, Symbol):
+            return ()
+        expression = self._to_sympy(expression_node)
+        variable = self._to_sympy(variable_node)
+        point = self._to_sympy(point_node)
+        if not isinstance(variable, sp.Symbol):
+            return ()
+        direction: str | None = None
+        if len(query.arguments) == 4 and isinstance(query.arguments[3], Symbol):
+            direction = {"left": "-", "right": "+"}.get(query.arguments[3].name)
+        try:
+            derivation = derive_limit(
+                expression,
+                variable,
+                point,
+                direction,
+                backend_value,
+            )
+        except (sp.PolynomialError, TypeError, ValueError):
+            return ()
+        return tuple(self._solution_step(item) for item in derivation)
 
     def _detailed_equation_steps(
         self,
@@ -188,10 +382,28 @@ class SympyBackend:
         if not isinstance(equation, sp.Equality) or not isinstance(variable, sp.Symbol):
             return ()
         roots = self._solution_roots(backend_value, variable)
-        if not roots:
-            return ()
         try:
             derivation = derive_polynomial_equation(equation, variable, roots)
+        except (sp.PolynomialError, TypeError, ValueError):
+            return ()
+        return tuple(self._solution_step(item) for item in derivation)
+
+    def _detailed_derivative_steps(
+        self,
+        query: Query,
+        backend_value: object,
+    ) -> tuple[SolutionStep, ...]:
+        if len(query.arguments) != 2 or not isinstance(backend_value, sp.Basic):
+            return ()
+        expression_node, variable_node = query.arguments
+        if not isinstance(variable_node, Symbol):
+            return ()
+        expression = self._to_sympy(expression_node)
+        variable = self._to_sympy(variable_node)
+        if not isinstance(variable, sp.Symbol):
+            return ()
+        try:
+            derivation = derive_derivative(expression, variable, backend_value)
         except (sp.PolynomialError, TypeError, ValueError):
             return ()
         return tuple(self._solution_step(item) for item in derivation)
@@ -210,23 +422,20 @@ class SympyBackend:
         variable = self._to_sympy(variable_expression)
         if not isinstance(variable, sp.Symbol):
             return ()
-        try:
-            if len(query.arguments) == 2:
-                derivation = derive_reciprocal_quadratic_integral(
-                    integrand,
-                    variable,
-                    backend_value,
+        if len(query.arguments) == 2:
+            try:
+                derivation = _derive_indefinite_integral(integrand, variable, backend_value)
+            except (sp.PolynomialError, TypeError, ValueError):
+                return ()
+        else:
+            lower = self._to_sympy(query.arguments[2])
+            upper = self._to_sympy(query.arguments[3])
+            try:
+                derivation = _derive_definite_integral(
+                    integrand, variable, lower, upper, backend_value
                 )
-            else:
-                derivation = derive_dirichlet_integral(
-                    integrand,
-                    variable,
-                    self._to_sympy(query.arguments[2]),
-                    self._to_sympy(query.arguments[3]),
-                    backend_value,
-                )
-        except (sp.PolynomialError, TypeError, ValueError):
-            return ()
+            except (sp.PolynomialError, TypeError, ValueError):
+                return ()
         return tuple(self._solution_step(item) for item in derivation)
 
     def _solution_roots(
@@ -275,6 +484,60 @@ class SympyBackend:
                 left=self._derivation_expression(value.left),
                 right=self._derivation_expression(value.right),
             )
+        if isinstance(value, BackendIntegrationByPartsRule):
+            return FunctionCall(name=Identifier("integration_by_parts_rule"), arguments=())
+        if isinstance(value, BackendQuadraticSolutions):
+            return FunctionCall(
+                name=Identifier("quadratic_solutions"),
+                arguments=(
+                    self._from_sympy(value.variable),
+                    self._derivation_expression(value.negative_numerator),
+                    self._derivation_expression(value.positive_numerator),
+                    self._derivation_expression(value.denominator),
+                ),
+            )
+        if isinstance(value, BackendNotEqual):
+            return Relation(
+                operator=RelationOperator.NOT_EQUAL,
+                left=self._derivation_expression(value.left),
+                right=self._derivation_expression(value.right),
+            )
+        if isinstance(value, BackendSum):
+            expressions = tuple(self._derivation_expression(term) for term in value.terms)
+            first, *remaining = expressions
+            result = first
+            for expression in remaining:
+                result = BinaryExpression(
+                    operator=BinaryOperator.ADD,
+                    left=result,
+                    right=expression,
+                )
+            return result
+        if isinstance(value, BackendProduct):
+            expressions = tuple(
+                self._derivation_expression(factor) for factor in value.factors
+            )
+            first, *remaining = expressions
+            result = first
+            for expression in remaining:
+                result = BinaryExpression(
+                    operator=BinaryOperator.MULTIPLY,
+                    left=result,
+                    right=expression,
+                )
+            return result
+        if isinstance(value, BackendQuotient):
+            return BinaryExpression(
+                operator=BinaryOperator.DIVIDE,
+                left=self._derivation_expression(value.numerator),
+                right=self._derivation_expression(value.denominator),
+            )
+        if isinstance(value, BackendDifference):
+            return BinaryExpression(
+                operator=BinaryOperator.SUBTRACT,
+                left=self._derivation_expression(value.left),
+                right=self._derivation_expression(value.right),
+            )
         if isinstance(value, BackendDifferential):
             differential = FunctionCall(
                 name=Identifier("differential"),
@@ -295,9 +558,19 @@ class SympyBackend:
                     self._from_sympy(value.variable),
                 ),
             )
+        if isinstance(value, BackendEvaluationAtBounds):
+            return FunctionCall(
+                name=Identifier("evaluate_at_bounds"),
+                arguments=(
+                    self._from_sympy(value.expression),
+                    self._from_sympy(value.variable),
+                    self._from_sympy(value.lower),
+                    self._from_sympy(value.upper),
+                ),
+            )
         if isinstance(value, BackendLimit):
             limit_arguments: tuple[Expression, ...] = (
-                self._from_sympy(value.expression),
+                self._derivation_expression(value.expression),
                 self._from_sympy(value.variable),
                 self._from_sympy(value.point),
             )
@@ -373,19 +646,17 @@ class SympyBackend:
                     if len(arguments) == 3
                     else 1
                 )
-                return sp.factor(
-                    sp.diff(
-                        self._to_sympy(arguments[0]),
-                        self._to_sympy(arguments[1]),
-                        order,
-                    )
+                return sp.diff(
+                    self._to_sympy(arguments[0]),
+                    self._to_sympy(arguments[1]),
+                    order,
                 )
             case Operation.INTEGRATE:
                 _expect_arity(query, 2, 4)
                 integrand = self._to_sympy(arguments[0])
                 variable = self._to_sympy(arguments[1])
                 if len(arguments) == 2:
-                    return sp.integrate(integrand, variable) + sp.Symbol("C")
+                    return _evaluate_indefinite_integral(integrand, variable)
                 return sp.integrate(
                     integrand,
                     (variable, self._to_sympy(arguments[2]), self._to_sympy(arguments[3])),
@@ -611,9 +882,11 @@ class SympyBackend:
         if isinstance(expression, Relation):
             left = self._to_sympy(expression.left)
             right = self._to_sympy(expression.right)
+            if expression.operator is RelationOperator.EQUAL:
+                return sp.Eq(left, right, evaluate=False)
+            if expression.operator is RelationOperator.NOT_EQUAL:
+                return sp.Ne(left, right, evaluate=False)
             relations = {
-                RelationOperator.EQUAL: sp.Eq,
-                RelationOperator.NOT_EQUAL: sp.Ne,
                 RelationOperator.LESS: sp.Lt,
                 RelationOperator.LESS_EQUAL: sp.Le,
                 RelationOperator.GREATER: sp.Gt,
@@ -635,6 +908,7 @@ class SympyBackend:
             "acos": sp.acos,
             "atan": sp.atan,
             "sinh": sp.sinh,
+            "asinh": sp.asinh,
             "cosh": sp.cosh,
             "tanh": sp.tanh,
             "exp": sp.exp,
@@ -651,7 +925,9 @@ class SympyBackend:
         if name == "log":
             if len(arguments) not in {1, 2}:
                 raise QueryError("log expects one or two arguments")
-            return sp.log(arguments[0], arguments[1] if len(arguments) == 2 else None)
+            if len(arguments) == 1:
+                return sp.log(arguments[0])
+            return sp.log(arguments[0], arguments[1])
         if name == Operation.DIFFERENTIATE.value:
             if len(arguments) not in {2, 3}:
                 raise QueryError("nested diff expects two or three arguments")
@@ -729,6 +1005,26 @@ class SympyBackend:
         raise BackendError(f"unsupported mapping key type: {type(value).__name__}")
 
     def _from_sympy(self, value: sp.Basic) -> Expression:
+        integration_constant = sp.Symbol("C")
+        if value.func == sp.Add and value.has(integration_constant):
+            nonconstant_terms = tuple(
+                term for term in value.args if term != integration_constant
+            )
+            if nonconstant_terms and all(
+                not term.has(integration_constant) for term in nonconstant_terms
+            ):
+                expression = self._from_sympy(nonconstant_terms[0])
+                for term in nonconstant_terms[1:]:
+                    expression = BinaryExpression(
+                        operator=BinaryOperator.ADD,
+                        left=expression,
+                        right=self._from_sympy(term),
+                    )
+                return BinaryExpression(
+                    operator=BinaryOperator.ADD,
+                    left=expression,
+                    right=Symbol(name=Identifier("C")),
+                )
         text = re.sub(r"\bI\b", "i", str(value)).replace("**", "^")
         if (
             _INTEGER_PATTERN.fullmatch(text) is not None

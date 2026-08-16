@@ -72,6 +72,57 @@ def test_exact_solve_response_contains_latex_steps() -> None:
     assert payload.steps[0].before_latex.startswith(r"\int_{0}^{\pi}")
 
 
+def test_visual_adjacency_uses_the_product_rule() -> None:
+    """Adjacent visual factors should reach the solver as an ordinary product."""
+    with TestClient(create_app()) as client:
+        response = client.post(
+            "/api/solve",
+            json={
+                "latex": r"\frac{\mathrm{d}}{\mathrm{d}x}(\sin(x)e^x)",
+                "math_json": [
+                    "D",
+                    [
+                        "InvisibleOperator",
+                        ["Sin", "x"],
+                        ["Power", "ExponentialE", "x"],
+                    ],
+                    "x",
+                ],
+            },
+        )
+    payload = SolveResponse.model_validate_json(response.text)
+    assert response.status_code == _HTTP_OK
+    assert payload.status == "exact"
+    assert [step.rule for step in payload.steps] == ["Apply the product rule"]
+    assert payload.result_latex == (
+        r"\exp\left(x\right) \cdot \sin\left(x\right) + "
+        r"\exp\left(x\right) \cdot \cos\left(x\right)"
+    )
+    assert payload.steps[0].notes[0].label == "Product rule"
+    assert "InvisibleOperator" not in response.text
+
+
+def test_visual_limit_tuple_is_accepted() -> None:
+    """Compute Engine's bound-variable tuple should decode as a limit query."""
+    with TestClient(create_app()) as client:
+        response = client.post(
+            "/api/solve",
+            json={
+                "latex": r"\lim_{x\to0}\frac{\sin(x)}{x}",
+                "math_json": [
+                    "Limit",
+                    ["Divide", ["Sin", "x"], "x"],
+                    ["Tuple", "x", 0],
+                ],
+            },
+        )
+    payload = SolveResponse.model_validate_json(response.text)
+    assert response.status_code == _HTTP_OK
+    assert payload.status == "exact"
+    assert payload.result_latex == "1"
+    assert [step.rule for step in payload.steps] == ["Use the standard sine limit"]
+
+
 def test_reciprocal_quadratic_integral_contains_detailed_latex_steps() -> None:
     """The browser should receive the completed-square integration derivation."""
     with TestClient(create_app()) as client:

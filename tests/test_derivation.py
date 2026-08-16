@@ -4,6 +4,7 @@ import pytest
 import sympy as sp
 
 from stepsolver.sympy_derivation import (
+    derive_basic_antiderivative,
     derive_dirichlet_integral,
     derive_reciprocal_quadratic_integral,
 )
@@ -73,6 +74,50 @@ def test_dirichlet_strategy_only_accepts_the_verified_improper_integral() -> Non
             sp.Integer(0),
             sp.oo,
             sp.pi / 2,
+        )
+        == ()
+    )
+
+
+def test_basic_integral_strategies_reject_nonmatching_forms_and_results() -> None:
+    """Elementary rules should decline nonlinear chains, sums, and incorrect results."""
+    variable = sp.Symbol("x", real=True)
+    assert derive_basic_antiderivative(sp.sin(variable), variable, variable) == ()
+    assert derive_basic_antiderivative(sp.sin(variable**2), variable, variable) == ()
+    assert derive_basic_antiderivative(variable**2 + variable, variable, variable) == ()
+    assert derive_basic_antiderivative(variable**2, variable, variable) == ()
+
+
+def test_dirichlet_strategy_rejects_invalid_frequency_bounds_and_result() -> None:
+    """The improper-integral proof should require its sign, interval, and exact value."""
+    variable = sp.Symbol("x", real=True)
+    assert (
+        derive_dirichlet_integral(
+            sp.sin(-2 * variable) / variable,
+            variable,
+            sp.Integer(0),
+            sp.oo,
+            -sp.pi / 2,
+        )
+        == ()
+    )
+    assert (
+        derive_dirichlet_integral(
+            sp.sin(variable) / variable,
+            variable,
+            sp.Integer(1),
+            sp.oo,
+            sp.pi / 2,
+        )
+        == ()
+    )
+    assert (
+        derive_dirichlet_integral(
+            sp.sin(variable) / variable,
+            variable,
+            sp.Integer(0),
+            sp.oo,
+            sp.Integer(0),
         )
         == ()
     )

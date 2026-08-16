@@ -121,7 +121,7 @@ def expression_from_mathjson(value: JsonValue) -> Expression:
             BinaryOperator.ADD,
             [expression_from_mathjson(item) for item in arguments],
         )
-    if head == "Multiply":
+    if head in {"Multiply", "InvisibleOperator"}:
         return _fold_binary(
             BinaryOperator.MULTIPLY,
             [expression_from_mathjson(item) for item in arguments],
@@ -271,12 +271,22 @@ def _derivative_query(node: list[JsonValue]) -> Query:
 
 
 def _limit_query(node: list[JsonValue]) -> Query:
-    if len(node) != 4:
-        raise _error("limit notation must include an expression, variable, and point")
-    return _query(
-        Operation.LIMIT,
-        tuple(expression_from_mathjson(item) for item in node[1:]),
-    )
+    if len(node) == 4:
+        arguments = tuple(expression_from_mathjson(item) for item in node[1:])
+        return _query(Operation.LIMIT, arguments)
+    if len(node) == 3:
+        limits = _node(node[2], role="limit approach")
+        if _head(limits) != "Tuple" or len(limits) != 3:
+            raise _error("limit notation must include a variable and approach point")
+        return _query(
+            Operation.LIMIT,
+            (
+                expression_from_mathjson(node[1]),
+                expression_from_mathjson(limits[1]),
+                expression_from_mathjson(limits[2]),
+            ),
+        )
+    raise _error("limit notation must include an expression, variable, and point")
 
 
 def _bounded_query(node: list[JsonValue], operation: Operation) -> Query:

@@ -2,7 +2,13 @@
 
 import pytest
 
-from stepsolver import ExactResult, Solver, UnsolvedResult, format_ascii
+from stepsolver import (
+    ExactResult,
+    Solver,
+    UnsolvedResult,
+    format_ascii,
+    format_latex_expression,
+)
 
 _CONTOUR_STEP_COUNT = 2
 
@@ -20,7 +26,7 @@ def solver() -> Solver:
         ("simplify((x^2-1)/(x-1))", "Result: x + 1"),
         ("expand((x+1)^3)", "Result: x ^ 3 + 3 * x ^ 2 + 3 * x + 1"),
         ("factor(x^2-4)", "Result: (x - 2) * (x + 2)"),
-        ("diff(sin(x)*exp(x),x)", "Result: (sin(x) + cos(x)) * exp(x)"),
+        ("diff(sin(x)*exp(x),x)", "Result: exp(x) * sin(x) + exp(x) * cos(x)"),
         ("integrate(sin(x),x,0,pi)", "Result: 2"),
         ("limit(sin(x)/x,x,0)", "Result: 1"),
         ("sum(k,k,1,10)", "Result: 55"),
@@ -72,7 +78,7 @@ def test_equation_system_returns_typed_mappings(solver: Solver) -> None:
         ),
         (
             "solve(x^2+x-1=0,x)",
-            ("Apply the quadratic formula", "Simplify the roots"),
+            ("Apply the quadratic formula",),
         ),
         (
             "solve((x+1)/(x-2)=3,x)",
@@ -156,6 +162,122 @@ def test_dirichlet_integral_has_a_parameter_derivation(solver: Solver) -> None:
     assert format_ascii(result).endswith("pi / 2")
 
 
+@pytest.mark.parametrize(
+    ("query", "rules"),
+    [
+        (
+            "solve((x-1)^2=0,x)",
+            ("Set the repeated factor equal to zero", "Solve each factor"),
+        ),
+        (
+            "solve(2*x^2+4*x+2=0,x)",
+            (
+                "Factor the quadratic",
+                "Set the repeated factor equal to zero",
+                "Solve each factor",
+            ),
+        ),
+        (
+            "solve(x^2+1=0,x)",
+            ("Calculate the discriminant", "Conclude there are no real solutions"),
+        ),
+        (
+            "solve(x=x+1,x)",
+            ("Simplify the equation", "Conclude there are no solutions"),
+        ),
+        ("integrate(sin(x),x)", ("Use the sine antiderivative",)),
+        (
+            "integrate(sin(2*x),x)",
+            ("Apply the reverse chain rule for sine",),
+        ),
+        ("integrate(x^2,x)", ("Use the power rule",)),
+        (
+            "integrate(x/(x^2+1),x)",
+            ("Substitute the denominator", "Use the logarithm rule", "Substitute back"),
+        ),
+        ("integrate(1/(x^2+1),x)", ("Use the basic arctangent rule",)),
+        (
+            "integrate(1/(4*x^2+1),x)",
+            (
+                "Substitute to get a unit denominator",
+                "Use the basic arctangent rule",
+                "Substitute back",
+            ),
+        ),
+    ],
+)
+def test_human_first_edge_case_derivations(
+    solver: Solver,
+    query: str,
+    rules: tuple[str, ...],
+) -> None:
+    """Degenerate and direct cases should use the shortest meaningful method."""
+    result = solver.solve(query)
+    assert isinstance(result, ExactResult)
+    assert tuple(step.rule for step in result.steps) == rules
+    assert all(step.rule != "Compute exact result" for step in result.steps)
+
+
+def test_derivations_hide_neutral_algebra_artifacts(solver: Solver) -> None:
+    """Student-facing transformations should not display identity arithmetic."""
+    direct = solver.solve("integrate(1/(x^2+1),x)")
+    scaled = solver.solve("integrate(1/(4*x^2+1),x)")
+    logarithmic = solver.solve("integrate(x/(x^2+1),x)")
+    assert isinstance(direct, ExactResult)
+    assert isinstance(scaled, ExactResult)
+    assert isinstance(logarithmic, ExactResult)
+    rendered = " ".join(
+        format_latex_expression(expression)
+        for result in (direct, scaled, logarithmic)
+        for step in result.steps
+        for expression in (step.before, step.after)
+    )
+    assert "1 \\cdot" not in rendered
+    assert r"\frac{2}{2}" not in rendered
+    assert r"\frac{\frac{1}{2}}{1}" not in rendered
+    positivity = logarithmic.steps[1].notes[0].expression
+    assert format_latex_expression(positivity) == r"x^{2} + 1 > 0"
+
+
+@pytest.mark.parametrize("query", ["solve(x=x,x)", "solve((x-1)/(x-1)=1,x)"])
+def test_identity_equations_do_not_return_a_false_empty_set(
+    solver: Solver,
+    query: str,
+) -> None:
+    """Universal identities should remain honest until domain sets are representable."""
+    result = solver.solve(query)
+    assert isinstance(result, UnsolvedResult)
+    assert "identity" not in result.reason.lower() or "domain" in result.reason.lower()
+    assert "universal solution set" in result.reason
+
+
+def test_no_real_solution_is_rendered_as_the_empty_set(solver: Solver) -> None:
+    """A negative discriminant should end with mathematical empty-set notation."""
+    result = solver.solve("solve(x^2+1=0,x)")
+    assert isinstance(result, ExactResult)
+    assert format_latex_expression(result.steps[-1].after) == r"\varnothing"
+
+
+def test_scaled_dirichlet_integral_reduces_to_the_standard_case(solver: Solver) -> None:
+    """A positive sine frequency should be removed by an explicit scaling substitution."""
+    result = solver.solve("integrate(sin(2*x)/x,x,0,oo)")
+    assert isinstance(result, ExactResult)
+    assert tuple(step.rule for step in result.steps) == (
+        "Scale the integration variable",
+        "Introduce a damping parameter",
+        "Differentiate with respect to the parameter",
+        "Recover the parameterized integral",
+        "Determine the constant",
+        "Remove the damping",
+    )
+    assert tuple(note.label for note in result.steps[0].notes) == (
+        "Choose the substitution",
+        "Rewrite the original variable",
+        "Change the differential",
+    )
+    assert format_ascii(result).endswith("pi / 2")
+
+
 def test_inequality_solver(solver: Solver) -> None:
     """A real univariate inequality should produce an exact interval condition."""
     result = solver.solve("solve_inequality(x^2<4,x)")
@@ -200,6 +322,7 @@ def test_numeric_is_explicit(solver: Solver) -> None:
         ("cancel((x^2-1)/(x-1))", "Result: x + 1"),
         ("apart(1/(x*(x+1)),x)", "Result: -1 / (x + 1) + 1 / x"),
         ("diff(x^4,x,2)", "Result: 12 * x ^ 2"),
+        ("diff(log(x^2+1),x)", "Result: 2 * x / (x ^ 2 + 1)"),
         ("integrate(x^2,x)", "Result: x ^ 3 / 3"),
         ("limit(1/x,x,0,right)", "Result: oo"),
         ("series(exp(x),x,0,4)", "Result: 1 + x + x ^ 2 / 2 + x ^ 3 / 6 + O(x ^ 4)"),

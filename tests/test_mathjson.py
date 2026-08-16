@@ -26,6 +26,11 @@ from stepsolver.mathjson import expression_from_mathjson, query_from_mathjson
         (["Derivative", ["Sin", "x"], "x"], Operation.DIFFERENTIATE, 2),
         (["D", ["D", ["Sin", "x"], "x"], "x"], Operation.DIFFERENTIATE, 3),
         (["Limit", ["Divide", ["Sin", "x"], "x"], "x", 0], Operation.LIMIT, 3),
+        (
+            ["Limit", ["Divide", ["Sin", "x"], "x"], ["Tuple", "x", 0]],
+            Operation.LIMIT,
+            3,
+        ),
         (["Sum", "n", ["Tuple", "n", 1, 10]], Operation.SUM, 4),
         (["Product", "n", ["Tuple", "n", 1, 4]], Operation.PRODUCT, 4),
         (["List", ["List", 1, 2], ["List", 3, 4]], Operation.MATRIX, 1),
@@ -102,6 +107,21 @@ def test_expression_decoder_handles_numeric_and_structural_forms() -> None:
     assert isinstance(sequence, SequenceExpression)
     assert isinstance(held, Symbol)
     assert expression_from_mathjson(2) == Number(value=Fraction(2))
+
+
+def test_invisible_operator_decodes_as_implicit_multiplication() -> None:
+    """Visual adjacency must become multiplication, not a backend function call."""
+    visual_product: JsonValue = [
+        "InvisibleOperator",
+        ["Sin", "x"],
+        ["Power", "ExponentialE", "x"],
+    ]
+    explicit_product: JsonValue = [
+        "Multiply",
+        ["Sin", "x"],
+        ["Power", "ExponentialE", "x"],
+    ]
+    assert expression_from_mathjson(visual_product) == expression_from_mathjson(explicit_product)
 
 
 def test_nested_calculus_operator_is_rejected_as_an_expression() -> None:

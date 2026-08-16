@@ -64,6 +64,8 @@ _NAMED_FUNCTIONS: dict[str, str] = {
     "log": r"\log",
     "exp": r"\exp",
     "gamma": r"\Gamma",
+    "erf": r"\operatorname{erf}",
+    "asinh": r"\operatorname{arsinh}",
 }
 
 
@@ -77,6 +79,25 @@ def _escape_identifier(identifier: str) -> str:
     if identifier in _GREEK_SYMBOLS:
         return rf"\{identifier}"
     return identifier.replace("_", r"\_")
+
+
+def _format_quadratic_solutions(arguments: tuple[Expression, ...]) -> str:
+    variable, negative, positive, denominator = (
+        format_latex_expression(argument) for argument in arguments
+    )
+    return (
+        rf"\left[{variable} = \frac{{{negative}}}{{{denominator}}}, "
+        rf"{variable} = \frac{{{positive}}}{{{denominator}}}\right]"
+    )
+
+
+def _format_evaluation_at_bounds(arguments: tuple[Expression, ...]) -> str:
+    value, variable, lower, upper = (
+        format_latex_expression(argument) for argument in arguments
+    )
+    if lower == upper:
+        return rf"\left.{value}\right|_{{{variable}={lower}}}"
+    return rf"\left[{value}\right]_{{{lower}}}^{{{upper}}}"
 
 
 def _format_function(expression: FunctionCall) -> str:
@@ -135,12 +156,18 @@ def _format_function(expression: FunctionCall) -> str:
         return rf"\left|{format_latex_expression(arguments[0])}\right|"
     if name == "differential" and len(arguments) == 1:
         return rf"\mathrm{{d}}{format_latex_expression(arguments[0])}"
+    if name == "evaluate_at_bounds" and len(arguments) == 4:
+        return _format_evaluation_at_bounds(arguments)
+    if name == "integration_by_parts_rule" and not arguments:
+        return r"\int u\,\mathrm{d}v = uv - \int v\,\mathrm{d}u"
+    if name == "quadratic_solutions" and len(arguments) == 4:
+        return _format_quadratic_solutions(arguments)
     rendered_arguments = ", ".join(format_latex_expression(item) for item in arguments)
     function = _NAMED_FUNCTIONS.get(name)
     if function is None:
         function = (
             name
-            if len(name) == 1 and name.isascii() and name.isupper()
+            if len(name) == 1 and name.isascii() and name.isalpha()
             else rf"\operatorname{{{_escape_identifier(name)}}}"
         )
     return rf"{function}\left({rendered_arguments}\right)"
@@ -172,6 +199,8 @@ def _format_binary(expression: BinaryExpression, *, parent_precedence: int) -> s
     elif operator is BinaryOperator.MULTIPLY:
         rendered = rf"{left} \cdot {right}"
     else:
+        if operator is BinaryOperator.SUBTRACT and right.startswith("-"):
+            right = rf"\left({right}\right)"
         rendered = f"{left} {operator.value} {right}"
     if precedence < parent_precedence:
         return rf"\left({rendered}\right)"
@@ -193,6 +222,8 @@ def format_latex_expression(expression: Expression, *, parent_precedence: int = 
         escaped = expression.text.replace("_", r"\_").replace("{", r"\{").replace("}", r"\}")
         return rf"\mathtt{{{escaped}}}"
     if isinstance(expression, SequenceExpression):
+        if not expression.items:
+            return r"\varnothing"
         items = ", ".join(format_latex_expression(item) for item in expression.items)
         return rf"\left[{items}\right]"
     if isinstance(expression, FunctionCall):
