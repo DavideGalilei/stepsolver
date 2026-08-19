@@ -172,6 +172,95 @@ def test_common_sums_show_human_first_identities(
 
 
 @pytest.mark.parametrize(
+    ("query", "answer"),
+    [
+        ("sum(sin(n*pi/2)/n,n,1,oo)", "Result: pi / 4"),
+        ("sum(sin(3*n*pi/2)/n,n,1,oo)", "Result: -pi / 4"),
+        ("sum(3*sin(n*pi/3)/n,n,1,oo)", "Result: pi"),
+        ("sum(sin(5*n*pi/2)/n,n,1,oo)", "Result: pi / 4"),
+        ("sum(sin(sqrt(2)*n)/n,n,1,oo)", "Result: -sqrt(2) / 2 + pi / 2"),
+    ],
+)
+def test_harmonic_sine_series_use_the_general_abel_derivation(
+    solver: Solver,
+    query: str,
+    answer: str,
+) -> None:
+    """Exact real angles should use one periodic Fourier rule rather than value lookups."""
+    result = solver.solve(query)
+    assert isinstance(result, ExactResult)
+    assert tuple(step.rule for step in result.steps) == (
+        "Introduce an Abel convergence factor",
+        "Sum the damped sine series",
+        "Remove the convergence factor",
+        "Simplify the exact value",
+    )
+    assert "Dirichlet's test proves convergence" in result.steps[0].explanation
+    assert result.steps[1].notes[0].label == "Damped sine-series identity"
+    assert result.steps[2].notes[0].label == "Harmonic sine-series identity"
+    assert format_ascii(result).endswith(answer)
+
+
+def test_full_turn_harmonic_sine_series_simplifies_every_term(solver: Solver) -> None:
+    """Angles congruent to zero should take the elementary zero-term path."""
+    result = solver.solve("sum(sin(2*n*pi)/n,n,1,oo)")
+    assert isinstance(result, ExactResult)
+    assert tuple(step.rule for step in result.steps) == ("Simplify the sine terms",)
+    assert format_ascii(result).endswith("Result: 0")
+
+
+@pytest.mark.parametrize(
+    ("query", "identity_rule", "answer"),
+    [
+        (
+            "sum((-1)^(n+1)/n,n,1,oo)",
+            "Use the alternating harmonic-series identity",
+            "Result: log(2)",
+        ),
+        (
+            "sum((-1)^(n+1)/n^2,n,1,oo)",
+            "Use the Dirichlet eta identity",
+            "Result: pi ^ 2 / 12",
+        ),
+        (
+            "sum(3*(-1)^n/n^2,n,1,oo)",
+            "Use the Dirichlet eta identity",
+            "Result: -(pi ^ 2) / 4",
+        ),
+    ],
+)
+def test_alternating_p_series_apply_leibniz_before_the_exact_identity(
+    solver: Solver,
+    query: str,
+    identity_rule: str,
+    answer: str,
+) -> None:
+    """Alternating exact values should first establish convergence by Leibniz's test."""
+    result = solver.solve(query)
+    assert isinstance(result, ExactResult)
+    assert tuple(step.rule for step in result.steps) == (
+        "Apply the Leibniz alternating-series test",
+        identity_rule,
+    )
+    assert tuple(note.label for note in result.steps[0].notes) == (
+        "Core magnitude limit",
+        "Decreasing core magnitudes",
+    )
+    assert format_ascii(result).endswith(answer)
+
+
+def test_nonzero_term_limit_uses_the_nth_term_divergence_test(solver: Solver) -> None:
+    """A series whose terms do not vanish should fail before stronger tests are attempted."""
+    result = solver.solve("sum((n+1)/n,n,1,oo)")
+    assert isinstance(result, DivergentResult)
+    assert result.kind is DivergenceKind.POSITIVE_INFINITY
+    assert tuple(step.rule for step in result.steps) == (
+        "Apply the nth-term divergence test",
+    )
+    assert result.steps[0].notes[0].label == "Term limit"
+
+
+@pytest.mark.parametrize(
     ("query", "kind", "rule"),
     [
         ("sum(1/n,n,1,oo)", DivergenceKind.POSITIVE_INFINITY, "Apply the p-series test"),

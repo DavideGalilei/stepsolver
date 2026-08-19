@@ -9,6 +9,7 @@ from stepsolver.ast import (
 )
 from stepsolver.errors import BackendError, QueryError
 from stepsolver.sympy_conversion import SympyConverter
+from stepsolver.sympy_series import match_alternating_p_series, match_harmonic_sine_series
 from stepsolver.sympy_support import expect_arity, expect_integer, expect_symbol
 
 
@@ -53,6 +54,27 @@ class SympyExecutor:
     def __init__(self, converter: SympyConverter) -> None:
         """Use the supplied converter for query arguments and structured values."""
         self._converter = converter
+
+    def _evaluate_sum(self, query: Query) -> sp.Basic:
+        """Evaluate a sum, including exact series families SymPy leaves inert."""
+        expect_arity(query, 4)
+        expression = self._converter.to_sympy(query.arguments[0])
+        variable = self._converter.to_sympy(query.arguments[1])
+        lower = self._converter.to_sympy(query.arguments[2])
+        upper = self._converter.to_sympy(query.arguments[3])
+        if isinstance(variable, sp.Symbol):
+            harmonic_sine = match_harmonic_sine_series(
+                expression,
+                variable,
+                lower,
+                upper,
+            )
+            if harmonic_sine is not None:
+                return harmonic_sine.value
+            alternating = match_alternating_p_series(expression, variable, lower, upper)
+            if alternating is not None:
+                return alternating.value
+        return sp.summation(expression, (variable, lower, upper))
 
     def execute(self, query: Query) -> object:
         """Execute one validated query and return its backend-native result."""
@@ -145,15 +167,7 @@ class SympyExecutor:
                     expect_integer(arguments[3], role="series order"),
                 )
             case Operation.SUM:
-                expect_arity(query, 4)
-                return sp.summation(
-                    self._converter.to_sympy(arguments[0]),
-                    (
-                        self._converter.to_sympy(arguments[1]),
-                        self._converter.to_sympy(arguments[2]),
-                        self._converter.to_sympy(arguments[3]),
-                    ),
-                )
+                return self._evaluate_sum(query)
             case Operation.PRODUCT:
                 expect_arity(query, 4)
                 return sp.product(

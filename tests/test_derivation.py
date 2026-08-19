@@ -3,11 +3,23 @@
 import pytest
 import sympy as sp
 
+from stepsolver.derivation.sums import derive_sum
 from stepsolver.sympy_derivation import (
     derive_basic_antiderivative,
     derive_dirichlet_integral,
     derive_reciprocal_quadratic_integral,
 )
+
+
+def test_nth_term_strategy_declines_when_the_test_cannot_prove_divergence() -> None:
+    """Finite bounds, zero term limits, and unresolved limits need another series method."""
+    variable = sp.Symbol("n", integer=True, positive=True)
+    expression = sp.sin(variable**2) / (variable + 1)
+    assert derive_sum(expression, variable, sp.Integer(1), sp.Integer(10), sp.Integer(0)) == ()
+    assert derive_sum(expression, variable, sp.Integer(1), sp.oo, sp.Integer(0)) == ()
+    unknown_term = sp.Function("f")(variable)
+    unevaluated_sum = sp.summation(unknown_term, (variable, sp.Integer(1), sp.oo))
+    assert derive_sum(unknown_term, variable, sp.Integer(1), sp.oo, unevaluated_sum) == ()
 
 
 def test_integral_strategy_declines_unsupported_rational_forms() -> None:
