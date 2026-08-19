@@ -14,6 +14,7 @@ _HTTP_OK = 200
 _HTTP_UNPROCESSABLE_CONTENT = 422
 _CONTOUR_STEP_COUNT = 2
 _MINIMUM_THREE_COLUMN_GRID_COUNT = 2
+_MINIMUM_DOCUMENT_OVERFLOW_GUARDS = 4
 _TEST_HOST = "127.0.0.2"
 _TEST_PORT = 8080
 
@@ -215,6 +216,18 @@ def test_mobile_sections_use_internal_safe_area_padding() -> None:
     assert "padding-left: var(--mobile-inset-left)" in stylesheet.text
     assert "safe-area-inset-right" in stylesheet.text
     assert "safe-area-inset-left" in stylesheet.text
+
+
+def test_ios_cannot_pan_the_document_horizontally() -> None:
+    """The page root should contain overflow while local math panes remain scrollable."""
+    with TestClient(create_app()) as client:
+        stylesheet = client.get("/static/style.css")
+    assert stylesheet.text.count("overflow-x: hidden") >= _MINIMUM_DOCUMENT_OVERFLOW_GUARDS
+    assert "overflow-x: clip" not in stylesheet.text
+    assert "overscroll-behavior-x: none" in stylesheet.text
+    assert "position: relative" in stylesheet.text
+    assert ".math-viewport" in stylesheet.text
+    assert "overflow-x: auto" in stylesheet.text
 
 
 def test_mobile_formula_gestures_preserve_vertical_page_scrolling() -> None:
