@@ -3,6 +3,12 @@
 import pytest
 import sympy as sp
 
+from stepsolver.derivation.integrals_structural import (
+    derive_cyclic_exponential_trig_integral,
+    derive_inverse_function_by_parts,
+    derive_inverse_tangent_substitution,
+    derive_trig_power_substitution,
+)
 from stepsolver.derivation.sums import derive_sum
 from stepsolver.sympy_derivation import (
     derive_basic_antiderivative,
@@ -20,6 +26,72 @@ def test_nth_term_strategy_declines_when_the_test_cannot_prove_divergence() -> N
     unknown_term = sp.Function("f")(variable)
     unevaluated_sum = sp.summation(unknown_term, (variable, sp.Integer(1), sp.oo))
     assert derive_sum(unknown_term, variable, sp.Integer(1), sp.oo, unevaluated_sum) == ()
+
+
+def test_structural_integral_strategies_reject_unrelated_integrands() -> None:
+    """Stateless method recognizers should fail closed when their pattern is absent."""
+    variable = sp.Symbol("x", real=True)
+    unrelated = sp.sin(variable) + variable
+    result = sp.integrate(unrelated, variable) + sp.Symbol("C")
+    assert derive_inverse_function_by_parts(unrelated, variable, result) == ()
+    assert derive_trig_power_substitution(unrelated, variable, result) == ()
+    assert derive_inverse_tangent_substitution(unrelated, variable, result) == ()
+    assert derive_cyclic_exponential_trig_integral(unrelated, variable, result) == ()
+
+
+def test_structural_integral_strategies_reject_unverified_near_matches() -> None:
+    """Recognized shapes still need constant rates and the exact expected result."""
+    variable = sp.Symbol("x", real=True)
+    integration_constant = sp.Symbol("C")
+
+    assert (
+        derive_inverse_function_by_parts(
+            sp.log(variable),
+            variable,
+            variable + integration_constant,
+        )
+        == ()
+    )
+    assert (
+        derive_trig_power_substitution(
+            sp.sin(variable) ** 2 * sp.cos(variable),
+            variable,
+            variable + integration_constant,
+        )
+        == ()
+    )
+    assert (
+        derive_inverse_tangent_substitution(
+            sp.Rational(1, 2),
+            variable,
+            variable / 2 + integration_constant,
+        )
+        == ()
+    )
+    assert (
+        derive_inverse_tangent_substitution(
+            1 / (variable**2 + 1),
+            variable,
+            sp.atan(variable) + integration_constant,
+        )
+        == ()
+    )
+    assert (
+        derive_cyclic_exponential_trig_integral(
+            sp.exp(variable**2) * sp.sin(variable),
+            variable,
+            sp.integrate(sp.exp(variable**2) * sp.sin(variable), variable),
+        )
+        == ()
+    )
+    assert (
+        derive_cyclic_exponential_trig_integral(
+            sp.exp(variable) * sp.sin(variable),
+            variable,
+            variable + integration_constant,
+        )
+        == ()
+    )
 
 
 def test_integral_strategy_declines_unsupported_rational_forms() -> None:

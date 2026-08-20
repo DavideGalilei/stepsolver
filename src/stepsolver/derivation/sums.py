@@ -476,6 +476,187 @@ def _derive_geometric_series(
     )
 
 
+def _derive_differentiated_geometric_series(
+    expression: sp.Basic,
+    variable: sp.Symbol,
+    lower: sp.Basic,
+    upper: sp.Basic,
+    result: sp.Basic,
+) -> tuple[BackendDerivationStep, ...]:
+    """Sum c*n*r^n by differentiating the geometric-series identity."""
+    if lower != sp.Integer(1) or upper != sp.oo:
+        return ()
+    power_match = next(
+        (
+            match
+            for factor in expression.as_ordered_factors()
+            if (match := _variable_power(factor, variable)) is not None
+        ),
+        None,
+    )
+    if power_match is None:
+        return ()
+    exponential_base, exponential_exponent = power_match
+    exponent_slope = sp.diff(exponential_exponent, variable)
+    ratio = sp.simplify(exponential_base**exponent_slope)
+    coefficient = sp.simplify(expression / (variable * ratio**variable))
+    converges = sp.simplify(sp.Lt(sp.Abs(ratio), sp.Integer(1)))
+    if (
+        exponent_slope.has(variable)
+        or coefficient.has(variable)
+        or converges is not sp.true
+    ):
+        return ()
+    formula = sp.simplify(coefficient * ratio / (1 - ratio) ** 2)
+    if formula != result:
+        return ()
+    generic_ratio = sp.Symbol("r", real=True)
+    identity = BackendIdentity(
+        left=BackendSigma(
+            expression=variable * generic_ratio**variable,
+            variable=variable,
+            lower=sp.Integer(1),
+            upper=sp.oo,
+        ),
+        right=generic_ratio / (1 - generic_ratio) ** 2,
+    )
+    return (
+        BackendDerivationStep(
+            rule="Differentiate the geometric-series identity",
+            before=BackendSigma(
+                expression=expression,
+                variable=variable,
+                lower=lower,
+                upper=upper,
+            ),
+            after=result,
+            explanation=(
+                "Differentiate Σrⁿ = 1/(1-r), multiply by r, then substitute the common "
+                "ratio and outside coefficient."
+            ),
+            verification_method=VerificationMethod.BACKEND_IDENTITY,
+            verification_detail="The differentiated geometric identity gives the exact sum.",
+            notes=(
+                BackendMathNote(label="Weighted geometric identity", expression=identity),
+                BackendMathNote(
+                    label="Common ratio",
+                    expression=BackendIdentity(left=generic_ratio, right=ratio),
+                ),
+                BackendMathNote(
+                    label="Convergence condition",
+                    expression=sp.Lt(sp.Abs(generic_ratio), sp.Integer(1)),
+                ),
+            ),
+        ),
+    )
+
+
+def _variable_power(
+    factor: sp.Basic,
+    variable: sp.Symbol,
+) -> tuple[sp.Basic, sp.Basic] | None:
+    if not factor.is_Pow or len(factor.args) != _GEOMETRIC_POWER_ARITY:
+        return None
+    base, exponent = factor.args
+    if exponent.has(variable):
+        return base, exponent
+    if base.is_Pow and len(base.args) == _GEOMETRIC_POWER_ARITY:
+        nested_base, nested_exponent = base.args
+        combined_exponent = sp.simplify(nested_exponent * exponent)
+        if combined_exponent.has(variable):
+            return nested_base, combined_exponent
+    return None
+
+
+def _derive_telescoping_rational_sum(
+    expression: sp.Basic,
+    variable: sp.Symbol,
+    lower: sp.Basic,
+    upper: sp.Basic,
+    result: sp.Basic,
+) -> tuple[BackendDerivationStep, ...]:
+    """Use partial fractions for c/(n(n+k)) and cancel interior terms."""
+    if lower.is_integer is not True or lower.is_positive is not True:
+        return ()
+    match = next(
+        (
+            (shift, sp.simplify(expression * variable * (variable + shift)))
+            for shift in range(1, 7)
+            if not sp.simplify(expression * variable * (variable + shift)).has(variable)
+        ),
+        None,
+    )
+    if match is None or match[1] == sp.Integer(0):
+        return ()
+    shift, coefficient = match
+    decomposition = coefficient / shift * (
+        1 / variable - 1 / (variable + shift)
+    )
+    if sp.simplify(decomposition - expression) != sp.Integer(0):
+        return ()
+    leading_terms = sp.Add(
+        *(1 / (lower + offset) for offset in range(shift)),
+    )
+    match upper:
+        case value if value == sp.oo:
+            boundary_value = sp.simplify(coefficient * leading_terms / shift)
+        case value if value.is_integer is True:
+            trailing_terms = sp.Add(
+                *(1 / (value + 1 + offset) for offset in range(shift)),
+            )
+            boundary_value = sp.simplify(
+                coefficient * (leading_terms - trailing_terms) / shift
+            )
+        case _:
+            return ()
+    if boundary_value != result:
+        return ()
+    decomposed_sigma = BackendSigma(
+        expression=decomposition,
+        variable=variable,
+        lower=lower,
+        upper=upper,
+    )
+    return (
+        BackendDerivationStep(
+            rule="Decompose the summand into partial fractions",
+            before=BackendSigma(
+                expression=expression,
+                variable=variable,
+                lower=lower,
+                upper=upper,
+            ),
+            after=decomposed_sigma,
+            explanation="Split the rational term into shifted reciprocals with opposite signs.",
+            verification_method=VerificationMethod.SYMBOLIC_EQUIVALENCE,
+            verification_detail="Combining the partial fractions recovers the original summand.",
+            notes=(
+                BackendMathNote(
+                    label="Partial-fraction identity",
+                    expression=BackendIdentity(left=expression, right=decomposition),
+                ),
+            ),
+        ),
+        BackendDerivationStep(
+            rule="Cancel the telescoping terms",
+            before=decomposed_sigma,
+            after=result,
+            explanation=(
+                "Write the partial sums: every interior reciprocal cancels, leaving only the "
+                "boundary terms."
+            ),
+            verification_method=VerificationMethod.EXACT_ARITHMETIC,
+            verification_detail="The surviving boundary terms simplify to the exact result.",
+            notes=(
+                BackendMathNote(
+                    label="Surviving boundary value",
+                    expression=BackendIdentity(left=boundary_value, right=result),
+                ),
+            ),
+        ),
+    )
+
+
 def _scaled_expression(
     amplitude: sp.Basic,
     expression: BackendExpression,
@@ -853,6 +1034,8 @@ def derive_sum(
         _derive_p_series,
         _derive_shifted_p_series,
         _derive_geometric_series,
+        _derive_differentiated_geometric_series,
+        _derive_telescoping_rational_sum,
         _derive_harmonic_sine_series,
         _derive_alternating_p_series,
         _derive_nth_term_divergence,

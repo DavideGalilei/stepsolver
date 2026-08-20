@@ -1,5 +1,6 @@
 """Select and build detailed student-facing derivations."""
 
+from fractions import Fraction
 from typing import cast
 
 import sympy as sp
@@ -12,8 +13,14 @@ from stepsolver.ast import (
     Operation,
     Query,
     Relation,
+    RelationOperator,
     SequenceExpression,
     Symbol,
+)
+from stepsolver.derivation.algebra import (
+    describe_algebra_step,
+    is_algebra_scalar,
+    symbolic_denominators,
 )
 from stepsolver.derivation.definite_integrals import (
     derive_definite_integral,
@@ -39,6 +46,12 @@ from stepsolver.derivation.integrals_special import (
     derive_square_root_rational_integral,
     derive_trigonometric_power_integral,
 )
+from stepsolver.derivation.integrals_structural import (
+    derive_cyclic_exponential_trig_integral,
+    derive_inverse_function_by_parts,
+    derive_inverse_tangent_substitution,
+    derive_trig_power_substitution,
+)
 from stepsolver.derivation.limits import derive_limit
 from stepsolver.derivation.model import BackendDerivationStep
 from stepsolver.derivation.reciprocal_quadratic import derive_reciprocal_quadratic_integral
@@ -47,6 +60,9 @@ from stepsolver.derivation.systems import derive_linear_system
 from stepsolver.derivation.transcendental_equations import derive_transcendental_equation
 from stepsolver.results import (
     SolutionStep,
+    StepConstraint,
+    Verification,
+    VerificationMethod,
 )
 from stepsolver.sympy_conversion import SympyConverter
 from stepsolver.sympy_rendering import SympyDerivationRenderer
@@ -79,10 +95,14 @@ def _derive_indefinite_integral(
         derive_polynomial_sum_integral,
         derive_constant_multiple_integral,
         derive_function_substitution_integral,
+        derive_trig_power_substitution,
+        derive_inverse_tangent_substitution,
         derive_square_root_rational_integral,
         derive_shifted_semicircle_integral,
         derive_inverse_hyperbolic_integral,
         derive_trigonometric_power_integral,
+        derive_inverse_function_by_parts,
+        derive_cyclic_exponential_trig_integral,
         derive_integration_by_parts,
         derive_advanced_substitution_integral,
         derive_gaussian_antiderivative,
@@ -154,17 +174,82 @@ class SympyStepBuilder:
         backend_value: object,
     ) -> tuple[SolutionStep, ...]:
         """Choose detailed steps for a supported operation family."""
-        if query.operation is Operation.SOLVE:
-            return self.detailed_equation_steps(query, backend_value)
-        if query.operation is Operation.DIFFERENTIATE:
-            return self.detailed_derivative_steps(query, backend_value)
-        if query.operation is Operation.INTEGRATE:
-            return self.detailed_integral_steps(query, backend_value)
-        if query.operation is Operation.LIMIT:
-            return self.detailed_limit_steps(query, backend_value)
-        if query.operation is Operation.SUM:
-            return self.detailed_sum_steps(query, backend_value)
-        return ()
+        match query.operation:
+            case (
+                Operation.SIMPLIFY
+                | Operation.EXPAND
+                | Operation.FACTOR
+                | Operation.CANCEL
+                | Operation.APART
+            ):
+                steps = self.detailed_algebra_steps(query, backend_value)
+            case Operation.SOLVE:
+                steps = self.detailed_equation_steps(query, backend_value)
+            case Operation.DIFFERENTIATE:
+                steps = self.detailed_derivative_steps(query, backend_value)
+            case Operation.INTEGRATE:
+                steps = self.detailed_integral_steps(query, backend_value)
+            case Operation.LIMIT:
+                steps = self.detailed_limit_steps(query, backend_value)
+            case Operation.SUM:
+                steps = self.detailed_sum_steps(query, backend_value)
+            case _:
+                steps = ()
+        return steps
+
+    def detailed_algebra_steps(
+        self,
+        query: Query,
+        backend_value: object,
+    ) -> tuple[SolutionStep, ...]:
+        """Describe elementary algebra using the learner's original expression."""
+        if len(query.arguments) not in {1, 2} or not isinstance(backend_value, sp.Basic):
+            return ()
+        original = query.arguments[0]
+        if not is_algebra_scalar(original):
+            return ()
+        backend_expression = self._converter.to_sympy(original)
+        if sp.simplify(backend_expression - backend_value) != sp.Integer(0):
+            return ()
+        description = describe_algebra_step(
+            query.operation,
+            original,
+            backend_expression,
+            backend_value,
+        )
+        denominators = (
+            symbolic_denominators(original)
+            if description.rule == "Cancel common factors"
+            else ()
+        )
+        constraints = tuple(
+            StepConstraint(
+                explanation="An original denominator cannot equal zero.",
+                expression=Relation(
+                    operator=RelationOperator.NOT_EQUAL,
+                    left=denominator,
+                    right=Number(value=Fraction(0)),
+                ),
+            )
+            for denominator in denominators
+        )
+        return (
+            SolutionStep(
+                rule=description.rule,
+                before=original,
+                after=self._converter.step_expression(backend_value),
+                explanation=description.explanation,
+                verification=Verification(
+                    method=VerificationMethod.SYMBOLIC_EQUIVALENCE,
+                    detail=(
+                        "The expressions agree wherever the original denominators are nonzero."
+                        if constraints
+                        else "Simplifying the difference between both expressions gives zero."
+                    ),
+                ),
+                introduced_constraints=constraints,
+            ),
+        )
 
     def detailed_sum_steps(
         self,

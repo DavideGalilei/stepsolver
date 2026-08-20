@@ -14,6 +14,7 @@ from stepsolver.derivation.model import (
     BackendMathNote,
     BackendProduct,
     BackendQuotient,
+    BackendStepConstraint,
     BackendSum,
 )
 from stepsolver.results import VerificationMethod
@@ -35,6 +36,7 @@ def _verified_derivative_steps(
     explanation: str,
     notes: tuple[BackendMathNote, ...],
     show_simplification: bool = False,
+    introduced_constraints: tuple[BackendStepConstraint, ...] = (),
 ) -> tuple[BackendDerivationStep, ...]:
     if str(sp.simplify(raw_derivative - result)) != "0":
         message = "the derivative rule did not match the exact backend result"
@@ -51,6 +53,7 @@ def _verified_derivative_steps(
                 "derivative."
             ),
             notes=notes,
+            introduced_constraints=introduced_constraints,
         )
     ]
     if show_simplification and str(raw_derivative) != str(result):
@@ -121,6 +124,59 @@ def _generic_quotient_rule(variable: sp.Symbol) -> BackendIdentity:
         right=BackendQuotient(
             numerator=numerator,
             denominator=sp.Pow(function_g, 2, evaluate=False),
+        ),
+    )
+
+
+def _derive_general_power(
+    expression: sp.Basic,
+    variable: sp.Symbol,
+    result: sp.Basic,
+) -> tuple[BackendDerivationStep, ...]:
+    """Differentiate f(x)^g(x) by taking logarithms first."""
+    if not expression.is_Pow or len(expression.args) != _BINARY_ARITY:
+        return ()
+    base, exponent = expression.args
+    if not base.has(variable) or not exponent.has(variable):
+        return ()
+    base_derivative = sp.diff(base, variable)
+    exponent_derivative = sp.diff(exponent, variable)
+    logarithmic_derivative = (
+        exponent_derivative * sp.log(base) + exponent * base_derivative / base
+    )
+    raw_derivative = expression * logarithmic_derivative
+    generic_base = sp.Function("f")(variable)
+    generic_exponent = sp.Function("g")(variable)
+    identity = BackendIdentity(
+        left=BackendDerivative(
+            expression=generic_base**generic_exponent,
+            variable=variable,
+        ),
+        right=(
+            generic_base**generic_exponent
+            * (
+                sp.diff(generic_exponent, variable) * sp.log(generic_base)
+                + generic_exponent * sp.diff(generic_base, variable) / generic_base
+            )
+        ),
+    )
+    return _verified_derivative_steps(
+        rule="Use logarithmic differentiation",
+        expression=expression,
+        variable=variable,
+        raw_derivative=raw_derivative,
+        result=result,
+        explanation=(
+            "Take logarithms so the variable exponent becomes a product, differentiate, "
+            "then multiply by the original power."
+        ),
+        notes=(BackendMathNote(label="General power rule", expression=identity),),
+        show_simplification=True,
+        introduced_constraints=(
+            BackendStepConstraint(
+                explanation="Logarithmic differentiation uses the real logarithm of the base.",
+                expression=sp.Gt(base, sp.Integer(0), evaluate=False),
+            ),
         ),
     )
 
@@ -445,6 +501,7 @@ def derive_derivative(
 ) -> tuple[BackendDerivationStep, ...]:
     """Derive a first derivative using the most specific familiar rule."""
     strategies = (
+        _derive_general_power,
         _derive_quotient,
         _derive_monomial,
         _derive_sum,

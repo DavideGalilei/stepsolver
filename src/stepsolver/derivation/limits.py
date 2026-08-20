@@ -15,6 +15,34 @@ from stepsolver.derivation.model import (
 )
 from stepsolver.results import VerificationMethod
 
+_POWER_ARITY = 2
+
+
+def _matching_terms(expression: sp.Basic, function: object) -> tuple[sp.Basic, ...]:
+    current = (expression,) if expression.func == function else ()
+    nested = tuple(
+        item
+        for argument in expression.args
+        for item in _matching_terms(argument, function)
+    )
+    return (*current, *nested)
+
+
+def _square_root_terms(expression: sp.Basic) -> tuple[sp.Basic, ...]:
+    current = (
+        (expression,)
+        if expression.is_Pow
+        and len(expression.args) == _POWER_ARITY
+        and expression.args[1] == sp.Rational(1, 2)
+        else ()
+    )
+    nested = tuple(
+        item
+        for argument in expression.args
+        for item in _square_root_terms(argument)
+    )
+    return (*current, *nested)
+
 
 def _derive_infinite_limit(
     expression: sp.Basic,
@@ -191,17 +219,295 @@ def _derive_sine_limit(
     return ()
 
 
-def derive_limit(
+def _derive_standard_zero_limit(
     expression: sp.Basic,
     variable: sp.Symbol,
     point: sp.Basic,
     direction: str | None,
     result: sp.Basic,
 ) -> tuple[BackendDerivationStep, ...]:
-    """Derive familiar limits with the shortest standard student method."""
-    sine_derivation = _derive_sine_limit(expression, variable, point, direction, result)
-    if sine_derivation:
-        return sine_derivation
+    """Recognize standard exponential, logarithmic, and cosine limits at zero."""
+    if point != sp.Integer(0):
+        return ()
+    displayed = BackendLimit(
+        expression=expression,
+        variable=variable,
+        point=point,
+        direction=direction,
+    )
+    numerator, denominator = sp.fraction(sp.together(expression))
+    if denominator == variable:
+        exponential_terms = _matching_terms(numerator, sp.exp)
+        if len(exponential_terms) == 1:
+            exponential = exponential_terms[0]
+            rate = sp.simplify(exponential.args[0] / variable)
+            if (
+                not rate.has(variable)
+                and sp.simplify(numerator - (exponential - 1)) == sp.Integer(0)
+                and result == rate
+            ):
+                generic = sp.Symbol("u", real=True)
+                return (
+                    BackendDerivationStep(
+                        rule="Normalize to the standard exponential limit",
+                        before=displayed,
+                        after=result,
+                        explanation=(
+                            "Use u equal to the exponent, factor out its constant rate, and "
+                            "apply lim (eᵘ-1)/u = 1."
+                        ),
+                        verification_method=VerificationMethod.BACKEND_IDENTITY,
+                        verification_detail="The normalized quotient is the standard limit.",
+                        notes=(
+                            BackendMathNote(
+                                label="Standard exponential limit",
+                                expression=BackendIdentity(
+                                    left=BackendLimit(
+                                        expression=(sp.exp(generic) - 1) / generic,
+                                        variable=generic,
+                                        point=sp.Integer(0),
+                                    ),
+                                    right=sp.Integer(1),
+                                ),
+                            ),
+                        ),
+                    ),
+                )
+        if numerator.func == sp.log and len(numerator.args) == 1:
+            logarithm_argument = numerator.args[0]
+            rate = sp.simplify((logarithm_argument - 1) / variable)
+            if not rate.has(variable) and result == rate:
+                generic = sp.Symbol("u", real=True)
+                return (
+                    BackendDerivationStep(
+                        rule="Normalize to the standard logarithm limit",
+                        before=displayed,
+                        after=result,
+                        explanation=(
+                            "Use u for the increment inside the logarithm, factor out its "
+                            "constant rate, and apply lim log(1+u)/u = 1."
+                        ),
+                        verification_method=VerificationMethod.BACKEND_IDENTITY,
+                        verification_detail="The normalized quotient is the standard limit.",
+                        notes=(
+                            BackendMathNote(
+                                label="Standard logarithm limit",
+                                expression=BackendIdentity(
+                                    left=BackendLimit(
+                                        expression=sp.log(1 + generic) / generic,
+                                        variable=generic,
+                                        point=sp.Integer(0),
+                                    ),
+                                    right=sp.Integer(1),
+                                ),
+                            ),
+                        ),
+                    ),
+                )
+    if denominator == variable**2:
+        cosine_terms = _matching_terms(numerator, sp.cos)
+        if len(cosine_terms) == 1:
+            cosine = cosine_terms[0]
+            rate = sp.simplify(cosine.args[0] / variable)
+            expected = sp.simplify(rate**2 / 2)
+            if (
+                not rate.has(variable)
+                and sp.simplify(numerator - (1 - cosine)) == sp.Integer(0)
+                and result == expected
+            ):
+                generic = sp.Symbol("u", real=True)
+                return (
+                    BackendDerivationStep(
+                        rule="Use the standard cosine limit",
+                        before=displayed,
+                        after=result,
+                        explanation=(
+                            "Normalize the angle and use 1-cos(u) = 2sin²(u/2), reducing the "
+                            "limit to the standard sine limit."
+                        ),
+                        verification_method=VerificationMethod.BACKEND_IDENTITY,
+                        verification_detail="The half-angle identity gives the exact limit.",
+                        notes=(
+                            BackendMathNote(
+                                label="Standard cosine limit",
+                                expression=BackendIdentity(
+                                    left=BackendLimit(
+                                        expression=(1 - sp.cos(generic)) / generic**2,
+                                        variable=generic,
+                                        point=sp.Integer(0),
+                                    ),
+                                    right=sp.Rational(1, 2),
+                                ),
+                            ),
+                        ),
+                    ),
+                )
+    return ()
+
+
+def _derive_radical_rationalization(
+    expression: sp.Basic,
+    variable: sp.Symbol,
+    point: sp.Basic,
+    direction: str | None,
+    result: sp.Basic,
+) -> tuple[BackendDerivationStep, ...]:
+    """Rationalize a square-root difference that produces zero over zero."""
+    rationalization = _radical_rationalization(expression, variable)
+    if point in {sp.oo, -sp.oo} or rationalization is None:
+        return ()
+    conjugate, rationalized = rationalization
+    substituted = sp.simplify(rationalized.subs(variable, point))
+    if substituted != result or substituted.has(sp.zoo) or substituted.has(sp.nan):
+        return ()
+    displayed = BackendLimit(
+        expression=expression,
+        variable=variable,
+        point=point,
+        direction=direction,
+    )
+    rationalized_limit = BackendLimit(
+        expression=rationalized,
+        variable=variable,
+        point=point,
+        direction=direction,
+    )
+    return (
+        BackendDerivationStep(
+            rule="Multiply by the conjugate",
+            before=displayed,
+            after=rationalized_limit,
+            explanation=(
+                "Multiply numerator and denominator by the conjugate, then use the difference "
+                "of squares to remove the radical from the numerator."
+            ),
+            verification_method=VerificationMethod.SYMBOLIC_EQUIVALENCE,
+            verification_detail="The conjugate quotient equals one away from the hole.",
+            notes=(BackendMathNote(label="Conjugate", expression=conjugate),),
+        ),
+        BackendDerivationStep(
+            rule="Substitute into the rationalized expression",
+            before=rationalized_limit,
+            after=result,
+            explanation="The rationalized expression is continuous at the approach point.",
+            verification_method=VerificationMethod.EXACT_ARITHMETIC,
+            verification_detail="Direct substitution gives the exact limit.",
+        ),
+    )
+
+
+def _radical_rationalization(
+    expression: sp.Basic,
+    variable: sp.Symbol,
+) -> tuple[sp.Basic, sp.Basic] | None:
+    numerator, denominator = sp.fraction(sp.together(expression))
+    square_roots = _square_root_terms(numerator)
+    if len(square_roots) != 1:
+        return None
+    root = square_roots[0]
+    constant = sp.simplify(root - numerator)
+    if constant.has(variable) or constant == sp.Integer(0):
+        return None
+    if sp.simplify(numerator - (root - constant)) != sp.Integer(0):
+        return None
+    conjugate = root + constant
+    radicand = root.args[0]
+    rationalized = sp.cancel((radicand - constant**2) / (denominator * conjugate))
+    if sp.simplify(rationalized - expression) != sp.Integer(0):
+        return None
+    return conjugate, rationalized
+
+
+def _derive_variable_power_limit(
+    expression: sp.Basic,
+    variable: sp.Symbol,
+    point: sp.Basic,
+    direction: str | None,
+    result: sp.Basic,
+) -> tuple[BackendDerivationStep, ...]:
+    """Handle variable powers using the exponential of a logarithm."""
+    displayed = BackendLimit(
+        expression=expression,
+        variable=variable,
+        point=point,
+        direction=direction,
+    )
+    if expression == variable**variable and point == sp.Integer(0) and direction == "+":
+        rewritten = sp.exp(variable * sp.log(variable))
+        exponent_limit = BackendLimit(
+            expression=variable * sp.log(variable),
+            variable=variable,
+            point=point,
+            direction=direction,
+        )
+        if result != sp.Integer(1):
+            return ()
+        return (
+            BackendDerivationStep(
+                rule="Rewrite the variable power exponentially",
+                before=displayed,
+                after=BackendLimit(
+                    expression=rewritten,
+                    variable=variable,
+                    point=point,
+                    direction=direction,
+                ),
+                explanation="For positive x, write xˣ as exp(x log(x)).",
+                verification_method=VerificationMethod.SYMBOLIC_EQUIVALENCE,
+                verification_detail="The exponential-logarithm identity holds for x > 0.",
+                notes=(BackendMathNote(label="Exponent limit", expression=exponent_limit),),
+            ),
+            BackendDerivationStep(
+                rule="Evaluate the exponent limit",
+                before=exponent_limit,
+                after=result,
+                explanation="Since x log(x) tends to zero, continuity of exp gives exp(0) = 1.",
+                verification_method=VerificationMethod.BACKEND_IDENTITY,
+                verification_detail="The standard x log(x) limit and continuity of exp apply.",
+            ),
+        )
+    if point == sp.oo and expression.is_Pow and len(expression.args) == _POWER_ARITY:
+        base, exponent = expression.args
+        increment = sp.simplify((base - 1) * variable)
+        if exponent == variable and not increment.has(variable) and result == sp.exp(increment):
+            generic = sp.Symbol("a", real=True)
+            return (
+                BackendDerivationStep(
+                    rule="Use the exponential-definition limit",
+                    before=displayed,
+                    after=result,
+                    explanation=(
+                        "This has the form (1+a/x)ˣ, whose limit is eᵃ. Substitute the "
+                        "constant increment."
+                    ),
+                    verification_method=VerificationMethod.BACKEND_IDENTITY,
+                    verification_detail="The defining exponential limit gives the exact value.",
+                    notes=(
+                        BackendMathNote(
+                            label="General identity",
+                            expression=BackendIdentity(
+                                left=BackendLimit(
+                                    expression=(1 + generic / variable) ** variable,
+                                    variable=variable,
+                                    point=sp.oo,
+                                ),
+                                right=sp.exp(generic),
+                            ),
+                        ),
+                    ),
+                ),
+            )
+    return ()
+
+
+def _derive_algebraic_limit(
+    expression: sp.Basic,
+    variable: sp.Symbol,
+    point: sp.Basic,
+    direction: str | None,
+    result: sp.Basic,
+) -> tuple[BackendDerivationStep, ...]:
+    """Use cancellation, sign analysis, substitution, or growth comparison."""
     displayed_limit = BackendLimit(
         expression=expression,
         variable=variable,
@@ -304,4 +610,26 @@ def derive_limit(
 
     if point in {sp.oo, -sp.oo}:
         return _derive_infinite_limit(expression, variable, point, direction, result)
+    return ()
+
+
+def derive_limit(
+    expression: sp.Basic,
+    variable: sp.Symbol,
+    point: sp.Basic,
+    direction: str | None,
+    result: sp.Basic,
+) -> tuple[BackendDerivationStep, ...]:
+    """Derive familiar limits with the shortest standard student method."""
+    strategies = (
+        _derive_sine_limit,
+        _derive_standard_zero_limit,
+        _derive_variable_power_limit,
+        _derive_radical_rationalization,
+        _derive_algebraic_limit,
+    )
+    for strategy in strategies:
+        derivation = strategy(expression, variable, point, direction, result)
+        if derivation:
+            return derivation
     return ()
