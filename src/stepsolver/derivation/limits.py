@@ -476,7 +476,7 @@ def _derive_variable_power_limit(
                     point=point,
                     direction=direction,
                 ),
-                explanation="For positive x, write xˣ as exp(x log(x)).",
+                explanation="For positive x, write xˣ as e^(x log(x)).",
                 verification_method=VerificationMethod.SYMBOLIC_EQUIVALENCE,
                 verification_detail="The exponential-logarithm identity holds for x > 0.",
                 notes=(BackendMathNote(label="Exponent limit", expression=exponent_limit),),
@@ -485,9 +485,11 @@ def _derive_variable_power_limit(
                 rule="Evaluate the exponent limit",
                 before=exponent_limit,
                 after=result,
-                explanation="Since x log(x) tends to zero, continuity of exp gives exp(0) = 1.",
+                explanation="Since x log(x) tends to zero, continuity of e^t gives e^0 = 1.",
                 verification_method=VerificationMethod.BACKEND_IDENTITY,
-                verification_detail="The standard x log(x) limit and continuity of exp apply.",
+                verification_detail=(
+                    "The standard x log(x) limit and continuity of the exponential apply."
+                ),
             ),
         )
     if point == sp.oo and expression.is_Pow and len(expression.args) == _POWER_ARITY:

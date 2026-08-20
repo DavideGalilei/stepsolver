@@ -14,6 +14,12 @@ def test_fraction_power_and_function_latex() -> None:
     assert format_latex_expression(expression) == r"\sin\left(x\right)^{2} + \frac{1}{2}"
 
 
+def test_exponential_uses_e_to_a_power() -> None:
+    """Exponentials should use conventional e-power notation instead of exp()."""
+    assert format_latex_expression(parse_expression("exp(x)")) == r"e^{x}"
+    assert format_latex_expression(parse_expression("exp(2*x+1)")) == r"e^{2 \cdot x + 1}"
+
+
 def test_relation_and_constants_latex() -> None:
     """Relations and built-in constants should receive conventional symbols."""
     expression = parse_expression("x <= 2*pi")

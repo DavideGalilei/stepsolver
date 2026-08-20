@@ -37,7 +37,7 @@
     "name": "product derivative",
     "latex": "\\frac{\\mathrm{d}}{\\mathrm{d}x}(\\sin(x)e^x)",
     "math_json": ["D", ["Delimiter", ["InvisibleOperator", ["Sin", "x"], ["Power", "e", "x"]]], "x"],
-    "result_latex": "\\exp\\left(x\\right) \\cdot \\sin\\left(x\\right) + \\exp\\left(x\\right) \\cdot \\cos\\left(x\\right)",
+    "result_latex": "e^{x} \\cdot \\sin\\left(x\\right) + e^{x} \\cdot \\cos\\left(x\\right)",
     "expected_rules": ["Apply the product rule"]
   },
   {
@@ -66,7 +66,7 @@
       ["InvisibleOperator", "x", ["Power", "e", "x"]],
       "x"
     ],
-    "result_latex": "\\left(x - 1\\right) \\cdot \\exp\\left(x\\right) + C",
+    "result_latex": "\\left(x - 1\\right) \\cdot e^{x} + C",
     "expected_rules": [
       "Choose integration by parts",
       "Evaluate the remaining integral"

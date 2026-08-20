@@ -64,7 +64,6 @@ _NAMED_FUNCTIONS: dict[str, str] = {
     "cosh": r"\cosh",
     "tanh": r"\tanh",
     "log": r"\log",
-    "exp": r"\exp",
     "gamma": r"\Gamma",
     "zeta": r"\zeta",
     "erf": r"\operatorname{erf}",
@@ -222,6 +221,8 @@ def _format_function(expression: FunctionCall) -> str:
     calculus = _format_calculus_function(name, arguments)
     if calculus is not None:
         return calculus
+    if name == "exp" and len(arguments) == 1:
+        return rf"e^{{{format_latex_expression(arguments[0])}}}"
     if name in {"sum", "product"} and len(arguments) == 4:
         value = format_latex_expression(arguments[0])
         variable = format_latex_expression(arguments[1])

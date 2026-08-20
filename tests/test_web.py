@@ -506,8 +506,8 @@ def test_visual_adjacency_uses_the_product_rule() -> None:
     assert payload.status == "exact"
     assert [step.rule for step in payload.steps] == ["Apply the product rule"]
     assert payload.result_latex == (
-        r"\exp\left(x\right) \cdot \sin\left(x\right) + "
-        r"\exp\left(x\right) \cdot \cos\left(x\right)"
+        r"e^{x} \cdot \sin\left(x\right) + "
+        r"e^{x} \cdot \cos\left(x\right)"
     )
     assert payload.steps[0].notes[0].label == "Product rule"
     assert "log" not in payload.result_latex
