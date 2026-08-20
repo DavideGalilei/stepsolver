@@ -434,6 +434,44 @@ def test_undefined_sum_payload_never_exposes_backend_complex_infinity() -> None:
     assert payload.steps[0].introduced_constraints[1].expression_latex == r"n \ne 0"
 
 
+@pytest.mark.parametrize("base", [2, 3])
+def test_indexed_root_power_series_crosses_the_web_boundary_with_human_steps(
+    base: int,
+) -> None:
+    """MathLive Root nodes should produce a proof of divergence, not an opaque fallback."""
+    with TestClient(create_app()) as client:
+        response = client.post(
+            "/api/solve",
+            json={
+                "latex": rf"\sum_{{n=1}}^{{+\infty}}{{\sqrt[n]{{{base}^n}}+{base}^n}}",
+                "math_json": [
+                    "Sum",
+                    [
+                        "Add",
+                        ["Root", ["Power", base, "n"], "n"],
+                        ["Power", base, "n"],
+                    ],
+                    ["Tuple", "n", 1, "PositiveInfinity"],
+                ],
+            },
+        )
+    payload = SolveResponse.model_validate_json(response.text)
+    assert response.status_code == _HTTP_OK
+    assert payload.status == "divergent"
+    assert payload.result_latex == r"\text{Diverges to }+\infty"
+    assert tuple(step.rule for step in payload.steps) == (
+        "Simplify the indexed root",
+        "Apply the nth-term divergence test",
+    )
+    assert payload.steps[0].before_latex == (
+        rf"\sum_{{n=1}}^{{\infty}} \left(\sqrt[n]{{{base}^{{n}}}} + {base}^{{n}}\right)"
+    )
+    assert payload.steps[0].after_latex == (
+        rf"\sum_{{n=1}}^{{\infty}} \left({base} + {base}^{{n}}\right)"
+    )
+    assert payload.steps[0].notes[0].expression_latex == (rf"\sqrt[n]{{{base}^{{n}}}} = {base}")
+
+
 def test_exact_solve_response_contains_latex_steps() -> None:
     """Exact API responses should carry both ASCII and generated LaTeX."""
     with TestClient(create_app()) as client:

@@ -48,6 +48,7 @@ _FUNCTIONS: dict[str, str] = {
     "Ln": "log",
     "Log": "log",
     "Sqrt": "sqrt",
+    "Root": "root",
     "Abs": "abs",
     "Gamma": "gamma",
     "Factorial": "factorial",

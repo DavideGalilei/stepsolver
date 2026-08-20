@@ -126,6 +126,14 @@ class BackendGrouped:
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
+class BackendNthRoot:
+    """An indexed radical retained explicitly in a human derivation."""
+
+    radicand: BackendExpression
+    index: BackendExpression
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
 class BackendEvaluationAtBounds:
     """An antiderivative evaluated between lower and upper bounds."""
 
@@ -247,6 +255,7 @@ type BackendExpression = (
     | BackendIntroducedOperation
     | BackendIntroducedQuotient
     | BackendGrouped
+    | BackendNthRoot
     | BackendEvaluationAtBounds
     | BackendEvaluationAtIndex
     | BackendSigma

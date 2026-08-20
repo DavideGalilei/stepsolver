@@ -6,6 +6,7 @@ import pytest
 
 from stepsolver.ast import Number, Operation, Query, SequenceExpression, Symbol
 from stepsolver.errors import QueryError
+from stepsolver.formatter import format_expression
 from stepsolver.mathjson import JsonValue, expression_from_mathjson, query_from_mathjson
 
 
@@ -141,6 +142,12 @@ def test_nested_calculus_operator_is_rejected_as_an_expression() -> None:
     """Calculus operators are semantic query roots, not ordinary functions."""
     with pytest.raises(QueryError, match="outermost"):
         expression_from_mathjson(["Add", 1, ["Integrate", "x", "x"]])
+
+
+def test_indexed_root_mathjson_uses_the_supported_root_function() -> None:
+    """MathLive indexed radicals should not become unknown backend functions."""
+    expression = expression_from_mathjson(["Root", ["Power", 2, "n"], "n"])
+    assert format_expression(expression) == "root(2 ^ n, n)"
 
 
 def test_mathjson_string_literal_is_rejected() -> None:

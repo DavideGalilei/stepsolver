@@ -20,6 +20,12 @@ def test_exponential_uses_e_to_a_power() -> None:
     assert format_latex_expression(parse_expression("exp(2*x+1)")) == r"e^{2 \cdot x + 1}"
 
 
+def test_sum_groups_an_additive_summand() -> None:
+    """A sum should visibly enclose an additive summand within its scope."""
+    expression = parse_expression("sum(2+2^n,n,1,oo)")
+    assert format_latex_expression(expression) == (r"\sum_{n=1}^{\infty} \left(2 + 2^{n}\right)")
+
+
 def test_relation_and_constants_latex() -> None:
     """Relations and built-in constants should receive conventional symbols."""
     expression = parse_expression("x <= 2*pi")

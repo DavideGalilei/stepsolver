@@ -211,8 +211,27 @@ def _format_derivation_annotation(
             )
         case "grouped", (argument,):
             return rf"\left({format_latex_expression(argument)}\right)"
+        case "nth_root", (radicand, index):
+            value = format_latex_expression(radicand)
+            root_index = format_latex_expression(index)
+            return rf"\sqrt[{root_index}]{{{value}}}"
         case _:
             return None
+
+
+def _format_indexed_operator(name: str, arguments: tuple[Expression, ...]) -> str:
+    value_expression, variable_expression, lower_expression, upper_expression = arguments
+    value = format_latex_expression(value_expression)
+    if isinstance(value_expression, BinaryExpression) and value_expression.operator in {
+        BinaryOperator.ADD,
+        BinaryOperator.SUBTRACT,
+    }:
+        value = rf"\left({value}\right)"
+    variable = format_latex_expression(variable_expression)
+    lower = format_latex_expression(lower_expression)
+    upper = format_latex_expression(upper_expression)
+    operator = r"\sum" if name == "sum" else r"\prod"
+    return rf"{operator}_{{{variable}={lower}}}^{{{upper}}} {value}"
 
 
 def _format_function(expression: FunctionCall) -> str:
@@ -224,12 +243,7 @@ def _format_function(expression: FunctionCall) -> str:
     if name == "exp" and len(arguments) == 1:
         return rf"e^{{{format_latex_expression(arguments[0])}}}"
     if name in {"sum", "product"} and len(arguments) == 4:
-        value = format_latex_expression(arguments[0])
-        variable = format_latex_expression(arguments[1])
-        lower = format_latex_expression(arguments[2])
-        upper = format_latex_expression(arguments[3])
-        operator = r"\sum" if name == "sum" else r"\prod"
-        return rf"{operator}_{{{variable}={lower}}}^{{{upper}}} {value}"
+        return _format_indexed_operator(name, arguments)
     if name == "solve" and len(arguments) == 2:
         equation = format_latex_expression(arguments[0])
         variable = format_latex_expression(arguments[1])
@@ -240,6 +254,10 @@ def _format_function(expression: FunctionCall) -> str:
         return f"{format_latex_expression(arguments[0])} = {format_latex_expression(arguments[1])}"
     if name == "sqrt" and len(arguments) == 1:
         return rf"\sqrt{{{format_latex_expression(arguments[0])}}}"
+    if name == "root" and len(arguments) == 2:
+        radicand = format_latex_expression(arguments[0])
+        index = format_latex_expression(arguments[1])
+        return rf"\sqrt[{index}]{{{radicand}}}"
     if name == "abs" and len(arguments) == 1:
         return rf"\left|{format_latex_expression(arguments[0])}\right|"
     if name == "differential" and len(arguments) == 1:

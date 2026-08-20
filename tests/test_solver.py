@@ -260,6 +260,31 @@ def test_nonzero_term_limit_uses_the_nth_term_divergence_test(solver: Solver) ->
     assert result.steps[0].notes[0].label == "Term limit"
 
 
+@pytest.mark.parametrize("base", [2, 3, 5])
+def test_indexed_root_power_series_has_human_divergence_steps(
+    solver: Solver,
+    base: int,
+) -> None:
+    """Matching indexed roots should simplify visibly before the term test."""
+    result = solver.solve(f"sum(root({base}^n,n)+{base}^n,n,1,oo)")
+    assert isinstance(result, DivergentResult)
+    assert result.kind is DivergenceKind.POSITIVE_INFINITY
+    assert tuple(step.rule for step in result.steps) == (
+        "Simplify the indexed root",
+        "Apply the nth-term divergence test",
+    )
+    assert format_latex_expression(result.steps[0].before) == (
+        rf"\sum_{{n=1}}^{{\infty}} \left(\sqrt[n]{{{base}^{{n}}}} + {base}^{{n}}\right)"
+    )
+    assert format_latex_expression(result.steps[0].after) == (
+        rf"\sum_{{n=1}}^{{\infty}} \left({base} + {base}^{{n}}\right)"
+    )
+    assert format_latex_expression(result.steps[0].notes[0].expression) == (
+        rf"\sqrt[n]{{{base}^{{n}}}} = {base}"
+    )
+    assert result.steps[1].notes[0].label == "Term limit"
+
+
 @pytest.mark.parametrize(
     ("query", "kind", "rule"),
     [

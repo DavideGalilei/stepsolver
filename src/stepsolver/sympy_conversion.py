@@ -143,6 +143,11 @@ class SympyConverter:
             if len(arguments) == 1:
                 return sp.log(arguments[0])
             return sp.log(arguments[0], arguments[1])
+        if name == "root":
+            if len(arguments) != 2:
+                raise QueryError("root expects a radicand and an index")
+            reciprocal_index = sp.Pow(arguments[1], -1, evaluate=False)
+            return sp.Pow(arguments[0], reciprocal_index, evaluate=False)
         if name == Operation.DIFFERENTIATE.value:
             if len(arguments) not in {2, 3}:
                 raise QueryError("nested diff expects two or three arguments")

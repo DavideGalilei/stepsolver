@@ -36,6 +36,7 @@ from stepsolver.derivation.model import (
     BackendNewtonIterations,
     BackendNewtonRule,
     BackendNotEqual,
+    BackendNthRoot,
     BackendProduct,
     BackendQuadraticSolutions,
     BackendQuotient,
@@ -154,6 +155,14 @@ class SympyDerivationRenderer:
             return FunctionCall(
                 name=Identifier("grouped"),
                 arguments=(self.derivation_expression(value.expression),),
+            )
+        if isinstance(value, BackendNthRoot):
+            return FunctionCall(
+                name=Identifier("nth_root"),
+                arguments=(
+                    self.derivation_expression(value.radicand),
+                    self.derivation_expression(value.index),
+                ),
             )
         if isinstance(value, BackendNewtonRule):
             return FunctionCall(name=Identifier("newton_rule"), arguments=())

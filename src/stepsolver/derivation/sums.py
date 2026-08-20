@@ -15,10 +15,12 @@ from stepsolver.derivation.model import (
     BackendLimit,
     BackendMathNote,
     BackendNotEqual,
+    BackendNthRoot,
     BackendProduct,
     BackendQuotient,
     BackendSigma,
     BackendStepConstraint,
+    BackendSum,
     BackendUndefined,
 )
 from stepsolver.results import VerificationMethod
@@ -36,6 +38,15 @@ class UndefinedSummation:
     index: sp.Basic
     denominator: sp.Basic
     steps: tuple[BackendDerivationStep, ...]
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class NthRootPowerMatch:
+    """A positive base raised to and rooted by the summation index."""
+
+    root_term: sp.Basic
+    radicand: sp.Basic
+    base: sp.Basic
 
 
 def _included_integer(
@@ -1021,6 +1032,112 @@ def _derive_nth_term_divergence(
     )
 
 
+def _match_nth_root_power(
+    expression: sp.Basic,
+    variable: sp.Symbol,
+) -> NthRootPowerMatch | None:
+    """Find one term of the form ``(base**n)**(1/n)`` for a positive base."""
+    for term in expression.as_ordered_terms():
+        if not term.is_Pow or len(term.args) != _GEOMETRIC_POWER_ARITY:
+            continue
+        radicand, reciprocal_index = term.args
+        if sp.simplify(reciprocal_index - 1 / variable) != sp.Integer(0):
+            continue
+        if not radicand.is_Pow or len(radicand.args) != _GEOMETRIC_POWER_ARITY:
+            continue
+        base, exponent = radicand.args
+        if exponent == variable and base.is_positive is True:
+            return NthRootPowerMatch(root_term=term, radicand=radicand, base=base)
+    return None
+
+
+def _derive_nth_root_power_divergence(
+    expression: sp.Basic,
+    variable: sp.Symbol,
+    lower: sp.Basic,
+    upper: sp.Basic,
+    result: sp.Basic,
+) -> tuple[BackendDerivationStep, ...]:
+    """Simplify an indexed root of a matching positive power before testing divergence."""
+    if upper != sp.oo or lower.is_integer is not True or lower.is_positive is not True:
+        return ()
+    match = _match_nth_root_power(expression, variable)
+    if match is None:
+        return ()
+    remaining = sp.simplify(expression - match.root_term)
+    simplified_expression = sp.simplify(match.base + remaining)
+    try:
+        term_limit = sp.limit(simplified_expression, variable, sp.oo)
+    except (NotImplementedError, TypeError, ValueError):
+        return ()
+    if contains_unevaluated_operation(term_limit):
+        return ()
+    if sp.simplify(sp.Ne(term_limit, sp.Integer(0))) is not sp.true:
+        return ()
+
+    displayed_root = BackendNthRoot(radicand=match.radicand, index=variable)
+    displayed_original: BackendExpression = displayed_root
+    displayed_simplified: BackendExpression = match.base
+    if remaining != sp.Integer(0):
+        displayed_original = BackendSum(terms=(displayed_root, remaining))
+        displayed_simplified = BackendSum(terms=(match.base, remaining))
+    original_sigma = BackendSigma(
+        expression=displayed_original,
+        variable=variable,
+        lower=lower,
+        upper=upper,
+    )
+    simplified_sigma = BackendSigma(
+        expression=displayed_simplified,
+        variable=variable,
+        lower=lower,
+        upper=upper,
+    )
+    return (
+        BackendDerivationStep(
+            rule="Simplify the indexed root",
+            before=original_sigma,
+            after=simplified_sigma,
+            explanation=(
+                "Because the index is a positive integer and the base is positive, "
+                "the n-th root of the matching n-th power equals the base."
+            ),
+            verification_method=VerificationMethod.EXACT_ARITHMETIC,
+            verification_detail="The indexed root and power have the same positive index.",
+            notes=(
+                BackendMathNote(
+                    label="Root-power identity",
+                    expression=BackendIdentity(left=displayed_root, right=match.base),
+                ),
+            ),
+        ),
+        BackendDerivationStep(
+            rule="Apply the nth-term divergence test",
+            before=simplified_sigma,
+            after=result,
+            explanation=(
+                "A convergent infinite series must have terms approaching zero. "
+                "The simplified summand instead grows without bound."
+            ),
+            verification_method=VerificationMethod.BACKEND_IDENTITY,
+            verification_detail="The simplified summand's limit at infinity is not zero.",
+            notes=(
+                BackendMathNote(
+                    label="Term limit",
+                    expression=BackendIdentity(
+                        left=BackendLimit(
+                            expression=displayed_simplified,
+                            variable=variable,
+                            point=sp.oo,
+                        ),
+                        right=term_limit,
+                    ),
+                ),
+            ),
+        ),
+    )
+
+
 def derive_sum(
     expression: sp.Basic,
     variable: sp.Symbol,
@@ -1038,6 +1155,7 @@ def derive_sum(
         _derive_telescoping_rational_sum,
         _derive_harmonic_sine_series,
         _derive_alternating_p_series,
+        _derive_nth_root_power_divergence,
         _derive_nth_term_divergence,
     ):
         derivation = strategy(expression, variable, lower, upper, result)
