@@ -223,6 +223,23 @@ def test_python_runtime_preloads_with_visible_stage_progress() -> None:
     assert "prefers-reduced-motion: reduce" in stylesheet.text
 
 
+def test_random_problem_control_uses_the_curated_problem_picker() -> None:
+    """The random action should load a fresh curated expression into the editor."""
+    with TestClient(create_app()) as client:
+        homepage = client.get("/")
+        stylesheet = client.get("/static/style.css")
+        script = client.get("/static/app.js")
+        problems = client.get("/static/random-problems.mjs")
+
+    assert 'id="random-problem"' in homepage.text
+    assert "Try a random problem" in homepage.text
+    assert 'from "./random-problems.mjs"' in script.text
+    assert 'randomProblemButton.addEventListener("click"' in script.text
+    assert "showExample(chooseRandomProblem(expressionField.value))" in script.text
+    assert "problem !== currentExpression" in problems.text
+    assert ".random-problem" in stylesheet.text
+
+
 def test_mobile_sections_use_internal_safe_area_padding() -> None:
     """Mobile sections should provide their own readable, notch-safe gutters."""
     with TestClient(create_app()) as client:

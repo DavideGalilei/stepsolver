@@ -500,6 +500,25 @@ math-field {
 .example:hover,
 .example:focus-visible { color: var(--accent); outline: none; text-decoration: underline; text-underline-offset: 4px; }
 
+.random-problem {
+  border: 0;
+  border-left: 1px solid var(--line-strong);
+  background: transparent;
+  color: var(--accent);
+  padding: 3px 0 3px 15px;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.random-problem:hover,
+.random-problem:focus-visible {
+  color: var(--accent-hover);
+  outline: none;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
 .solve-action {
   display: flex;
   min-width: 220px;

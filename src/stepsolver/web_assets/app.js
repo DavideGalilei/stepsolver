@@ -1,6 +1,7 @@
 "use strict";
 
 import { createSolverClient } from "./runtime.mjs";
+import { chooseRandomProblem } from "./random-problems.mjs";
 import { ComputeEngine, MathfieldElement } from "./vendor.mjs";
 
 MathfieldElement.fontsDirectory = new URL("./fonts/", import.meta.url).href;
@@ -13,6 +14,7 @@ const mathToolbar = document.querySelector(".math-toolbar");
 const expressionField = document.querySelector("#expression-field");
 const mobileKeyboardProxy = document.querySelector("#mobile-keyboard-proxy");
 const mathKeyboardButton = document.querySelector("#math-keyboard-button");
+const randomProblemButton = document.querySelector("#random-problem");
 const solveButton = document.querySelector("#solve-button");
 const runtimeStatus = document.querySelector("#runtime-status");
 const runtimeStatusText = document.querySelector("#runtime-status-text");
@@ -624,10 +626,16 @@ mathToolbar.addEventListener(
   { capture: true }
 );
 
-for (const example of document.querySelectorAll(".example")) {
-  example.addEventListener("click", () => {
-    expressionField.value = example.dataset.expression;
-    if (usesMobileKeyboard()) focusMobileKeyboard();
-    else expressionField.focus();
-  });
+function showExample(expression) {
+  expressionField.value = expression;
+  if (usesMobileKeyboard()) focusMobileKeyboard();
+  else expressionField.focus();
 }
+
+for (const example of document.querySelectorAll(".example")) {
+  example.addEventListener("click", () => showExample(example.dataset.expression));
+}
+
+randomProblemButton.addEventListener("click", () => {
+  showExample(chooseRandomProblem(expressionField.value));
+});
