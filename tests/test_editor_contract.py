@@ -20,6 +20,7 @@ class _EditorCase(BaseModel):
     latex: str
     math_json: JsonValue
     result_latex: str
+    expected_rules: tuple[str, ...]
 
 
 _CASES = tuple(
@@ -35,6 +36,16 @@ def test_editor_mathjson_reaches_the_browser_solver(editor_case: _EditorCase) ->
     payload = SolveResponse.model_validate_json(response)
     assert payload.status == "exact"
     assert payload.result_latex == editor_case.result_latex
+    actual_rules = tuple(step.rule for step in payload.steps)
+    assert actual_rules, (
+        f"{editor_case.name} returned an exact answer without a derivation; "
+        "human-solvable editor cases must include worked steps"
+    )
+    assert "Compute exact result" not in actual_rules, (
+        f"{editor_case.name} fell back to an opaque exact-result step instead of its "
+        f"required human method: {editor_case.expected_rules}"
+    )
+    assert actual_rules == editor_case.expected_rules
 
 
 def test_browser_query_errors_do_not_expose_python_tracebacks() -> None:

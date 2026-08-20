@@ -521,80 +521,20 @@ math-field {
 
 .solve-action {
   display: flex;
-  min-width: 220px;
+  min-width: 190px;
   align-items: center;
   justify-content: flex-end;
-  gap: 14px;
-}
-
-.runtime-status {
-  display: grid;
-  width: min(260px, 32vw);
-  grid-template-columns: 9px minmax(0, 1fr);
-  align-items: center;
-  gap: 9px;
-  color: var(--muted);
-  font-size: 11px;
-  font-weight: 650;
-  line-height: 1.35;
-}
-
-.runtime-status-indicator {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--muted);
-}
-
-.runtime-status[data-state="loading"] .runtime-status-indicator,
-.runtime-status[data-state="solving"] .runtime-status-indicator {
-  background: var(--accent);
-  animation: runtime-pulse 1.2s ease-in-out infinite;
-}
-
-.runtime-status[data-state="ready"] { color: var(--success); }
-.runtime-status[data-state="ready"] .runtime-status-indicator { background: var(--success); }
-.runtime-status[data-state="error"] { color: var(--error); }
-.runtime-status[data-state="error"] .runtime-status-indicator { background: var(--error); }
-
-.runtime-status-copy { min-width: 0; }
-#runtime-status-text { overflow-wrap: anywhere; }
-
-.runtime-status progress {
-  display: block;
-  width: 100%;
-  height: 3px;
-  overflow: hidden;
-  margin-top: 5px;
-  border: 0;
-  border-radius: 0;
-  background: var(--line);
-  color: var(--accent);
-  accent-color: var(--accent);
-}
-
-.runtime-status progress::-webkit-progress-bar { background: var(--line); }
-.runtime-status progress::-webkit-progress-value { background: currentcolor; }
-.runtime-status progress::-moz-progress-bar { background: currentcolor; }
-.runtime-status[data-state="ready"] progress { color: var(--success); }
-.runtime-status[data-state="error"] progress { color: var(--error); }
-
-@keyframes runtime-pulse {
-  0%, 100% { opacity: .35; transform: scale(.82); }
-  50% { opacity: 1; transform: scale(1); }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .runtime-status-indicator { animation: none !important; }
 }
 
 .solve-button {
-  min-width: 132px;
+  min-width: 180px;
+  min-height: 58px;
   border: 0;
   border-radius: 3px;
   background: var(--accent);
   color: var(--button-on-accent);
-  padding: 14px 26px;
+  padding: 17px 36px;
+  font-size: 17px;
   font-weight: 700;
   cursor: pointer;
   transition: background-color 120ms ease, box-shadow 120ms ease, transform 120ms ease;
@@ -608,6 +548,68 @@ math-field {
 }
 
 .solve-button:disabled { cursor: wait; opacity: .58; transform: none; }
+
+.solver-progress {
+  margin-top: 34px;
+  border-top: 1px solid var(--line);
+  padding: 28px 0 4px;
+}
+
+.solver-progress-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.solver-progress-heading h3 {
+  margin-bottom: 7px;
+  font-size: 17px;
+}
+
+#solver-progress-count {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+#runtime-status-text {
+  margin-bottom: 16px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.solver-progress progress {
+  display: block;
+  width: 100%;
+  height: 5px;
+  margin-bottom: 20px;
+  border: 0;
+  border-radius: 0;
+  background: var(--line);
+  color: var(--accent);
+  accent-color: var(--accent);
+}
+
+.solver-progress progress::-webkit-progress-bar { background: var(--line); }
+.solver-progress progress::-webkit-progress-value { background: currentcolor; }
+.solver-progress progress::-moz-progress-bar { background: currentcolor; }
+
+.runtime-steps {
+  display: grid;
+  margin: 0;
+  padding-left: 24px;
+  gap: 9px;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.runtime-steps li::marker { color: var(--muted); font-weight: 700; }
+.runtime-steps .is-complete { color: var(--success); }
+.runtime-steps .is-complete::marker { content: "✓  "; color: var(--success); }
+.runtime-steps .is-current { color: var(--ink); font-weight: 700; }
+.runtime-steps .is-current::marker { color: var(--accent); }
 
 .solution-panel {
   margin-top: 64px;
@@ -646,8 +648,7 @@ math-field {
 }
 
 .status-text::before { content: "✓"; margin-right: 6px; }
-.status-text.is-loading { color: var(--muted); }
-.status-text.is-loading::before { content: "◌"; }
+.status-text:empty::before { content: none; }
 .status-text.is-error { color: var(--error); }
 .status-text.is-error::before { content: "×"; }
 
@@ -933,8 +934,7 @@ pre { overflow-x: auto; color: var(--muted); font: 12px/1.65 var(--mono); white-
   .symbol-key-wide { flex-basis: 92px; width: 92px; min-height: 57px; }
   .symbol-key-system { flex-basis: 88px; }
   .problem-actions { align-items: stretch; flex-direction: column; }
-  .solve-action { width: 100%; align-items: stretch; flex-direction: column; gap: 10px; }
-  .runtime-status { width: 100%; }
+  .solve-action { width: 100%; align-items: stretch; }
   .solve-button { width: 100%; }
   .solution-panel { margin-top: 48px; padding-top: 32px; }
   .answer-block {
@@ -945,6 +945,10 @@ pre { overflow-x: auto; color: var(--muted); font: 12px/1.65 var(--mono); white-
     padding: 30px var(--mobile-inset-right) 0 var(--mobile-inset-left);
   }
   .error-box {
+    margin-right: var(--mobile-inset-right);
+    margin-left: var(--mobile-inset-left);
+  }
+  .solver-progress {
     margin-right: var(--mobile-inset-right);
     margin-left: var(--mobile-inset-left);
   }

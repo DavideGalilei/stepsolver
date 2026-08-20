@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import cast
+
 import sympy as sp
 
 from stepsolver.derivation.model import (
@@ -18,9 +20,34 @@ from stepsolver.derivation.model import (
 )
 from stepsolver.results import VerificationMethod
 
+_POWER_ARITY = 2
+
 
 def _matches_result(candidate: sp.Basic, result: sp.Basic) -> bool:
     return sp.simplify(candidate - result) == sp.Integer(0)
+
+
+def _matches_antiderivative(
+    candidate: sp.Basic,
+    result: sp.Basic,
+    variable: sp.Symbol,
+) -> bool:
+    """Compare antiderivatives modulo an additive constant."""
+    return sp.simplify(sp.diff(candidate - result, variable)) == sp.Integer(0)
+
+
+def _matching_functions(
+    expression: sp.Basic,
+    function: object,
+) -> tuple[sp.Basic, ...]:
+    """Collect applications of one function without relying on broad tree queries."""
+    current = (expression,) if expression.func == function else ()
+    nested = tuple(
+        match
+        for argument in expression.args
+        for match in _matching_functions(argument, function)
+    )
+    return (*current, *nested)
 
 
 def derive_inverse_function_by_parts(
@@ -28,8 +55,16 @@ def derive_inverse_function_by_parts(
     variable: sp.Symbol,
     result: sp.Basic,
 ) -> tuple[BackendDerivationStep, ...]:
-    """Use integration by parts for logarithms and inverse tangent."""
-    if integrand not in {sp.log(variable), sp.atan(variable)}:
+    """Use integration by parts for logarithms and inverse tangent of affine inputs."""
+    _, inverse_function = integrand.as_independent(variable, as_Add=False)
+    if (
+        inverse_function.func not in {sp.log, sp.atan}
+        or len(inverse_function.args) != 1
+    ):
+        return ()
+    inner = inverse_function.args[0]
+    inner_rate = sp.diff(inner, variable)
+    if inner_rate == sp.Integer(0) or inner_rate.has(variable):
         return ()
     chosen_u = integrand
     chosen_v = variable
@@ -42,7 +77,11 @@ def derive_inverse_function_by_parts(
         sp.Symbol("C"),
         evaluate=False,
     )
-    if remaining_antiderivative.has(sp.Integral) or not _matches_result(formula, result):
+    if remaining_antiderivative.has(sp.Integral) or not _matches_antiderivative(
+        formula,
+        result,
+        variable,
+    ):
         return ()
     reduced = BackendDifference(
         left=chosen_u * chosen_v,
@@ -57,8 +96,9 @@ def derive_inverse_function_by_parts(
             before=BackendIntegral(integrand=integrand, variable=variable),
             after=reduced,
             explanation=(
-                "Treat the inverse function as u and 1 dx as dv, because differentiating u "
-                "produces a simpler rational expression."
+                "Treat the logarithm or inverse tangent as u and 1 dx as dv. Its affine "
+                "inner expression has a constant derivative, leaving a simpler rational "
+                "integral."
             ),
             verification_method=VerificationMethod.SYMBOLIC_EQUIVALENCE,
             verification_detail="The integration-by-parts identity was applied exactly.",
@@ -123,45 +163,56 @@ def derive_trig_power_substitution(
     result: sp.Basic,
 ) -> tuple[BackendDerivationStep, ...]:
     """Substitute sine or cosine when the matching differential is present."""
-    candidates = (
-        (sp.sin(variable), sp.cos(variable), sp.Integer(1), "sine"),
-        (sp.cos(variable), sp.sin(variable), sp.Integer(-1), "cosine"),
+    sine_candidates = tuple(
+        (inner, sp.cos(inner.args[0]), "sine")
+        for inner in sorted(_matching_functions(integrand, sp.sin), key=str)
     )
-    for inner, differential_factor, differential_sign, name in candidates:
-        power = next(
-            (
-                exponent
-                for exponent in range(1, 9)
-                if sp.simplify(
-                    integrand - inner**exponent * differential_factor
-                )
-                == sp.Integer(0)
-            ),
-            None,
+    cosine_candidates = tuple(
+        (inner, sp.sin(inner.args[0]), "cosine")
+        for inner in sorted(_matching_functions(integrand, sp.cos), key=str)
+    )
+    for inner, differential_factor, name in (*sine_candidates, *cosine_candidates):
+        derivative_coefficient = sp.simplify(
+            sp.diff(inner, variable) / differential_factor
         )
-        if power is None:
+        if (
+            derivative_coefficient == sp.Integer(0)
+            or derivative_coefficient.has(variable)
+        ):
+            continue
+        for power in range(1, 9):
+            coefficient = sp.simplify(
+                integrand / (inner**power * differential_factor)
+            )
+            if coefficient.has(variable):
+                continue
+            transformed_coefficient = sp.simplify(
+                coefficient / derivative_coefficient
+            )
+            break
+        else:
             continue
         substitution = sp.Symbol("u", real=True)
-        transformed_integrand = differential_sign * substitution**power
+        transformed_integrand = transformed_coefficient * substitution**power
         transformed = BackendIntegral(
             integrand=transformed_integrand,
             variable=substitution,
         )
         transformed_result = (
-            differential_sign * substitution ** (power + 1) / (power + 1)
+            transformed_coefficient * substitution ** (power + 1) / (power + 1)
             + sp.Symbol("C")
         )
         formula = transformed_result.subs(substitution, inner)
-        if not _matches_result(formula, result):
-            return ()
+        if not _matches_antiderivative(formula, result, variable):
+            continue
         return (
             BackendDerivationStep(
                 rule=f"Substitute the {name}",
                 before=BackendIntegral(integrand=integrand, variable=variable),
                 after=transformed,
                 explanation=(
-                    f"The differential of {name}(x) appears as a factor, leaving a power of "
-                    "the new variable."
+                    f"The differential of the {name} expression appears up to a constant "
+                    "factor, leaving a power of the new variable."
                 ),
                 verification_method=VerificationMethod.SUBSTITUTION,
                 verification_detail="The substitution replaces both the function and differential.",
@@ -194,6 +245,41 @@ def derive_trig_power_substitution(
     return ()
 
 
+def _one_plus_square_inner(expression: sp.Basic) -> sp.Basic | None:
+    """Return u from an expression structurally equal to 1 + u**2."""
+    terms = expression.args if expression.func == sp.Add else (expression,)
+    for term in terms:
+        if (
+            term.is_Pow
+            and len(term.args) == _POWER_ARITY
+            and term.args[1] == sp.Integer(2)
+            and sp.simplify(expression - term) == sp.Integer(1)
+        ):
+            return term.args[0]
+    return None
+
+
+def _perfect_square_base(expression: sp.Basic) -> sp.Basic | None:
+    """Recover an algebraic base whose square is the supplied expression."""
+    factored = sp.factor(expression)
+    if factored.func == sp.exp and len(factored.args) == 1:
+        return sp.exp(factored.args[0] / 2)
+    if factored.is_Pow and len(factored.args) == _POWER_ARITY:
+        base, exponent = factored.args
+        half_exponent = exponent / 2
+        if exponent.is_integer is True and half_exponent.is_integer is True:
+            return cast("sp.Basic", base**half_exponent)
+    if factored.is_Mul:
+        bases = tuple(_perfect_square_base(factor) for factor in factored.args)
+        if all(base is not None for base in bases):
+            return sp.Mul(*(base for base in bases if base is not None))
+    if not factored.has(*expression.free_symbols):
+        root = sp.sqrt(factored)
+        if sp.simplify(root**2 - factored) == sp.Integer(0):
+            return root
+    return None
+
+
 def derive_inverse_tangent_substitution(
     integrand: sp.Basic,
     variable: sp.Symbol,
@@ -201,10 +287,14 @@ def derive_inverse_tangent_substitution(
 ) -> tuple[BackendDerivationStep, ...]:
     """Recognize a constant multiple of u'/(1 + u^2)."""
     numerator, denominator = sp.fraction(sp.cancel(integrand))
-    squared_inner = sp.simplify(denominator - 1)
-    inner = sp.sqrt(squared_inner)
-    if sp.simplify(inner**2 - squared_inner) != sp.Integer(0):
+    if not numerator.has(variable):
         return ()
+    inner = _one_plus_square_inner(denominator)
+    if inner is None:
+        squared_inner = sp.simplify(denominator - 1)
+        inner = _perfect_square_base(squared_inner)
+        if inner is None or sp.simplify(inner**2 - squared_inner) != sp.Integer(0):
+            return ()
     inner_derivative = sp.diff(inner, variable)
     if inner_derivative == sp.Integer(0):
         return ()
@@ -212,7 +302,7 @@ def derive_inverse_tangent_substitution(
     if coefficient.has(variable):
         return ()
     formula = coefficient * sp.atan(inner) + sp.Symbol("C")
-    if not _matches_result(formula, result):
+    if not _matches_antiderivative(formula, result, variable):
         return ()
     substitution = sp.Symbol("u", real=True)
     transformed = BackendIntegral(

@@ -32,6 +32,13 @@ const { createSolverClient } = await import("./browser-runtime.mjs");
 test("warmup exposes shared Python runtime stages before solve", async () => {
   const client = createSolverClient();
   const statuses = [];
+  const steps = [
+    "Download the Python runtime",
+    "Load Python's package installer",
+    "Install the SymPy mathematics engine",
+    "Install StepSolver",
+    "Import the StepSolver Python code"
+  ];
   const unsubscribe = client.subscribeRuntimeStatus((status) => statuses.push(status));
   const warming = client.warmup();
   const worker = WorkerStub.instance;
@@ -42,24 +49,27 @@ test("warmup exposes shared Python runtime stages before solve", async () => {
     state: "loading",
     stage: 3,
     total: 5,
-    message: "Installing the SymPy mathematics engine"
+    message: "Install the SymPy mathematics engine",
+    steps
   });
   worker.emit("message", {
     type: "runtime-status",
     state: "ready",
     stage: 5,
     total: 5,
-    message: "Python solver ready"
+    message: "Python solver ready",
+    steps
   });
   worker.emit("message", { id: 0, type: "result", payload: null });
   await warming;
 
-  assert.equal(statuses.at(-2).message, "Installing the SymPy mathematics engine");
+  assert.equal(statuses.at(-2).message, "Install the SymPy mathematics engine");
   assert.deepEqual(statuses.at(-1), {
     state: "ready",
     stage: 5,
     total: 5,
-    message: "Python solver ready"
+    message: "Python solver ready",
+    steps
   });
 
   const lateStatuses = [];
@@ -71,11 +81,11 @@ test("warmup exposes shared Python runtime stages before solve", async () => {
 test("worker reports each concrete Python initialization phase", () => {
   const source = readFileSync(new URL("./browser-worker.mjs", import.meta.url), "utf8");
   const phases = [
-    "Downloading the Python runtime",
-    "Loading Python's package installer",
-    "Installing the SymPy mathematics engine",
-    "Installing StepSolver",
-    "Importing the StepSolver Python code",
+    "Download the Python runtime",
+    "Load Python's package installer",
+    "Install the SymPy mathematics engine",
+    "Install StepSolver",
+    "Import the StepSolver Python code",
     "Python solver ready"
   ];
 
@@ -85,4 +95,5 @@ test("worker reports each concrete Python initialization phase", () => {
     assert.ok(index > previousIndex, `${phase} should follow the preceding phase`);
     previousIndex = index;
   }
+  assert.match(source, /searchParams\.set\("v", "__STEPSOLVER_WHEEL_VERSION__"\)/);
 });

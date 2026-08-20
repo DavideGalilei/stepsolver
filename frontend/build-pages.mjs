@@ -4,6 +4,8 @@ import { cp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { basename, dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { contentVersion } from "./artifact-version.mjs";
+
 const frontendDirectory = dirname(fileURLToPath(import.meta.url));
 const repositoryDirectory = resolve(frontendDirectory, "..");
 const outputDirectory = resolve(repositoryDirectory, "_site");
@@ -19,6 +21,8 @@ await cp(sourceAssets, resolve(outputDirectory, "static"), { recursive: true });
 await cp(resolve(sourceAssets, "index.html"), resolve(outputDirectory, "index.html"));
 await rm(resolve(outputDirectory, "static/index.html"));
 const wheelName = basename(wheelPath);
+const wheelContent = await readFile(resolve(repositoryDirectory, wheelPath));
+const wheelVersion = contentVersion(wheelContent);
 await cp(
   resolve(repositoryDirectory, wheelPath),
   resolve(outputDirectory, "packages", wheelName)
@@ -26,7 +30,9 @@ await cp(
 const worker = await readFile(resolve(frontendDirectory, "browser-worker.mjs"), "utf8");
 await writeFile(
   resolve(outputDirectory, "static/browser-worker.mjs"),
-  worker.replace("__STEPSOLVER_WHEEL__", wheelName),
+  worker
+    .replace("__STEPSOLVER_WHEEL__", wheelName)
+    .replace("__STEPSOLVER_WHEEL_VERSION__", wheelVersion),
   "utf8"
 );
 await cp(

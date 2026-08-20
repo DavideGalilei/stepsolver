@@ -16,15 +16,19 @@ const mobileKeyboardProxy = document.querySelector("#mobile-keyboard-proxy");
 const mathKeyboardButton = document.querySelector("#math-keyboard-button");
 const randomProblemButton = document.querySelector("#random-problem");
 const solveButton = document.querySelector("#solve-button");
-const runtimeStatus = document.querySelector("#runtime-status");
+const solverProgress = document.querySelector("#solver-progress");
+const solverProgressHeading = document.querySelector("#solver-progress-heading");
+const solverProgressCount = document.querySelector("#solver-progress-count");
 const runtimeStatusText = document.querySelector("#runtime-status-text");
 const runtimeProgress = document.querySelector("#runtime-progress");
+const runtimeSteps = document.querySelector("#runtime-steps");
 const resultSection = document.querySelector("#result-section");
 const statusText = document.querySelector("#status-text");
 const answerBlock = document.querySelector("#answer-block");
 const workingBlock = document.querySelector("#working-block");
 const resultLatex = document.querySelector("#result-latex");
 const stepsContainer = document.querySelector("#steps");
+const asciiPanel = document.querySelector("#ascii-panel");
 const asciiOutput = document.querySelector("#ascii-output");
 const errorBox = document.querySelector("#error-box");
 const themeToggle = document.querySelector("#theme-toggle");
@@ -35,24 +39,40 @@ let solveInProgress = false;
 
 function renderRuntimeStatus(status) {
   latestRuntimeStatus = status;
-  runtimeStatus.dataset.state = status.state;
+  if (!solveInProgress || status.state !== "loading") return;
+  solverProgress.classList.remove("hidden");
+  solverProgressHeading.textContent = "Preparing the Python solver";
+  solverProgressCount.textContent = `Step ${status.stage} of ${status.total}`;
   runtimeStatusText.textContent = status.message;
+  runtimeProgress.hidden = false;
   runtimeProgress.max = status.total;
   runtimeProgress.value = status.stage;
-  runtimeProgress.setAttribute("aria-valuetext", `${status.message}, ${status.stage} of ${status.total}`);
-  if (solveInProgress && status.state === "loading") {
-    statusText.textContent = status.message;
-    statusText.classList.add("is-loading");
+  runtimeProgress.setAttribute("aria-valuetext", `${status.message}, step ${status.stage} of ${status.total}`);
+  runtimeSteps.hidden = false;
+  runtimeSteps.replaceChildren();
+  for (const [index, label] of status.steps.entries()) {
+    const item = document.createElement("li");
+    item.textContent = label;
+    if (index + 1 < status.stage) item.className = "is-complete";
+    else if (index + 1 === status.stage) {
+      item.className = "is-current";
+      item.setAttribute("aria-current", "step");
+    }
+    runtimeSteps.append(item);
   }
 }
 
 function renderSolveActivity(message) {
-  runtimeStatus.dataset.state = "solving";
+  solverProgress.classList.remove("hidden");
+  solverProgressHeading.textContent = "Solving your problem";
+  solverProgressCount.textContent = "";
   runtimeStatusText.textContent = message;
-  runtimeProgress.removeAttribute("value");
-  runtimeProgress.setAttribute("aria-valuetext", message);
-  statusText.textContent = message;
-  statusText.classList.add("is-loading");
+  runtimeProgress.hidden = true;
+  runtimeSteps.hidden = true;
+}
+
+function hideSolverProgress() {
+  solverProgress.classList.add("hidden");
 }
 
 solverClient.subscribeRuntimeStatus(renderRuntimeStatus);
@@ -489,19 +509,19 @@ async function solve() {
   resultSection.classList.remove("hidden");
   errorBox.classList.add("hidden");
   statusText.classList.remove("is-error");
+  statusText.textContent = "";
   answerBlock.classList.add("hidden");
   workingBlock.classList.add("hidden");
+  asciiPanel.classList.add("hidden");
   stepsContainer.replaceChildren();
-  renderSolveActivity(
-    latestRuntimeStatus?.state === "ready"
-      ? "Sending the problem to Python"
-      : latestRuntimeStatus?.message ?? "Preparing the Python solver"
-  );
+  if (latestRuntimeStatus?.state === "loading") renderRuntimeStatus(latestRuntimeStatus);
+  else renderSolveActivity("Sending the problem to Python");
+  resultSection.scrollIntoView({ block: "start" });
   try {
     const payload = await solverClient.solve(buildPayload(), (message) => {
       renderSolveActivity(message);
     });
-    statusText.classList.remove("is-loading");
+    hideSolverProgress();
     const completed =
       payload.status === "exact" ||
       payload.status === "divergent" ||
@@ -515,6 +535,7 @@ async function solve() {
     }
     else statusText.textContent = "No exact answer";
     asciiOutput.textContent = payload.formatted_ascii;
+    asciiPanel.classList.remove("hidden");
     if (completed) {
       answerBlock.classList.remove("hidden");
       resultLatex.value = payload.result_latex;
@@ -526,9 +547,8 @@ async function solve() {
     }
     for (const step of payload.steps) stepsContainer.append(createStep(step));
     workingBlock.classList.toggle("hidden", payload.steps.length === 0);
-    resultSection.scrollIntoView({ block: "start" });
   } catch (error) {
-    statusText.classList.remove("is-loading");
+    hideSolverProgress();
     answerBlock.classList.add("hidden");
     workingBlock.classList.add("hidden");
     statusText.textContent = "Input error";
@@ -538,7 +558,7 @@ async function solve() {
   } finally {
     solveInProgress = false;
     solveButton.disabled = false;
-    if (latestRuntimeStatus) renderRuntimeStatus(latestRuntimeStatus);
+    hideSolverProgress();
   }
 }
 

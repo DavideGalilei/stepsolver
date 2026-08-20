@@ -3,31 +3,124 @@
     "name": "quadratic equation",
     "latex": "x^2-4=0",
     "math_json": ["Equal", ["Subtract", ["Power", "x", 2], 4], 0],
-    "result_latex": "x = -2\\quad\\text{or}\\quad x = 2"
+    "result_latex": "x = -2\\quad\\text{or}\\quad x = 2",
+    "expected_rules": [
+      "Factor the quadratic",
+      "Apply the zero-product property",
+      "Solve each factor"
+    ]
+  },
+  {
+    "name": "linear equation with fractions",
+    "latex": "\\frac{5x}{2}+2=\\frac{3x}{2}+10",
+    "math_json": [
+      "Equal",
+      ["Add", ["Divide", ["InvisibleOperator", 5, "x"], 2], 2],
+      ["Add", ["Divide", ["InvisibleOperator", 3, "x"], 2], 10]
+    ],
+    "result_latex": "x = 8",
+    "expected_rules": [
+      "Multiply both sides by the denominator",
+      "Cancel the common factors",
+      "Expand and collect like terms",
+      "Collect variable terms"
+    ]
   },
   {
     "name": "product derivative",
     "latex": "\\frac{\\mathrm{d}}{\\mathrm{d}x}(\\sin(x)e^x)",
     "math_json": ["D", ["Delimiter", ["InvisibleOperator", ["Sin", "x"], ["Power", "e", "x"]]], "x"],
-    "result_latex": "\\exp\\left(x\\right) \\cdot \\sin\\left(x\\right) + \\exp\\left(x\\right) \\cdot \\cos\\left(x\\right)"
+    "result_latex": "\\exp\\left(x\\right) \\cdot \\sin\\left(x\\right) + \\exp\\left(x\\right) \\cdot \\cos\\left(x\\right)",
+    "expected_rules": ["Apply the product rule"]
+  },
+  {
+    "name": "general power derivative",
+    "latex": "\\frac{\\mathrm{d}}{\\mathrm{d}x}(x^x)",
+    "math_json": ["D", ["Delimiter", ["Power", "x", "x"]], "x"],
+    "result_latex": "x^{x} \\cdot \\left(\\log\\left(x\\right) + 1\\right)",
+    "expected_rules": ["Use logarithmic differentiation"]
   },
   {
     "name": "definite integral",
     "latex": "\\int_0^\\pi\\sin(x)\\,\\mathrm{d}x",
     "math_json": ["Integrate", ["Sin", "x"], ["Tuple", "x", 0, "Pi"]],
-    "result_latex": "2"
+    "result_latex": "2",
+    "expected_rules": [
+      "Apply the Fundamental Theorem of Calculus",
+      "Evaluate the bounds",
+      "Finish the arithmetic"
+    ]
+  },
+  {
+    "name": "integration by parts",
+    "latex": "\\int x e^x\\,\\mathrm{d}x",
+    "math_json": [
+      "Integrate",
+      ["InvisibleOperator", "x", ["Power", "e", "x"]],
+      "x"
+    ],
+    "result_latex": "\\left(x - 1\\right) \\cdot \\exp\\left(x\\right) + C",
+    "expected_rules": [
+      "Choose integration by parts",
+      "Evaluate the remaining integral"
+    ]
+  },
+  {
+    "name": "logarithm integration by parts",
+    "latex": "\\int \\ln(x)\\,\\mathrm{d}x",
+    "math_json": ["Integrate", ["Ln", "x"], "x"],
+    "result_latex": "-x + x \\cdot \\log\\left(x\\right) + C",
+    "expected_rules": [
+      "Choose integration by parts",
+      "Evaluate the simpler remaining integral"
+    ]
   },
   {
     "name": "sine limit",
     "latex": "\\lim_{x\\to0}\\frac{\\sin(x)}{x}",
     "math_json": ["Limit", ["Function", ["Divide", ["Sin", "x"], "x"], "x"], 0],
-    "result_latex": "1"
+    "result_latex": "1",
+    "expected_rules": ["Use the standard sine limit"]
+  },
+  {
+    "name": "standard exponential limit",
+    "latex": "\\lim_{x\\to0}\\frac{e^x-1}{x}",
+    "math_json": [
+      "Limit",
+      [
+        "Function",
+        ["Divide", ["Subtract", ["Power", "e", "x"], 1], "x"],
+        "x"
+      ],
+      0
+    ],
+    "result_latex": "1",
+    "expected_rules": ["Normalize to the standard exponential limit"]
   },
   {
     "name": "finite sum",
     "latex": "\\sum_{n=1}^{10}n^2",
     "math_json": ["Sum", ["Power", "n", 2], ["Tuple", "n", 1, 10]],
-    "result_latex": "385"
+    "result_latex": "385",
+    "expected_rules": ["Use the sum of squares identity", "Simplify the arithmetic"]
+  },
+  {
+    "name": "infinite telescoping sum",
+    "latex": "\\sum_{n=1}^{\\infty}\\frac{1}{n(n+1)}",
+    "math_json": [
+      "Sum",
+      [
+        "Divide",
+        1,
+        ["InvisibleOperator", "n", ["Delimiter", ["Add", "n", 1]]]
+      ],
+      ["Tuple", "n", 1, "PositiveInfinity"]
+    ],
+    "result_latex": "1",
+    "expected_rules": [
+      "Decompose the summand into partial fractions",
+      "Cancel the telescoping terms"
+    ]
   },
   {
     "name": "linear equation system",
@@ -37,6 +130,7 @@
       ["Equal", ["Add", "x", "y"], 3],
       ["Equal", ["Subtract", "x", "y"], 1]
     ],
-    "result_latex": "\\left[\\left\\{x \\mapsto 2, y \\mapsto 1\\right\\}\\right]"
+    "result_latex": "\\left[\\left\\{x \\mapsto 2, y \\mapsto 1\\right\\}\\right]",
+    "expected_rules": ["Eliminate x", "Solve for y", "Substitute back to find x"]
   }
 ]

@@ -9,7 +9,8 @@ let runtimeSnapshot = Object.freeze({
   state: "idle",
   stage: 0,
   total: 5,
-  message: "Starting the Python solver in the background"
+  message: "Starting the Python solver in the background",
+  steps: Object.freeze([])
 });
 
 function publishRuntimeStatus(status) {
@@ -17,7 +18,8 @@ function publishRuntimeStatus(status) {
     state: status.state,
     stage: status.stage,
     total: status.total,
-    message: status.message
+    message: status.message,
+    steps: Object.freeze([...(status.steps ?? runtimeSnapshot.steps)])
   });
   for (const listener of runtimeListeners) listener(runtimeSnapshot);
 }
@@ -53,7 +55,8 @@ function solverWorker() {
         state: "error",
         stage: 0,
         total: runtimeSnapshot.total,
-        message: "Python solver worker stopped unexpectedly"
+        message: "Python solver worker stopped unexpectedly",
+        steps: runtimeSnapshot.steps
       });
     });
   }

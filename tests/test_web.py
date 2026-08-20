@@ -202,25 +202,36 @@ def test_frontend_handles_large_math_and_warms_the_browser_runtime() -> None:
     assert "-webkit-overflow-scrolling: touch" in stylesheet.text
 
 
-def test_python_runtime_preloads_with_visible_stage_progress() -> None:
-    """Python startup should begin immediately and expose its current phase beside Solve."""
+def test_python_runtime_preloads_but_only_shows_progress_after_submit() -> None:
+    """Background startup should stay quiet until a waiting user needs its progress."""
     with TestClient(create_app()) as client:
         homepage = client.get("/")
         stylesheet = client.get("/static/style.css")
         script = client.get("/static/app.js")
         runtime = client.get("/static/runtime.mjs")
 
-    assert 'id="runtime-status"' in homepage.text
+    assert 'id="runtime-status"' not in homepage.text
+    assert 'id="solver-progress" class="solver-progress hidden"' in homepage.text
+    assert "runtime-status-indicator" not in homepage.text
     assert 'id="runtime-progress"' in homepage.text
+    assert 'id="runtime-steps"' in homepage.text
     assert "solverClient.subscribeRuntimeStatus(renderRuntimeStatus)" in script.text
     assert "void solverClient.warmup()" in script.text
     assert '"requestIdleCallback" in window' not in script.text
     assert "renderSolveActivity(message)" in script.text
+    assert "if (!solveInProgress" in script.text
+    assert 'solverProgress.classList.add("hidden")' in script.text
     assert 'solveButton.textContent = "Solving…"' not in script.text
+    solve_start = script.text.index("async function solve()")
+    solve_request = script.text.index("await solverClient.solve", solve_start)
+    progress_scroll = script.text.index('resultSection.scrollIntoView({ block: "start" })')
+    assert solve_start < progress_scroll < solve_request
+    assert 'statusText.classList.add("is-loading")' not in script.text
     assert "async warmup()" in runtime.text
     assert "subscribeRuntimeStatus(listener)" in runtime.text
-    assert ".runtime-status" in stylesheet.text
-    assert "prefers-reduced-motion: reduce" in stylesheet.text
+    assert ".solver-progress" in stylesheet.text
+    assert "runtime-pulse" not in stylesheet.text
+    assert "min-width: 180px" in stylesheet.text
 
 
 def test_random_problem_control_uses_the_curated_problem_picker() -> None:

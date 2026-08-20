@@ -145,15 +145,6 @@
               </button>
             </div>
             <div class="solve-action">
-              <div id="runtime-status" class="runtime-status" data-state="loading"
-                role="status" aria-live="polite">
-                <span class="runtime-status-indicator" aria-hidden="true"></span>
-                <div class="runtime-status-copy">
-                  <span id="runtime-status-text">Starting the Python solver in the background</span>
-                  <progress id="runtime-progress" max="5" value="0"
-                    aria-label="Python solver loading progress"></progress>
-                </div>
-              </div>
               <button id="solve-button" class="solve-button" type="submit">Solve</button>
             </div>
           </footer>
@@ -181,10 +172,22 @@
           <div id="steps" class="steps"></div>
         </section>
 
-        <details class="ascii-panel">
+        <details id="ascii-panel" class="ascii-panel">
           <summary>ASCII output</summary>
           <pre id="ascii-output"></pre>
         </details>
+
+        <section id="solver-progress" class="solver-progress hidden"
+          aria-labelledby="solver-progress-heading" aria-live="polite">
+          <div class="solver-progress-heading">
+            <h3 id="solver-progress-heading">Preparing the Python solver</h3>
+            <span id="solver-progress-count"></span>
+          </div>
+          <p id="runtime-status-text"></p>
+          <progress id="runtime-progress" max="5" value="0"
+            aria-label="Python solver loading progress"></progress>
+          <ol id="runtime-steps" class="runtime-steps"></ol>
+        </section>
       </section>
     </main>
   </body>

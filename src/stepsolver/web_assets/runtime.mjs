@@ -5,7 +5,8 @@ export function createSolverClient() {
     state: "ready",
     stage: 1,
     total: 1,
-    message: "Solver server ready"
+    message: "Solver server ready",
+    steps: Object.freeze([])
   });
   return {
     subscribeRuntimeStatus(listener) {

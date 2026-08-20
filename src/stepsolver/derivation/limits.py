@@ -18,6 +18,18 @@ from stepsolver.results import VerificationMethod
 _POWER_ARITY = 2
 
 
+def _constant_scale(
+    expression: sp.Basic,
+    reference: sp.Basic,
+    variable: sp.Symbol,
+) -> sp.Basic | None:
+    """Return the nonzero constant relating expression to reference."""
+    scale = sp.simplify(expression / reference)
+    if scale == sp.Integer(0) or scale.has(variable):
+        return None
+    return scale
+
+
 def _matching_terms(expression: sp.Basic, function: object) -> tuple[sp.Basic, ...]:
     current = (expression,) if expression.func == function else ()
     nested = tuple(
@@ -142,47 +154,31 @@ def _derive_sine_limit(
         point=point,
         direction=direction,
     )
-    standard_sine_quotient = sp.sin(variable) / variable
-    if point == sp.Integer(0) and sp.simplify(expression - standard_sine_quotient) == sp.Integer(0):
-        generic_variable = sp.Symbol("u", real=True)
-        return (
-            BackendDerivationStep(
-                rule="Use the standard sine limit",
-                before=displayed_limit,
-                after=result,
-                explanation=("This expression is the standard trigonometric limit at zero."),
-                verification_method=VerificationMethod.SYMBOLIC_EQUIVALENCE,
-                verification_detail="The expression exactly matches the standard sine limit.",
-                notes=(
-                    BackendMathNote(
-                        label="Standard limit",
-                        expression=BackendIdentity(
-                            left=BackendLimit(
-                                expression=sp.sin(generic_variable) / generic_variable,
-                                variable=generic_variable,
-                                point=sp.Integer(0),
-                            ),
-                            right=sp.Integer(1),
-                        ),
-                    ),
-                ),
-            ),
-        )
-
     numerator, denominator = sp.fraction(sp.together(expression))
-    if point == sp.Integer(0) and denominator == variable and numerator.func == sp.sin:
+    if point not in {sp.oo, -sp.oo} and numerator.func == sp.sin:
+        offset = sp.simplify(variable - point)
+        denominator_scale = _constant_scale(denominator, offset, variable)
         sine_argument = numerator.args[0]
-        frequency = sp.simplify(sine_argument / variable)
-        if not frequency.has(variable) and frequency != sp.Integer(0) and result == frequency:
+        frequency = _constant_scale(sine_argument, offset, variable)
+        if denominator_scale is not None and frequency is not None:
+            expected = sp.simplify(frequency / denominator_scale)
+        else:
+            expected = None
+        if expected is not None and sp.simplify(result - expected) == sp.Integer(0):
             generic_variable = sp.Symbol("u", real=True)
+            is_standard = frequency == denominator_scale == sp.Integer(1)
             return (
                 BackendDerivationStep(
-                    rule="Normalize to the standard sine limit",
+                    rule=(
+                        "Use the standard sine limit"
+                        if is_standard
+                        else "Normalize to the standard sine limit"
+                    ),
                     before=displayed_limit,
                     after=result,
                     explanation=(
-                        "Multiply and divide by the sine argument's coefficient, then use the "
-                        "standard sine limit."
+                        "Shift to the approach point, account for the constant angle and "
+                        "denominator scales, then use the standard sine limit."
                     ),
                     verification_method=VerificationMethod.SYMBOLIC_EQUIVALENCE,
                     verification_detail="The normalized quotient has the standard limit one.",
@@ -193,7 +189,7 @@ def _derive_sine_limit(
                                 left=expression,
                                 right=BackendProduct(
                                     factors=(
-                                        frequency,
+                                        expected,
                                         BackendQuotient(
                                             numerator=sp.sin(sine_argument),
                                             denominator=sine_argument,
@@ -226,8 +222,8 @@ def _derive_standard_zero_limit(
     direction: str | None,
     result: sp.Basic,
 ) -> tuple[BackendDerivationStep, ...]:
-    """Recognize standard exponential, logarithmic, and cosine limits at zero."""
-    if point != sp.Integer(0):
+    """Recognize shifted/scaled exponential, logarithmic, and cosine limits."""
+    if point in {sp.oo, -sp.oo}:
         return ()
     displayed = BackendLimit(
         expression=expression,
@@ -236,15 +232,22 @@ def _derive_standard_zero_limit(
         direction=direction,
     )
     numerator, denominator = sp.fraction(sp.together(expression))
-    if denominator == variable:
+    offset = sp.simplify(variable - point)
+    denominator_scale = _constant_scale(denominator, offset, variable)
+    if denominator_scale is not None:
         exponential_terms = _matching_terms(numerator, sp.exp)
         if len(exponential_terms) == 1:
             exponential = exponential_terms[0]
-            rate = sp.simplify(exponential.args[0] / variable)
+            exponent_rate = _constant_scale(exponential.args[0], offset, variable)
+            rate = (
+                sp.simplify(exponent_rate / denominator_scale)
+                if exponent_rate is not None
+                else None
+            )
             if (
-                not rate.has(variable)
+                rate is not None
                 and sp.simplify(numerator - (exponential - 1)) == sp.Integer(0)
-                and result == rate
+                and sp.simplify(result - rate) == sp.Integer(0)
             ):
                 generic = sp.Symbol("u", real=True)
                 return (
@@ -275,8 +278,20 @@ def _derive_standard_zero_limit(
                 )
         if numerator.func == sp.log and len(numerator.args) == 1:
             logarithm_argument = numerator.args[0]
-            rate = sp.simplify((logarithm_argument - 1) / variable)
-            if not rate.has(variable) and result == rate:
+            increment_rate = _constant_scale(
+                logarithm_argument - 1,
+                offset,
+                variable,
+            )
+            rate = (
+                sp.simplify(increment_rate / denominator_scale)
+                if increment_rate is not None
+                else None
+            )
+            if (
+                rate is not None
+                and sp.simplify(result - rate) == sp.Integer(0)
+            ):
                 generic = sp.Symbol("u", real=True)
                 return (
                     BackendDerivationStep(
@@ -304,16 +319,25 @@ def _derive_standard_zero_limit(
                         ),
                     ),
                 )
-    if denominator == variable**2:
+    squared_denominator_scale = _constant_scale(
+        denominator,
+        offset**2,
+        variable,
+    )
+    if squared_denominator_scale is not None:
         cosine_terms = _matching_terms(numerator, sp.cos)
         if len(cosine_terms) == 1:
             cosine = cosine_terms[0]
-            rate = sp.simplify(cosine.args[0] / variable)
-            expected = sp.simplify(rate**2 / 2)
+            rate = _constant_scale(cosine.args[0], offset, variable)
+            expected = (
+                sp.simplify(rate**2 / (2 * squared_denominator_scale))
+                if rate is not None
+                else None
+            )
             if (
-                not rate.has(variable)
+                expected is not None
                 and sp.simplify(numerator - (1 - cosine)) == sp.Integer(0)
-                and result == expected
+                and sp.simplify(result - expected) == sp.Integer(0)
             ):
                 generic = sp.Symbol("u", real=True)
                 return (
@@ -469,7 +493,14 @@ def _derive_variable_power_limit(
     if point == sp.oo and expression.is_Pow and len(expression.args) == _POWER_ARITY:
         base, exponent = expression.args
         increment = sp.simplify((base - 1) * variable)
-        if exponent == variable and not increment.has(variable) and result == sp.exp(increment):
+        exponent_scale = sp.simplify(exponent / variable)
+        expected = sp.exp(sp.simplify(increment * exponent_scale))
+        if (
+            not increment.has(variable)
+            and not exponent_scale.has(variable)
+            and exponent_scale != sp.Integer(0)
+            and sp.simplify(result - expected) == sp.Integer(0)
+        ):
             generic = sp.Symbol("a", real=True)
             return (
                 BackendDerivationStep(
@@ -477,8 +508,8 @@ def _derive_variable_power_limit(
                     before=displayed,
                     after=result,
                     explanation=(
-                        "This has the form (1+a/x)ˣ, whose limit is eᵃ. Substitute the "
-                        "constant increment."
+                        "This has the form (1+a/x)^(b x), whose limit is e^(a b). "
+                        "Substitute the constant increment and exponent scale."
                     ),
                     verification_method=VerificationMethod.BACKEND_IDENTITY,
                     verification_detail="The defining exponential limit gives the exact value.",
