@@ -23,10 +23,13 @@
       "Multiply both sides by the denominator",
       "Cancel the common factors",
       "Subtract the variable term from both sides",
+      "Group like terms",
       "Combine the variable terms",
       "Subtract the constant from both sides",
+      "Cancel the opposite constants",
       "Simplify both sides",
       "Divide both sides by the coefficient",
+      "Cancel the common coefficient",
       "Simplify the quotients"
     ]
   },

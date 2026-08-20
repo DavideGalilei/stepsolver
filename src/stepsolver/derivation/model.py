@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
 import sympy as sp
 
@@ -98,6 +98,30 @@ class BackendIntroducedProduct:
     """A newly introduced multiplication wrapped around an existing expression."""
 
     multiplier: BackendExpression
+    expression: BackendExpression
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class BackendIntroducedOperation:
+    """An addition or subtraction newly applied to an existing expression."""
+
+    expression: BackendExpression
+    operand: BackendExpression
+    operation: Literal["add", "subtract"]
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class BackendIntroducedQuotient:
+    """A newly introduced division around an existing expression."""
+
+    numerator: BackendExpression
+    denominator: BackendExpression
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class BackendGrouped:
+    """An expression explicitly enclosed in parentheses for a human step."""
+
     expression: BackendExpression
 
 
@@ -220,6 +244,9 @@ type BackendExpression = (
     | BackendApproximateSolutions
     | BackendCrossedOut
     | BackendIntroducedProduct
+    | BackendIntroducedOperation
+    | BackendIntroducedQuotient
+    | BackendGrouped
     | BackendEvaluationAtBounds
     | BackendEvaluationAtIndex
     | BackendSigma

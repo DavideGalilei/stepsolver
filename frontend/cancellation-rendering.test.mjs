@@ -3,16 +3,17 @@ import test from "node:test";
 
 import { convertLatexToMarkup, validateLatex } from "mathlive/ssr";
 
-test("canceled factors are red beneath two white diagonal strokes", () => {
-  const latex = String.raw`\textcolor{#ffffff}{\xcancel{\textcolor{#ff5362}{x - 2}}}`;
+test("canceled factors are red beneath one white diagonal bar", () => {
+  const latex = String.raw`\textcolor{#ffffff}{\cancel{\textcolor{#ff5362}{x - 2}}}`;
   assert.deepEqual(validateLatex(latex), []);
 
   const markup = convertLatexToMarkup(latex);
-  assert.equal(markup.match(/<line /g)?.length, 2);
+  assert.equal(markup.match(/<line /g)?.length, 1);
   assert.match(markup, /stroke="currentColor"/);
   assert.match(markup, /z-index:2/);
   assert.match(markup, /color:#ffffff/);
   assert.match(markup, /color:#ff5362/);
+  assert.doesNotMatch(latex, /\\xcancel/);
 });
 
 test("an introduced multiplication highlights its operator and parentheses", () => {

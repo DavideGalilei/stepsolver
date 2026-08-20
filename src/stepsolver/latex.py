@@ -190,7 +190,7 @@ def _format_derivation_annotation(
     match name, arguments:
         case "crossed_out", (argument,):
             value = format_latex_expression(argument)
-            return rf"\textcolor{{#ffffff}}{{\xcancel{{\textcolor{{#ff5362}}{{{value}}}}}}}"
+            return rf"\textcolor{{#ffffff}}{{\cancel{{\textcolor{{#ff5362}}{{{value}}}}}}}"
         case "introduced_product", (multiplier, argument):
             multiplier_latex = format_latex_expression(multiplier, parent_precedence=20)
             value = format_latex_expression(argument)
@@ -198,6 +198,20 @@ def _format_derivation_annotation(
                 rf"\textcolor{{#4f8cff}}{{{multiplier_latex} \cdot "
                 rf"\left(\textcolor{{#f4f4f5}}{{{value}}}\right)}}"
             )
+        case (("introduced_add" | "introduced_subtract"), (argument, operand)):
+            value = format_latex_expression(argument)
+            operand_latex = format_latex_expression(operand, parent_precedence=11)
+            operator = "+" if name == "introduced_add" else "-"
+            return rf"{value} \textcolor{{#4f8cff}}{{{operator} {operand_latex}}}"
+        case "introduced_quotient", (numerator, denominator):
+            numerator_latex = format_latex_expression(numerator)
+            denominator_latex = format_latex_expression(denominator)
+            return (
+                rf"\textcolor{{#4f8cff}}{{\frac{{\textcolor{{#f4f4f5}}"
+                rf"{{{numerator_latex}}}}}{{{denominator_latex}}}}}"
+            )
+        case "grouped", (argument,):
+            return rf"\left({format_latex_expression(argument)}\right)"
         case _:
             return None
 

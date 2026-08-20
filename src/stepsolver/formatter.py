@@ -53,6 +53,16 @@ def _format_function_call(expression: FunctionCall, *, parent_precedence: int) -
             left = format_expression(multiplier, parent_precedence=20)
             right = format_expression(value, parent_precedence=21)
             return f"{left} * {right}"
+        case "introduced_add", (value, operand):
+            return f"{format_expression(value)} + {format_expression(operand)}"
+        case "introduced_subtract", (value, operand):
+            return f"{format_expression(value)} - {format_expression(operand)}"
+        case "introduced_quotient", (numerator, denominator):
+            top = format_expression(numerator, parent_precedence=20)
+            bottom = format_expression(denominator, parent_precedence=21)
+            return f"{top} / {bottom}"
+        case "grouped", (value,):
+            return f"({format_expression(value)})"
         case _:
             arguments = ", ".join(format_expression(item) for item in expression.arguments)
             return f"{expression.name}({arguments})"

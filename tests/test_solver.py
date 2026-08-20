@@ -423,8 +423,10 @@ def test_two_by_two_elimination_uses_smallest_integer_multipliers(solver: Solver
             "solve(2*x+3=7,x)",
             (
                 "Subtract the constant from both sides",
+                "Cancel the opposite constants",
                 "Simplify both sides",
                 "Divide both sides by the coefficient",
+                "Cancel the common coefficient",
                 "Simplify the quotients",
             ),
         ),
@@ -447,10 +449,13 @@ def test_two_by_two_elimination_uses_smallest_integer_multipliers(solver: Solver
                 "Cancel the common factors",
                 "Expand both sides",
                 "Subtract the variable term from both sides",
+                "Group like terms",
                 "Combine the variable terms",
                 "Add the constant to both sides",
+                "Cancel the opposite constants",
                 "Simplify both sides",
                 "Divide both sides by the coefficient",
+                "Cancel the common coefficient",
                 "Simplify the quotients",
                 "Write the variable on the left",
             ),
@@ -482,10 +487,13 @@ def test_fractional_linear_equation_clears_the_actual_denominator(
         "Multiply both sides by the denominator",
         "Cancel the common factors",
         "Subtract the variable term from both sides",
+        "Group like terms",
         "Combine the variable terms",
         "Subtract the constant from both sides",
+        "Cancel the opposite constants",
         "Simplify both sides",
         "Divide both sides by the coefficient",
+        "Cancel the common coefficient",
         "Simplify the quotients",
     )
     assert result.steps[0].introduced_constraints == ()
@@ -496,19 +504,28 @@ def test_fractional_linear_equation_clears_the_actual_denominator(
         r"{\frac{3 \cdot x}{2} + 10}\right)}"
     )
     cancellation = format_latex_expression(result.steps[1].before)
-    canceled_two = r"\textcolor{#ffffff}{\xcancel{\textcolor{#ff5362}{2}}}"
+    canceled_two = r"\textcolor{#ffffff}{\cancel{\textcolor{#ff5362}{2}}}"
     assert cancellation.count(canceled_two) == _CROSSED_NUMERIC_FACTOR_COUNT
-    assert r"\cancel{" not in cancellation
+    assert r"\xcancel{" not in cancellation
     assert format_latex_expression(result.steps[1].after) == r"5 \cdot x + 4 = 3 \cdot x + 20"
     assert format_latex_expression(result.steps[2].before) == (
         format_latex_expression(result.steps[1].after)
     )
     assert format_latex_expression(result.steps[2].after) == (
-        r"5 \cdot x + 4 - 3 \cdot x = 3 \cdot x + 20 - 3 \cdot x"
+        r"5 \cdot x + 4 \textcolor{#4f8cff}{- 3 \cdot x}"
+        r" = 3 \cdot x + 20 \textcolor{#4f8cff}{- 3 \cdot x}"
     )
-    assert format_latex_expression(result.steps[5].after) == r"2 \cdot x = 16"
-    assert format_latex_expression(result.steps[6].after) == (r"\frac{2 \cdot x}{2} = \frac{16}{2}")
-    assert format_latex_expression(result.steps[7].after) == "x = 8"
+    grouped = format_latex_expression(result.steps[3].after)
+    assert grouped.startswith(r"\left(5 \cdot x - 3 \cdot x\right) + 4")
+    assert grouped.count(r"\cancel{\textcolor{#ff5362}{3 \cdot x}}") == _INTRODUCED_MULTIPLIER_COUNT
+    constant_operation = format_latex_expression(result.steps[5].after)
+    assert constant_operation.count(r"\textcolor{#4f8cff}{- 4}") == _INTRODUCED_MULTIPLIER_COUNT
+    assert format_latex_expression(result.steps[7].after) == r"2 \cdot x = 16"
+    division = format_latex_expression(result.steps[8].after)
+    assert division.count(r"\textcolor{#4f8cff}{\frac{") == _INTRODUCED_MULTIPLIER_COUNT
+    coefficient_cancellation = format_latex_expression(result.steps[9].after)
+    assert coefficient_cancellation.count(canceled_two) == _INTRODUCED_MULTIPLIER_COUNT
+    assert format_latex_expression(result.steps[10].after) == "x = 8"
 
 
 @pytest.mark.parametrize(
@@ -521,8 +538,10 @@ def test_fractional_linear_equation_clears_the_actual_denominator(
                 "Multiply both sides by the denominator",
                 "Cancel the common factors",
                 "Subtract the variable term from both sides",
+                "Group like terms",
                 "Combine the variable terms",
                 "Subtract the constant from both sides",
+                "Cancel the opposite constants",
                 "Simplify both sides",
             ),
         ),
@@ -533,10 +552,13 @@ def test_fractional_linear_equation_clears_the_actual_denominator(
                 "Multiply both sides by the denominator",
                 "Cancel the common factors",
                 "Subtract the variable term from both sides",
+                "Group like terms",
                 "Combine the variable terms",
                 "Add the constant to both sides",
+                "Cancel the opposite constants",
                 "Simplify both sides",
                 "Divide both sides by the coefficient",
+                "Cancel the common coefficient",
                 "Simplify the quotients",
             ),
         ),
@@ -558,7 +580,8 @@ def test_nearby_numeric_fraction_equations_use_their_lcd(
     assert multiplied.startswith(highlighted_product)
     assert multiplied.count(highlighted_product) == _INTRODUCED_MULTIPLIER_COUNT
     cancellation = format_latex_expression(result.steps[1].before)
-    assert r"\xcancel" in cancellation
+    assert r"\cancel" in cancellation
+    assert r"\xcancel" not in cancellation
     assert r"\textcolor{#ff5362}" in cancellation
     assert r"\textcolor{#ffffff}" in cancellation
 
@@ -611,8 +634,8 @@ def test_rational_equation_reducing_to_cubic_has_human_steps(solver: Solver) -> 
     )
     assert format_latex_expression(result.steps[1].before) == (
         r"\left(x + 1\right) \cdot \left(x^{2} - 4\right)"
-        r" = \frac{\textcolor{#ffffff}{\xcancel{\textcolor{#ff5362}{x + 1}}}}"
-        r"{\textcolor{#ffffff}{\xcancel{\textcolor{#ff5362}{x + 1}}}}"
+        r" = \frac{\textcolor{#ffffff}{\cancel{\textcolor{#ff5362}{x + 1}}}}"
+        r"{\textcolor{#ffffff}{\cancel{\textcolor{#ff5362}{x + 1}}}}"
     )
     assert format_latex_expression(result.steps[1].after) == (
         r"\left(x + 1\right) \cdot \left(x^{2} - 4\right) = 1"

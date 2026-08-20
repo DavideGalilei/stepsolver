@@ -25,10 +25,13 @@ from stepsolver.derivation.model import (
     BackendEvaluationAtBounds,
     BackendEvaluationAtIndex,
     BackendExpression,
+    BackendGrouped,
     BackendIdentity,
     BackendIntegral,
     BackendIntegrationByPartsRule,
+    BackendIntroducedOperation,
     BackendIntroducedProduct,
+    BackendIntroducedQuotient,
     BackendLimit,
     BackendNewtonIterations,
     BackendNewtonRule,
@@ -130,6 +133,27 @@ class SympyDerivationRenderer:
                     self.derivation_expression(value.multiplier),
                     self.derivation_expression(value.expression),
                 ),
+            )
+        if isinstance(value, BackendIntroducedOperation):
+            return FunctionCall(
+                name=Identifier(f"introduced_{value.operation}"),
+                arguments=(
+                    self.derivation_expression(value.expression),
+                    self.derivation_expression(value.operand),
+                ),
+            )
+        if isinstance(value, BackendIntroducedQuotient):
+            return FunctionCall(
+                name=Identifier("introduced_quotient"),
+                arguments=(
+                    self.derivation_expression(value.numerator),
+                    self.derivation_expression(value.denominator),
+                ),
+            )
+        if isinstance(value, BackendGrouped):
+            return FunctionCall(
+                name=Identifier("grouped"),
+                arguments=(self.derivation_expression(value.expression),),
             )
         if isinstance(value, BackendNewtonRule):
             return FunctionCall(name=Identifier("newton_rule"), arguments=())
