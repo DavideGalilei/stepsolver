@@ -88,7 +88,14 @@ class BackendApproximateSolutions:
 
 @dataclass(frozen=True, slots=True, kw_only=True)
 class BackendCrossedOut:
-    """A factor displayed with a red cancellation stroke."""
+    """A factor displayed with cancellation strokes."""
+
+    expression: BackendExpression
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class BackendIntroduced:
+    """An expression visually marked as newly introduced by a derivation step."""
 
     expression: BackendExpression
 
@@ -211,6 +218,7 @@ type BackendExpression = (
     | BackendNewtonIterations
     | BackendApproximateSolutions
     | BackendCrossedOut
+    | BackendIntroduced
     | BackendEvaluationAtBounds
     | BackendEvaluationAtIndex
     | BackendSigma

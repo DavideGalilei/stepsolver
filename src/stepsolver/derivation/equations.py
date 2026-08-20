@@ -16,6 +16,7 @@ from stepsolver.derivation.model import (
     BackendDerivationStep,
     BackendExpression,
     BackendIdentity,
+    BackendIntroduced,
     BackendMathNote,
     BackendNewtonIterations,
     BackendNewtonRule,
@@ -362,8 +363,18 @@ def _prepare_polynomial_equation(
         evaluate=False,
     )
     multiplied_display = BackendIdentity(
-        left=BackendProduct(factors=(clearing_denominator, equation.lhs)),
-        right=BackendProduct(factors=(clearing_denominator, equation.rhs)),
+        left=BackendProduct(
+            factors=(
+                BackendIntroduced(expression=clearing_denominator),
+                equation.lhs,
+            )
+        ),
+        right=BackendProduct(
+            factors=(
+                BackendIntroduced(expression=clearing_denominator),
+                equation.rhs,
+            )
+        ),
     )
     cleared = sp.Eq(
         _cleared_side(equation.lhs, clearing_denominator),

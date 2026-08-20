@@ -14,6 +14,7 @@ _HTTP_OK = 200
 _HTTP_UNPROCESSABLE_CONTENT = 422
 _CONTOUR_STEP_COUNT = 2
 _CROSSED_NUMERIC_FACTOR_COUNT = 4
+_INTRODUCED_MULTIPLIER_COUNT = 2
 _MINIMUM_THREE_COLUMN_GRID_COUNT = 2
 _MINIMUM_DOCUMENT_OVERFLOW_GUARDS = 4
 _TEST_HOST = "127.0.0.2"
@@ -673,8 +674,8 @@ def test_rational_cubic_response_uses_a_student_facing_numerical_method() -> Non
     assert payload.steps[0].introduced_constraints[1].expression_latex == r"x \ne -1"
     assert payload.steps[1].before_latex == (
         r"\left(x + 1\right) \cdot \left(x^{2} - 4\right)"
-        r" = \frac{\color{#e93242}{\xcancel{x + 1}}}"
-        r"{\color{#e93242}{\xcancel{x + 1}}}"
+        r" = \frac{\xcancel{x + 1}}"
+        r"{\xcancel{x + 1}}"
     )
     assert tuple(note.label for note in payload.steps[3].notes) == (
         "Rational-root test",
@@ -717,12 +718,14 @@ def test_fractional_linear_response_shows_real_lcd_cancellation() -> None:
         "Divide by the coefficient",
     )
     assert payload.steps[0].introduced_constraints == ()
-    assert payload.steps[0].after_latex.startswith(r"2 \cdot \left(")
-    assert r"1 \cdot" not in payload.steps[0].after_latex
+    assert payload.steps[0].after_latex.startswith(r"\textcolor{#4f8cff}{2} \cdot \left(")
     assert (
-        payload.steps[1].before_latex.count(r"\xcancel{2}")
-        == _CROSSED_NUMERIC_FACTOR_COUNT
+        payload.steps[0].after_latex.count(r"\textcolor{#4f8cff}{2}")
+        == _INTRODUCED_MULTIPLIER_COUNT
     )
+    assert r"1 \cdot" not in payload.steps[0].after_latex
+    assert payload.steps[1].before_latex.count(r"\xcancel{2}") == _CROSSED_NUMERIC_FACTOR_COUNT
+    assert r"\color" not in payload.steps[1].before_latex
     assert payload.steps[1].after_latex == r"5 \cdot x + 4 = 3 \cdot x + 20"
     assert payload.steps[2].before_latex == payload.steps[1].after_latex
     assert payload.steps[2].after_latex == r"2 \cdot x = 16"

@@ -16,6 +16,7 @@ from stepsolver import (
 
 _CONTOUR_STEP_COUNT = 2
 _CROSSED_NUMERIC_FACTOR_COUNT = 4
+_INTRODUCED_MULTIPLIER_COUNT = 2
 
 
 @pytest.fixture
@@ -476,15 +477,14 @@ def test_fractional_linear_equation_clears_the_actual_denominator(
     )
     assert result.steps[0].introduced_constraints == ()
     assert format_latex_expression(result.steps[0].after) == (
-        r"2 \cdot \left(\frac{5 \cdot x}{2} + 2\right)"
-        r" = 2 \cdot \left(\frac{3 \cdot x}{2} + 10\right)"
+        r"\textcolor{#4f8cff}{2} \cdot \left(\frac{5 \cdot x}{2} + 2\right)"
+        r" = \textcolor{#4f8cff}{2} \cdot \left(\frac{3 \cdot x}{2} + 10\right)"
     )
     cancellation = format_latex_expression(result.steps[1].before)
     assert cancellation.count(r"\xcancel{2}") == _CROSSED_NUMERIC_FACTOR_COUNT
     assert r"\cancel{" not in cancellation
-    assert format_latex_expression(result.steps[1].after) == (
-        r"5 \cdot x + 4 = 3 \cdot x + 20"
-    )
+    assert r"\color" not in cancellation
+    assert format_latex_expression(result.steps[1].after) == r"5 \cdot x + 4 = 3 \cdot x + 20"
     assert format_latex_expression(result.steps[2].before) == (
         format_latex_expression(result.steps[1].after)
     )
@@ -528,9 +528,12 @@ def test_nearby_numeric_fraction_equations_use_their_lcd(
     assert tuple(step.rule for step in result.steps) == expected_rules
     assert result.steps[0].introduced_constraints == ()
     multiplied = format_latex_expression(result.steps[0].after)
-    assert multiplied.startswith(rf"{multiplier} \cdot \left(")
-    assert f"{multiplier} \\cdot \\left(" in multiplied.split(" = ", maxsplit=1)[1]
-    assert r"\xcancel" in format_latex_expression(result.steps[1].before)
+    highlighted_multiplier = rf"\textcolor{{#4f8cff}}{{{multiplier}}}"
+    assert multiplied.startswith(rf"{highlighted_multiplier} \cdot \left(")
+    assert multiplied.count(highlighted_multiplier) == _INTRODUCED_MULTIPLIER_COUNT
+    cancellation = format_latex_expression(result.steps[1].before)
+    assert r"\xcancel" in cancellation
+    assert r"\color" not in cancellation
 
 
 def test_exponential_linear_equation_uses_lambert_w_steps(solver: Solver) -> None:
@@ -574,13 +577,13 @@ def test_rational_equation_reducing_to_cubic_has_human_steps(solver: Solver) -> 
         format_latex_expression(item.expression) for item in result.steps[0].introduced_constraints
     ) == (r"x + 1 \ne 0", r"x \ne -1")
     assert format_latex_expression(result.steps[0].after) == (
-        r"\left(x + 1\right) \cdot \left(x^{2} - 4\right)"
-        r" = \left(x + 1\right) \cdot \left(\frac{1}{x + 1}\right)"
+        r"\textcolor{#4f8cff}{x + 1} \cdot \left(x^{2} - 4\right)"
+        r" = \textcolor{#4f8cff}{x + 1} \cdot \left(\frac{1}{x + 1}\right)"
     )
     assert format_latex_expression(result.steps[1].before) == (
         r"\left(x + 1\right) \cdot \left(x^{2} - 4\right)"
-        r" = \frac{\color{#e93242}{\xcancel{x + 1}}}"
-        r"{\color{#e93242}{\xcancel{x + 1}}}"
+        r" = \frac{\xcancel{x + 1}}"
+        r"{\xcancel{x + 1}}"
     )
     assert format_latex_expression(result.steps[1].after) == (
         r"\left(x + 1\right) \cdot \left(x^{2} - 4\right) = 1"

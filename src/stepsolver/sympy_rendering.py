@@ -28,6 +28,7 @@ from stepsolver.derivation.model import (
     BackendIdentity,
     BackendIntegral,
     BackendIntegrationByPartsRule,
+    BackendIntroduced,
     BackendLimit,
     BackendNewtonIterations,
     BackendNewtonRule,
@@ -120,6 +121,11 @@ class SympyDerivationRenderer:
         if isinstance(value, BackendCrossedOut):
             return FunctionCall(
                 name=Identifier("crossed_out"),
+                arguments=(self.derivation_expression(value.expression),),
+            )
+        if isinstance(value, BackendIntroduced):
+            return FunctionCall(
+                name=Identifier("introduced"),
                 arguments=(self.derivation_expression(value.expression),),
             )
         if isinstance(value, BackendNewtonRule):

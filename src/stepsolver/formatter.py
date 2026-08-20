@@ -45,6 +45,15 @@ def _format_fraction(value: Fraction) -> str:
     return f"{value.numerator}/{value.denominator}"
 
 
+def _format_function_call(expression: FunctionCall, *, parent_precedence: int) -> str:
+    match str(expression.name), expression.arguments:
+        case (("crossed_out" | "introduced"), (argument,)):
+            return format_expression(argument, parent_precedence=parent_precedence)
+        case _:
+            arguments = ", ".join(format_expression(item) for item in expression.arguments)
+            return f"{expression.name}({arguments})"
+
+
 def format_expression(expression: Expression, *, parent_precedence: int = 0) -> str:
     """Render a mathematical expression using parseable ASCII syntax."""
     if isinstance(expression, Number):
@@ -60,8 +69,7 @@ def format_expression(expression: Expression, *, parent_precedence: int = 0) -> 
     if isinstance(expression, SequenceExpression):
         return f"[{', '.join(format_expression(item) for item in expression.items)}]"
     if isinstance(expression, FunctionCall):
-        arguments = ", ".join(format_expression(item) for item in expression.arguments)
-        return f"{expression.name}({arguments})"
+        return _format_function_call(expression, parent_precedence=parent_precedence)
     if isinstance(expression, Relation):
         return (
             f"{format_expression(expression.left)} {expression.operator.value} "
