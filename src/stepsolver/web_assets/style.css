@@ -775,6 +775,11 @@ math-field {
   padding: 3px 0;
 }
 
+.step-note.is-wide {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 7px;
+}
+
 .step-note-label {
   color: var(--muted);
   font-size: 11px;

@@ -429,6 +429,7 @@ function createNotes(step) {
     if (derivativeNotes.has(note.label)) continue;
     const noteBlock = document.createElement("div");
     noteBlock.className = "step-note";
+    if (note.label === "General power rule") noteBlock.classList.add("is-wide");
     const noteLabel = document.createElement("div");
     noteLabel.className = "step-note-label";
     noteLabel.textContent = note.label;

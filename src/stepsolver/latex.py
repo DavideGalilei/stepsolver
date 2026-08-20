@@ -133,9 +133,19 @@ def _format_calculus_function(name: str, arguments: tuple[Expression, ...]) -> s
         path = format_latex_expression(arguments[2])
         return rf"\int_{{{path}}} {integrand}\,\mathrm{{d}}{variable}"
     if name == "diff" and len(arguments) in {2, 3}:
-        value = format_latex_expression(arguments[0])
-        variable = format_latex_expression(arguments[1])
+        value_expression = arguments[0]
+        variable_expression = arguments[1]
+        value = format_latex_expression(value_expression)
+        variable = format_latex_expression(variable_expression)
         if len(arguments) == 2:
+            if (
+                isinstance(value_expression, FunctionCall)
+                and len(value_expression.arguments) == 1
+                and value_expression.arguments[0] == variable_expression
+            ):
+                function_name = str(value_expression.name)
+                if function_name in {"f", "g"}:
+                    return rf"{function_name}'\left({variable}\right)"
             return rf"\frac{{\mathrm{{d}}}}{{\mathrm{{d}}{variable}}}\left({value}\right)"
         order = format_latex_expression(arguments[2])
         return (

@@ -172,6 +172,19 @@ def test_student_facing_latex_has_no_backend_or_neutral_artifacts(solver: Solver
     assert "C +" not in joined
 
 
+def test_general_power_rule_uses_prime_notation_without_backend_leaks(
+    solver: Solver,
+) -> None:
+    """The logarithmic-differentiation identity should look like textbook mathematics."""
+    result = solver.solve("diff(x^x,x)")
+    assert isinstance(result, ExactResult)
+    rule = format_latex_expression(result.steps[0].notes[0].expression)
+    assert r"g'\left(x\right)" in rule
+    assert r"f'\left(x\right)" in rule
+    assert "Derivative" not in rule
+    assert r"\operatorname" not in rule
+
+
 def test_integration_by_parts_explains_each_choice_separately(solver: Solver) -> None:
     """The learner should see u, dv, du, and v rather than an opaque tuple."""
     result = solver.solve("integrate(x*exp(x),x)")

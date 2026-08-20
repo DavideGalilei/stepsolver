@@ -152,12 +152,35 @@ def _derive_general_power(
             expression=generic_base**generic_exponent,
             variable=variable,
         ),
-        right=(
-            generic_base**generic_exponent
-            * (
-                sp.diff(generic_exponent, variable) * sp.log(generic_base)
-                + generic_exponent * sp.diff(generic_base, variable) / generic_base
-            )
+        right=BackendProduct(
+            factors=(
+                generic_base**generic_exponent,
+                BackendSum(
+                    terms=(
+                        BackendProduct(
+                            factors=(
+                                BackendDerivative(
+                                    expression=generic_exponent,
+                                    variable=variable,
+                                ),
+                                sp.log(generic_base),
+                            ),
+                        ),
+                        BackendQuotient(
+                            numerator=BackendProduct(
+                                factors=(
+                                    generic_exponent,
+                                    BackendDerivative(
+                                        expression=generic_base,
+                                        variable=variable,
+                                    ),
+                                ),
+                            ),
+                            denominator=generic_base,
+                        ),
+                    ),
+                ),
+            ),
         ),
     )
     return _verified_derivative_steps(

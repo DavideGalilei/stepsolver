@@ -727,6 +727,28 @@ def test_derivative_notation_is_inferred_without_an_operation_field() -> None:
     assert payload.steps[0].before_latex.startswith(r"\frac{\mathrm{d}}{\mathrm{d}x}")
 
 
+def test_general_power_rule_is_rendered_as_a_wide_textbook_identity() -> None:
+    """Generic derivatives should use prime notation and receive the wide-note layout."""
+    with TestClient(create_app()) as client:
+        response = client.post(
+            "/api/solve",
+            json={
+                "latex": "x^x",
+                "math_json": ["D", ["Power", "x", "x"], "x"],
+            },
+        )
+        script = client.get("/static/app.js")
+        stylesheet = client.get("/static/style.css")
+    payload = SolveResponse.model_validate_json(response.text)
+    rule = payload.steps[0].notes[0].expression_latex
+    assert response.status_code == _HTTP_OK
+    assert r"g'\left(x\right)" in rule
+    assert r"f'\left(x\right)" in rule
+    assert "Derivative" not in rule
+    assert 'note.label === "General power rule"' in script.text
+    assert ".step-note.is-wide" in stylesheet.text
+
+
 def test_server_entry_point_uses_environment(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
