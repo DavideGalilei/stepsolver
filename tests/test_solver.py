@@ -15,6 +15,7 @@ from stepsolver import (
 )
 
 _CONTOUR_STEP_COUNT = 2
+_CROSSED_NUMERIC_FACTOR_COUNT = 4
 
 
 @pytest.fixture
@@ -440,7 +441,6 @@ def test_two_by_two_elimination_uses_smallest_integer_multipliers(solver: Solver
             (
                 "Multiply both sides by the denominator",
                 "Cancel the common factors",
-                "Expand and collect like terms",
                 "Collect variable terms",
                 "Divide by the coefficient",
             ),
@@ -460,6 +460,77 @@ def test_equations_have_verified_detailed_derivations(
     assert all(
         step.verification.method.value == "solution-set equivalence" for step in result.steps
     )
+
+
+def test_fractional_linear_equation_clears_the_actual_denominator(
+    solver: Solver,
+) -> None:
+    """Numeric fractions should multiply by their LCD without fake domain restrictions."""
+    result = solver.solve("solve(5*x/2+2=3*x/2+10,x)")
+    assert isinstance(result, ExactResult)
+    assert tuple(step.rule for step in result.steps) == (
+        "Multiply both sides by the denominator",
+        "Cancel the common factors",
+        "Collect variable terms",
+        "Divide by the coefficient",
+    )
+    assert result.steps[0].introduced_constraints == ()
+    assert format_latex_expression(result.steps[0].after) == (
+        r"2 \cdot \left(\frac{5 \cdot x}{2} + 2\right)"
+        r" = 2 \cdot \left(\frac{3 \cdot x}{2} + 10\right)"
+    )
+    cancellation = format_latex_expression(result.steps[1].before)
+    assert cancellation.count(r"\xcancel{2}") == _CROSSED_NUMERIC_FACTOR_COUNT
+    assert r"\cancel{" not in cancellation
+    assert format_latex_expression(result.steps[1].after) == (
+        r"5 \cdot x + 4 = 3 \cdot x + 20"
+    )
+    assert format_latex_expression(result.steps[2].before) == (
+        format_latex_expression(result.steps[1].after)
+    )
+    assert format_latex_expression(result.steps[2].after) == r"2 \cdot x = 16"
+    assert format_latex_expression(result.steps[3].after) == "x = 8"
+
+
+@pytest.mark.parametrize(
+    ("query", "multiplier", "expected_rules"),
+    [
+        (
+            "solve(x/2+1=x/3+2,x)",
+            "6",
+            (
+                "Multiply both sides by the denominator",
+                "Cancel the common factors",
+                "Collect variable terms",
+            ),
+        ),
+        (
+            "solve(5*x/3-1=x/3+7,x)",
+            "3",
+            (
+                "Multiply both sides by the denominator",
+                "Cancel the common factors",
+                "Collect variable terms",
+                "Divide by the coefficient",
+            ),
+        ),
+    ],
+)
+def test_nearby_numeric_fraction_equations_use_their_lcd(
+    solver: Solver,
+    query: str,
+    multiplier: str,
+    expected_rules: tuple[str, ...],
+) -> None:
+    """Nearby fractional linear equations should retain the same classroom method."""
+    result = solver.solve(query)
+    assert isinstance(result, ExactResult)
+    assert tuple(step.rule for step in result.steps) == expected_rules
+    assert result.steps[0].introduced_constraints == ()
+    multiplied = format_latex_expression(result.steps[0].after)
+    assert multiplied.startswith(rf"{multiplier} \cdot \left(")
+    assert f"{multiplier} \\cdot \\left(" in multiplied.split(" = ", maxsplit=1)[1]
+    assert r"\xcancel" in format_latex_expression(result.steps[1].before)
 
 
 def test_exponential_linear_equation_uses_lambert_w_steps(solver: Solver) -> None:
@@ -508,8 +579,8 @@ def test_rational_equation_reducing_to_cubic_has_human_steps(solver: Solver) -> 
     )
     assert format_latex_expression(result.steps[1].before) == (
         r"\left(x + 1\right) \cdot \left(x^{2} - 4\right)"
-        r" = \frac{\color{#e93242}{\cancel{x + 1}}}"
-        r"{\color{#e93242}{\cancel{x + 1}}}"
+        r" = \frac{\color{#e93242}{\xcancel{x + 1}}}"
+        r"{\color{#e93242}{\xcancel{x + 1}}}"
     )
     assert format_latex_expression(result.steps[1].after) == (
         r"\left(x + 1\right) \cdot \left(x^{2} - 4\right) = 1"

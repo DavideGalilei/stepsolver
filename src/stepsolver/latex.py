@@ -225,7 +225,7 @@ def _format_function(expression: FunctionCall) -> str:
         return _format_cardano_solution(arguments)
     if name == "crossed_out" and len(arguments) == 1:
         value = format_latex_expression(arguments[0])
-        return rf"\color{{#e93242}}{{\cancel{{{value}}}}}"
+        return rf"\color{{#e93242}}{{\xcancel{{{value}}}}}"
     if name == "newton_rule" and not arguments:
         return r"x_{k+1} = x_k - \frac{f\left(x_k\right)}{f'\left(x_k\right)}"
     if name == "newton_iterations" and len(arguments) >= 2:

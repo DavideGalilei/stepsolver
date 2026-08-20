@@ -13,6 +13,7 @@ from stepsolver.web import SolveResponse, create_app
 _HTTP_OK = 200
 _HTTP_UNPROCESSABLE_CONTENT = 422
 _CONTOUR_STEP_COUNT = 2
+_CROSSED_NUMERIC_FACTOR_COUNT = 4
 _MINIMUM_THREE_COLUMN_GRID_COUNT = 2
 _MINIMUM_DOCUMENT_OVERFLOW_GUARDS = 4
 _TEST_HOST = "127.0.0.2"
@@ -672,8 +673,8 @@ def test_rational_cubic_response_uses_a_student_facing_numerical_method() -> Non
     assert payload.steps[0].introduced_constraints[1].expression_latex == r"x \ne -1"
     assert payload.steps[1].before_latex == (
         r"\left(x + 1\right) \cdot \left(x^{2} - 4\right)"
-        r" = \frac{\color{#e93242}{\cancel{x + 1}}}"
-        r"{\color{#e93242}{\cancel{x + 1}}}"
+        r" = \frac{\color{#e93242}{\xcancel{x + 1}}}"
+        r"{\color{#e93242}{\xcancel{x + 1}}}"
     )
     assert tuple(note.label for note in payload.steps[3].notes) == (
         "Rational-root test",
@@ -691,6 +692,40 @@ def test_rational_cubic_response_uses_a_student_facing_numerical_method() -> Non
     assert payload.steps[-1].after_latex == r"x \approx 2.079596"
     assert payload.result_latex == r"x \approx 2.079596"
     assert payload.steps[-1].notes[-1].expression_latex.startswith(r"x = \frac{-1}{3} + \sqrt[3]")
+
+
+def test_fractional_linear_response_shows_real_lcd_cancellation() -> None:
+    """The browser payload should not display multiplication by one or constant domains."""
+    with TestClient(create_app()) as client:
+        response = client.post(
+            "/api/solve",
+            json={
+                "latex": r"\frac{5x}{2}+2=\frac{3x}{2}+10",
+                "math_json": [
+                    "Equal",
+                    ["Add", ["Divide", ["Multiply", 5, "x"], 2], 2],
+                    ["Add", ["Divide", ["Multiply", 3, "x"], 2], 10],
+                ],
+            },
+        )
+    payload = SolveResponse.model_validate_json(response.text)
+    assert response.status_code == _HTTP_OK
+    assert tuple(step.rule for step in payload.steps) == (
+        "Multiply both sides by the denominator",
+        "Cancel the common factors",
+        "Collect variable terms",
+        "Divide by the coefficient",
+    )
+    assert payload.steps[0].introduced_constraints == ()
+    assert payload.steps[0].after_latex.startswith(r"2 \cdot \left(")
+    assert r"1 \cdot" not in payload.steps[0].after_latex
+    assert (
+        payload.steps[1].before_latex.count(r"\xcancel{2}")
+        == _CROSSED_NUMERIC_FACTOR_COUNT
+    )
+    assert payload.steps[1].after_latex == r"5 \cdot x + 4 = 3 \cdot x + 20"
+    assert payload.steps[2].before_latex == payload.steps[1].after_latex
+    assert payload.steps[2].after_latex == r"2 \cdot x = 16"
 
 
 def test_frontend_labels_approximate_results_as_numerical() -> None:

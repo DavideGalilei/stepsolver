@@ -22,8 +22,8 @@
     "expected_rules": [
       "Multiply both sides by the denominator",
       "Cancel the common factors",
-      "Expand and collect like terms",
-      "Collect variable terms"
+      "Collect variable terms",
+      "Divide by the coefficient"
     ]
   },
   {

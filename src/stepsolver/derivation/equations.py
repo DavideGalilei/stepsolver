@@ -46,6 +46,14 @@ class _DomainRestrictions:
     displayed: tuple[BackendStepConstraint, ...]
 
 
+@dataclass(frozen=True, slots=True, kw_only=True)
+class _PreparedPolynomialEquation:
+    current: sp.Equality
+    expanded: sp.Basic
+    restrictions: _DomainRestrictions
+    cleared_denominators: bool
+
+
 def _is_basic_sequence(value: object) -> TypeGuard[Sequence[sp.Basic]]:
     if not isinstance(value, Sequence) or isinstance(value, str | bytes):
         return False
@@ -208,9 +216,18 @@ def _domain_restrictions(
     supplied_denominators: tuple[sp.Basic, ...],
     variable: sp.Symbol,
 ) -> _DomainRestrictions:
-    denominators = list(supplied_denominators)
-    if not denominators and denominator != sp.Integer(1):
-        denominators.append(denominator)
+    candidates: tuple[sp.Basic, ...] = supplied_denominators
+    if not candidates:
+        candidates = (denominator,)
+    denominators: list[sp.Basic] = []
+    for candidate in candidates:
+        _constant_part, variable_part = candidate.as_independent(
+            variable,
+            as_Add=False,
+        )
+        variable_denominator = sp.factor(variable_part)
+        if variable_denominator != sp.Integer(1):
+            denominators.append(variable_denominator)
     unique_text = tuple(dict.fromkeys(str(item) for item in denominators))
     unique_denominators = tuple(
         next(item for item in denominators if str(item) == text) for text in unique_text
@@ -240,6 +257,17 @@ def _domain_restrictions(
         excluded_values=excluded_values,
         displayed=denominator_constraints + exclusion_constraints,
     )
+
+
+def _common_denominator(
+    denominator: sp.Basic,
+    supplied_denominators: tuple[sp.Basic, ...],
+) -> sp.Basic:
+    """Find the least common multiplier from the equation's original fractions."""
+    common: sp.Basic = sp.Integer(1)
+    for candidate in (*supplied_denominators, denominator):
+        common = sp.lcm(common, candidate)
+    return sp.factor(common)
 
 
 def _append_if_changed(
@@ -309,6 +337,90 @@ def _cancelled_side(expression: sp.Basic, denominator: sp.Basic) -> BackendExpre
     )
 
 
+def _prepare_polynomial_equation(
+    equation: sp.Equality,
+    variable: sp.Symbol,
+    domain_denominators: tuple[sp.Basic, ...],
+    steps: list[BackendDerivationStep],
+) -> _PreparedPolynomialEquation:
+    """Clear original fractions and retain the equation used by later human steps."""
+    difference = sp.together(equation.lhs - equation.rhs)
+    numerator, denominator = sp.fraction(difference)
+    clearing_denominator = _common_denominator(denominator, domain_denominators)
+    restrictions = _domain_restrictions(denominator, domain_denominators, variable)
+    if clearing_denominator == sp.Integer(1):
+        return _PreparedPolynomialEquation(
+            current=equation,
+            expanded=sp.expand(numerator),
+            restrictions=restrictions,
+            cleared_denominators=False,
+        )
+
+    multiplied = sp.Eq(
+        _multiplied_side(equation.lhs, clearing_denominator),
+        _multiplied_side(equation.rhs, clearing_denominator),
+        evaluate=False,
+    )
+    multiplied_display = BackendIdentity(
+        left=BackendProduct(factors=(clearing_denominator, equation.lhs)),
+        right=BackendProduct(factors=(clearing_denominator, equation.rhs)),
+    )
+    cleared = sp.Eq(
+        _cleared_side(equation.lhs, clearing_denominator),
+        _cleared_side(equation.rhs, clearing_denominator),
+        evaluate=False,
+    )
+    steps.append(
+        _equivalent_display_step(
+            rule="Multiply both sides by the denominator",
+            semantic_before=equation,
+            semantic_after=multiplied,
+            display_before=equation,
+            display_after=multiplied_display,
+            explanation=(
+                "Multiply each side by the least common denominator so every fraction "
+                "can be cleared."
+            ),
+            variable=variable,
+            excluded_values=restrictions.excluded_values,
+            introduced_constraints=restrictions.displayed,
+            verification_detail=(
+                "Multiplying both sides by the same nonzero expression preserves the "
+                "solution set."
+            ),
+        )
+    )
+    cancellation_display = BackendIdentity(
+        left=_cancelled_side(equation.lhs, clearing_denominator),
+        right=_cancelled_side(equation.rhs, clearing_denominator),
+    )
+    steps.append(
+        _equivalent_display_step(
+            rule="Cancel the common factors",
+            semantic_before=multiplied,
+            semantic_after=cleared,
+            display_before=cancellation_display,
+            display_after=cleared,
+            explanation=(
+                "Cancel each denominator with the matching nonzero factor introduced on "
+                "the same side."
+            ),
+            variable=variable,
+            excluded_values=restrictions.excluded_values,
+            verification_detail="Canceling equal nonzero factors preserves the solution set.",
+        )
+    )
+    expanded = sp.expand(
+        numerator if clearing_denominator.has(variable) else cleared.lhs - cleared.rhs
+    )
+    return _PreparedPolynomialEquation(
+        current=cleared,
+        expanded=expanded,
+        restrictions=restrictions,
+        cleared_denominators=True,
+    )
+
+
 def _linear_steps(
     equation: sp.Equality,
     variable: sp.Symbol,
@@ -327,7 +439,8 @@ def _linear_steps(
         before=current,
         after=isolated_term,
         explanation=(
-            "Move every variable term to one side and every constant term to the other side."
+            "Expand any remaining products, then move variable terms to one side and "
+            "constant terms to the other side."
         ),
         variable=variable,
         excluded_values=excluded_values,
@@ -776,70 +889,20 @@ def derive_polynomial_equation(
 ) -> tuple[BackendDerivationStep, ...]:
     """Derive detailed steps for rational, linear, and quadratic equations."""
     steps: list[BackendDerivationStep] = []
-    difference = sp.together(equation.lhs - equation.rhs)
-    numerator, denominator = sp.fraction(difference)
-    restrictions = _domain_restrictions(denominator, domain_denominators, variable)
+    prepared = _prepare_polynomial_equation(
+        equation,
+        variable,
+        domain_denominators,
+        steps,
+    )
+    restrictions = prepared.restrictions
     excluded_values = restrictions.excluded_values
-    expanded = sp.expand(numerator)
+    current: EquationBackendExpression = prepared.current
+    expanded = prepared.expanded
     normalized = sp.Eq(expanded, 0, evaluate=False)
-    current: EquationBackendExpression = equation
-    if restrictions.denominators:
-        multiplied = sp.Eq(
-            _multiplied_side(equation.lhs, denominator),
-            _multiplied_side(equation.rhs, denominator),
-            evaluate=False,
-        )
-        multiplied_display = BackendIdentity(
-            left=BackendProduct(factors=(denominator, equation.lhs)),
-            right=BackendProduct(factors=(denominator, equation.rhs)),
-        )
-        cleared = sp.Eq(
-            _cleared_side(equation.lhs, denominator),
-            _cleared_side(equation.rhs, denominator),
-            evaluate=False,
-        )
-        steps.append(
-            _equivalent_display_step(
-                rule="Multiply both sides by the denominator",
-                semantic_before=current,
-                semantic_after=multiplied,
-                display_before=current,
-                display_after=multiplied_display,
-                explanation=(
-                    "Multiply each side by the common denominator. The domain restrictions "
-                    "make this multiplier nonzero."
-                ),
-                variable=variable,
-                excluded_values=excluded_values,
-                introduced_constraints=restrictions.displayed,
-                verification_detail=(
-                    "Multiplying both sides by the same nonzero expression preserves the "
-                    "solution set."
-                ),
-            )
-        )
-        current = multiplied
-        cancellation_display = BackendIdentity(
-            left=_cancelled_side(equation.lhs, denominator),
-            right=_cancelled_side(equation.rhs, denominator),
-        )
-        steps.append(
-            _equivalent_display_step(
-                rule="Cancel the common factors",
-                semantic_before=multiplied,
-                semantic_after=cleared,
-                display_before=cancellation_display,
-                display_after=cleared,
-                explanation=(
-                    "Cancel each denominator with the matching nonzero factor introduced on "
-                    "the same side."
-                ),
-                variable=variable,
-                excluded_values=excluded_values,
-                verification_detail=("Canceling equal nonzero factors preserves the solution set."),
-            )
-        )
-        current = cleared
+    polynomial = sp.Poly(expanded, variable)
+    degree = polynomial.degree()
+    if prepared.cleared_denominators and degree != _LINEAR_DEGREE:
         current = _append_if_changed(
             steps,
             rule="Expand and collect like terms",
@@ -849,8 +912,6 @@ def derive_polynomial_equation(
             variable=variable,
             excluded_values=excluded_values,
         )
-    polynomial = sp.Poly(expanded, variable)
-    degree = polynomial.degree()
     if degree == _CONSTANT_DEGREE:
         current = _append_if_changed(
             steps,
@@ -874,7 +935,7 @@ def derive_polynomial_equation(
         return tuple(steps)
     if degree == _LINEAR_DEGREE:
         detail = _linear_steps(
-            normalized if steps else equation,
+            prepared.current,
             variable,
             polynomial,
             roots,
