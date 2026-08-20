@@ -21,6 +21,18 @@ test("MathJSON contract: indexed-root series", () => {
   ]);
 });
 
+test("MathJSON contract: indexed root containing an additive radicand", () => {
+  const parsed = computeEngine.parse(
+    String.raw`\sum_{n=1}^{+\infty}{\sqrt[n]{2^n+2^n}}`,
+    { form: "raw" },
+  );
+  assert.deepEqual(parsed.json, [
+    "Sum",
+    ["Root", ["Add", ["Power", 2, "n"], ["Power", 2, "n"]], "n"],
+    ["Tuple", "n", 1, "PositiveInfinity"],
+  ]);
+});
+
 for (const editorCase of cases) {
   test(`MathJSON contract: ${editorCase.name}`, () => {
     const parsed = computeEngine.parse(editorCase.latex, { form: "raw" });

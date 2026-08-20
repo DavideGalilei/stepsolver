@@ -174,33 +174,63 @@ class SympyBackend:
         backend_value: object,
         detailed_steps: tuple[SolutionStep, ...],
     ) -> DivergenceKind | None:
-        """Classify a definite integral whose non-convergence was established."""
+        """Classify an operation whose non-convergence was established."""
         if query.operation is Operation.SUM and len(query.arguments) == _BOUNDED_OPERATION_ARITY:
-            if backend_value == sp.oo:
-                return DivergenceKind.POSITIVE_INFINITY
-            if backend_value == -sp.oo:
-                return DivergenceKind.NEGATIVE_INFINITY
-            if backend_value in {sp.nan, sp.zoo}:
-                return DivergenceKind.NONFINITE
-            if contains_unevaluated_operation(backend_value) and self._is_divergent_geometric_sum(
-                query
-            ):
-                return DivergenceKind.NONFINITE
+            return self._sum_divergence_kind(query, backend_value, detailed_steps)
         if (
             query.operation is Operation.INTEGRATE
             and len(query.arguments) == _DEFINITE_INTEGRAL_ARITY
         ):
-            final_expression = detailed_steps[-1].after if detailed_steps else None
-            if backend_value == sp.oo or final_expression == Constant(name=ConstantName.INFINITY):
-                return DivergenceKind.POSITIVE_INFINITY
-            negative_infinity = UnaryExpression(
-                operator=UnaryOperator.NEGATIVE,
-                operand=Constant(name=ConstantName.INFINITY),
-            )
-            if backend_value == -sp.oo or final_expression == negative_infinity:
-                return DivergenceKind.NEGATIVE_INFINITY
-            if backend_value in {sp.nan, sp.zoo}:
-                return DivergenceKind.NONFINITE
+            return self._integral_divergence_kind(backend_value, detailed_steps)
+        return None
+
+    def _sum_divergence_kind(
+        self,
+        query: Query,
+        backend_value: object,
+        detailed_steps: tuple[SolutionStep, ...],
+    ) -> DivergenceKind | None:
+        """Classify a divergent series from its backend value or verified proof."""
+        if backend_value == sp.oo:
+            return DivergenceKind.POSITIVE_INFINITY
+        if backend_value == -sp.oo:
+            return DivergenceKind.NEGATIVE_INFINITY
+        if backend_value in {sp.nan, sp.zoo}:
+            return DivergenceKind.NONFINITE
+        if contains_unevaluated_operation(backend_value) and self._is_divergent_geometric_sum(
+            query
+        ):
+            return DivergenceKind.NONFINITE
+        return self._displayed_divergence_kind(detailed_steps)
+
+    def _integral_divergence_kind(
+        self,
+        backend_value: object,
+        detailed_steps: tuple[SolutionStep, ...],
+    ) -> DivergenceKind | None:
+        """Classify a divergent definite integral from its value or endpoint proof."""
+        if backend_value == sp.oo:
+            return DivergenceKind.POSITIVE_INFINITY
+        if backend_value == -sp.oo:
+            return DivergenceKind.NEGATIVE_INFINITY
+        if backend_value in {sp.nan, sp.zoo}:
+            return DivergenceKind.NONFINITE
+        return self._displayed_divergence_kind(detailed_steps)
+
+    @staticmethod
+    def _displayed_divergence_kind(
+        detailed_steps: tuple[SolutionStep, ...],
+    ) -> DivergenceKind | None:
+        """Read a directional infinity established by the final verified step."""
+        final_expression = detailed_steps[-1].after if detailed_steps else None
+        if final_expression == Constant(name=ConstantName.INFINITY):
+            return DivergenceKind.POSITIVE_INFINITY
+        negative_infinity = UnaryExpression(
+            operator=UnaryOperator.NEGATIVE,
+            operand=Constant(name=ConstantName.INFINITY),
+        )
+        if final_expression == negative_infinity:
+            return DivergenceKind.NEGATIVE_INFINITY
         return None
 
     def _is_divergent_geometric_sum(self, query: Query) -> bool:

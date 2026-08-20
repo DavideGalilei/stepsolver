@@ -285,6 +285,30 @@ def test_indexed_root_power_series_has_human_divergence_steps(
     assert result.steps[1].notes[0].label == "Term limit"
 
 
+@pytest.mark.parametrize(("coefficient", "base"), [(2, 2), (3, 2), (5, 3)])
+def test_scaled_indexed_root_series_uses_its_proved_divergence(
+    solver: Solver,
+    coefficient: int,
+    base: int,
+) -> None:
+    """An unevaluated sum must not override a conclusive nth-term proof."""
+    result = solver.solve(f"sum(root({coefficient}*{base}^n,n),n,1,oo)")
+    assert isinstance(result, DivergentResult)
+    assert result.kind is DivergenceKind.POSITIVE_INFINITY
+    assert tuple(step.rule for step in result.steps) == (
+        "Simplify the indexed root",
+        "Apply the nth-term divergence test",
+    )
+    assert format_latex_expression(result.steps[0].before) == (
+        rf"\sum_{{n=1}}^{{\infty}} \sqrt[n]{{{coefficient} \cdot {base}^{{n}}}}"
+    )
+    assert format_latex_expression(result.steps[0].after) == (
+        rf"\sum_{{n=1}}^{{\infty}} {base} \cdot \sqrt[n]{{{coefficient}}}"
+    )
+    assert format_latex_expression(result.steps[-1].after) == r"\infty"
+    assert "Sum(" not in format_ascii(result)
+
+
 @pytest.mark.parametrize(
     ("query", "kind", "rule"),
     [

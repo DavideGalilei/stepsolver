@@ -472,6 +472,38 @@ def test_indexed_root_power_series_crosses_the_web_boundary_with_human_steps(
     assert payload.steps[0].notes[0].expression_latex == (rf"\sqrt[n]{{{base}^{{n}}}} = {base}")
 
 
+def test_additive_radicand_series_is_reported_as_proved_divergence() -> None:
+    """A conclusive term test should outrank an unevaluated backend Sum object."""
+    with TestClient(create_app()) as client:
+        response = client.post(
+            "/api/solve",
+            json={
+                "latex": r"\sum_{n=1}^{+\infty}{\sqrt[n]{2^n+2^n}}",
+                "math_json": [
+                    "Sum",
+                    ["Root", ["Add", ["Power", 2, "n"], ["Power", 2, "n"]], "n"],
+                    ["Tuple", "n", 1, "PositiveInfinity"],
+                ],
+            },
+        )
+    payload = SolveResponse.model_validate_json(response.text)
+    assert response.status_code == _HTTP_OK
+    assert payload.status == "divergent"
+    assert payload.result_latex == r"\text{Diverges to }+\infty"
+    assert tuple(step.rule for step in payload.steps) == (
+        "Simplify the indexed root",
+        "Apply the nth-term divergence test",
+    )
+    assert payload.steps[0].before_latex == (
+        r"\sum_{n=1}^{\infty} \sqrt[n]{2 \cdot 2^{n}}"
+    )
+    assert payload.steps[0].after_latex == r"\sum_{n=1}^{\infty} 2 \cdot \sqrt[n]{2}"
+    assert payload.steps[-1].notes[0].expression_latex == (
+        r"\lim_{n \to \infty} 2 \cdot \sqrt[n]{2} = 2"
+    )
+    assert "Sum(" not in payload.formatted_ascii
+
+
 def test_exact_solve_response_contains_latex_steps() -> None:
     """Exact API responses should carry both ASCII and generated LaTeX."""
     with TestClient(create_app()) as client:
