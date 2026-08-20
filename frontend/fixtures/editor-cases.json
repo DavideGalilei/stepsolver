@@ -22,8 +22,12 @@
     "expected_rules": [
       "Multiply both sides by the denominator",
       "Cancel the common factors",
-      "Collect variable terms",
-      "Divide by the coefficient"
+      "Subtract the variable term from both sides",
+      "Combine the variable terms",
+      "Subtract the constant from both sides",
+      "Simplify both sides",
+      "Divide both sides by the coefficient",
+      "Simplify the quotients"
     ]
   },
   {

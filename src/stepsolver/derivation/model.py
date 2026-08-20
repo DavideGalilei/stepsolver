@@ -94,9 +94,10 @@ class BackendCrossedOut:
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
-class BackendIntroduced:
-    """An expression visually marked as newly introduced by a derivation step."""
+class BackendIntroducedProduct:
+    """A newly introduced multiplication wrapped around an existing expression."""
 
+    multiplier: BackendExpression
     expression: BackendExpression
 
 
@@ -218,7 +219,7 @@ type BackendExpression = (
     | BackendNewtonIterations
     | BackendApproximateSolutions
     | BackendCrossedOut
-    | BackendIntroduced
+    | BackendIntroducedProduct
     | BackendEvaluationAtBounds
     | BackendEvaluationAtIndex
     | BackendSigma

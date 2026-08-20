@@ -47,8 +47,12 @@ def _format_fraction(value: Fraction) -> str:
 
 def _format_function_call(expression: FunctionCall, *, parent_precedence: int) -> str:
     match str(expression.name), expression.arguments:
-        case (("crossed_out" | "introduced"), (argument,)):
+        case "crossed_out", (argument,):
             return format_expression(argument, parent_precedence=parent_precedence)
+        case "introduced_product", (multiplier, value):
+            left = format_expression(multiplier, parent_precedence=20)
+            right = format_expression(value, parent_precedence=21)
+            return f"{left} * {right}"
         case _:
             arguments = ", ".join(format_expression(item) for item in expression.arguments)
             return f"{expression.name}({arguments})"

@@ -14,9 +14,10 @@ from stepsolver.derivation.model import (
     BackendCardanoSolution,
     BackendCrossedOut,
     BackendDerivationStep,
+    BackendDifference,
     BackendExpression,
     BackendIdentity,
-    BackendIntroduced,
+    BackendIntroducedProduct,
     BackendMathNote,
     BackendNewtonIterations,
     BackendNewtonRule,
@@ -25,6 +26,7 @@ from stepsolver.derivation.model import (
     BackendQuadraticSolutions,
     BackendQuotient,
     BackendStepConstraint,
+    BackendSum,
     EquationBackendExpression,
 )
 from stepsolver.results import VerificationMethod
@@ -363,17 +365,13 @@ def _prepare_polynomial_equation(
         evaluate=False,
     )
     multiplied_display = BackendIdentity(
-        left=BackendProduct(
-            factors=(
-                BackendIntroduced(expression=clearing_denominator),
-                equation.lhs,
-            )
+        left=BackendIntroducedProduct(
+            multiplier=clearing_denominator,
+            expression=equation.lhs,
         ),
-        right=BackendProduct(
-            factors=(
-                BackendIntroduced(expression=clearing_denominator),
-                equation.rhs,
-            )
+        right=BackendIntroducedProduct(
+            multiplier=clearing_denominator,
+            expression=equation.rhs,
         ),
     )
     cleared = sp.Eq(
@@ -396,8 +394,7 @@ def _prepare_polynomial_equation(
             excluded_values=restrictions.excluded_values,
             introduced_constraints=restrictions.displayed,
             verification_detail=(
-                "Multiplying both sides by the same nonzero expression preserves the "
-                "solution set."
+                "Multiplying both sides by the same nonzero expression preserves the solution set."
             ),
         )
     )
@@ -432,6 +429,64 @@ def _prepare_polynomial_equation(
     )
 
 
+def _operation_expression(expression: sp.Basic, term: sp.Basic) -> BackendExpression:
+    """Display adding the opposite of a negative term or subtracting a positive term."""
+    if term.could_extract_minus_sign():
+        return BackendSum(terms=(expression, -term))
+    return BackendDifference(left=expression, right=term)
+
+
+def _move_term_from_both_sides(
+    steps: list[BackendDerivationStep],
+    *,
+    equation: sp.Equality,
+    term: sp.Basic,
+    term_name: str,
+    simplify_rule: str,
+    simplify_explanation: str,
+    variable: sp.Symbol,
+    excluded_values: tuple[sp.Basic, ...],
+) -> sp.Equality:
+    """Show a balanced add/subtract operation, followed by its simplification."""
+    operation = "Add" if term.could_extract_minus_sign() else "Subtract"
+    preposition = "to" if operation == "Add" else "from"
+    displayed_term = -term if term.could_extract_minus_sign() else term
+    operation_display = BackendIdentity(
+        left=_operation_expression(equation.lhs, term),
+        right=_operation_expression(equation.rhs, term),
+    )
+    simplified = sp.Eq(
+        sp.expand(equation.lhs - term),
+        sp.expand(equation.rhs - term),
+        evaluate=False,
+    )
+    steps.extend(
+        (
+            _equivalent_display_step(
+                rule=f"{operation} the {term_name} {preposition} both sides",
+                semantic_before=equation,
+                semantic_after=simplified,
+                display_before=equation,
+                display_after=operation_display,
+                explanation=f"{operation} {displayed_term} on each side to preserve equality.",
+                variable=variable,
+                excluded_values=excluded_values,
+            ),
+            _equivalent_display_step(
+                rule=simplify_rule,
+                semantic_before=simplified,
+                semantic_after=simplified,
+                display_before=operation_display,
+                display_after=simplified,
+                explanation=simplify_explanation,
+                variable=variable,
+                excluded_values=excluded_values,
+            ),
+        )
+    )
+    return simplified
+
+
 def _linear_steps(
     equation: sp.Equality,
     variable: sp.Symbol,
@@ -440,33 +495,111 @@ def _linear_steps(
     excluded_values: tuple[sp.Basic, ...],
 ) -> tuple[BackendDerivationStep, ...]:
     steps: list[BackendDerivationStep] = []
-    coefficient = polynomial.coeff_monomial(variable)
+    expanded_equation = sp.Eq(sp.expand(equation.lhs), sp.expand(equation.rhs), evaluate=False)
+    current: sp.Equality = equation
+    if str(current) != str(expanded_equation):
+        current = cast(
+            "sp.Equality",
+            _append_if_changed(
+                steps,
+                rule="Expand both sides",
+                before=current,
+                after=expanded_equation,
+                explanation="Expand every remaining product before collecting terms.",
+                variable=variable,
+                excluded_values=excluded_values,
+            ),
+        )
+
+    left_polynomial = sp.Poly(current.lhs, variable)
+    right_polynomial = sp.Poly(current.rhs, variable)
+    net_coefficient = polynomial.coeff_monomial(variable)
+    variable_on_left = net_coefficient.is_negative is not True
+    variable_term = (
+        right_polynomial.coeff_monomial(variable) * variable
+        if variable_on_left
+        else left_polynomial.coeff_monomial(variable) * variable
+    )
+    if variable_term != sp.Integer(0):
+        current = _move_term_from_both_sides(
+            steps,
+            equation=current,
+            term=variable_term,
+            term_name="variable term",
+            simplify_rule="Combine the variable terms",
+            simplify_explanation="Combine the variable terms after performing the operation.",
+            variable=variable,
+            excluded_values=excluded_values,
+        )
+
+    variable_side = current.lhs if variable_on_left else current.rhs
+    variable_side_constant = sp.Poly(variable_side, variable).coeff_monomial(1)
+    if variable_side_constant != sp.Integer(0):
+        current = _move_term_from_both_sides(
+            steps,
+            equation=current,
+            term=variable_side_constant,
+            term_name="constant",
+            simplify_rule="Simplify both sides",
+            simplify_explanation="Perform the arithmetic on each side and simplify.",
+            variable=variable,
+            excluded_values=excluded_values,
+        )
+
+    variable_side = current.lhs if variable_on_left else current.rhs
+    divisor = sp.Poly(variable_side, variable).coeff_monomial(variable)
     constant = polynomial.coeff_monomial(1)
-    isolated_term = sp.Eq(coefficient * variable, -constant)
-    current: EquationBackendExpression = equation
-    current = _append_if_changed(
-        steps,
-        rule="Collect variable terms",
-        before=current,
-        after=isolated_term,
-        explanation=(
-            "Expand any remaining products, then move variable terms to one side and "
-            "constant terms to the other side."
-        ),
-        variable=variable,
-        excluded_values=excluded_values,
+    candidate = sp.simplify(-constant / net_coefficient)
+    simplified_division = (
+        sp.Eq(variable, candidate, evaluate=False)
+        if variable_on_left
+        else sp.Eq(candidate, variable, evaluate=False)
     )
-    candidate = sp.simplify(-constant / coefficient)
-    candidate_relation = sp.Eq(variable, candidate)
-    current = _append_if_changed(
-        steps,
-        rule="Divide by the coefficient",
-        before=current,
-        after=candidate_relation,
-        explanation="Divide both sides by the coefficient of the variable.",
-        variable=variable,
-        excluded_values=excluded_values,
-    )
+    if divisor != sp.Integer(1):
+        division_display = BackendIdentity(
+            left=BackendQuotient(numerator=current.lhs, denominator=divisor),
+            right=BackendQuotient(numerator=current.rhs, denominator=divisor),
+        )
+        steps.extend(
+            (
+                _equivalent_display_step(
+                    rule="Divide both sides by the coefficient",
+                    semantic_before=current,
+                    semantic_after=simplified_division,
+                    display_before=current,
+                    display_after=division_display,
+                    explanation=("Divide each side by the coefficient attached to the variable."),
+                    variable=variable,
+                    excluded_values=excluded_values,
+                ),
+                _equivalent_display_step(
+                    rule="Simplify the quotients",
+                    semantic_before=simplified_division,
+                    semantic_after=simplified_division,
+                    display_before=division_display,
+                    display_after=simplified_division,
+                    explanation=(
+                        "Cancel the common coefficient and simplify the numerical quotient."
+                    ),
+                    variable=variable,
+                    excluded_values=excluded_values,
+                ),
+            )
+        )
+        current = simplified_division
+    if not variable_on_left:
+        current = cast(
+            "sp.Equality",
+            _append_if_changed(
+                steps,
+                rule="Write the variable on the left",
+                before=current,
+                after=sp.Eq(variable, candidate, evaluate=False),
+                explanation="Reverse the equality so the solved variable appears first.",
+                variable=variable,
+                excluded_values=excluded_values,
+            ),
+        )
     if not roots:
         _append_if_changed(
             steps,

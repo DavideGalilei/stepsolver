@@ -183,6 +183,25 @@ def _format_row_operation(arguments: tuple[Expression, ...]) -> str:
     )
 
 
+def _format_derivation_annotation(
+    name: str,
+    arguments: tuple[Expression, ...],
+) -> str | None:
+    match name, arguments:
+        case "crossed_out", (argument,):
+            value = format_latex_expression(argument)
+            return rf"\textcolor{{#ffffff}}{{\xcancel{{\textcolor{{#ff5362}}{{{value}}}}}}}"
+        case "introduced_product", (multiplier, argument):
+            multiplier_latex = format_latex_expression(multiplier, parent_precedence=20)
+            value = format_latex_expression(argument)
+            return (
+                rf"\textcolor{{#4f8cff}}{{{multiplier_latex} \cdot "
+                rf"\left(\textcolor{{#f4f4f5}}{{{value}}}\right)}}"
+            )
+        case _:
+            return None
+
+
 def _format_function(expression: FunctionCall) -> str:
     name = str(expression.name)
     arguments = expression.arguments
@@ -223,15 +242,9 @@ def _format_function(expression: FunctionCall) -> str:
         return _format_quadratic_solutions(arguments)
     if name == "cardano_solution" and len(arguments) == 4:
         return _format_cardano_solution(arguments)
-    match name, arguments:
-        case "crossed_out", (argument,):
-            value = format_latex_expression(argument)
-            return rf"\xcancel{{{value}}}"
-        case "introduced", (argument,):
-            value = format_latex_expression(argument)
-            return rf"\textcolor{{#4f8cff}}{{{value}}}"
-        case _:
-            pass
+    derivation_annotation = _format_derivation_annotation(name, arguments)
+    if derivation_annotation is not None:
+        return derivation_annotation
     if name == "newton_rule" and not arguments:
         return r"x_{k+1} = x_k - \frac{f\left(x_k\right)}{f'\left(x_k\right)}"
     if name == "newton_iterations" and len(arguments) >= 2:

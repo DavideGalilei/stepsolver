@@ -674,8 +674,8 @@ def test_rational_cubic_response_uses_a_student_facing_numerical_method() -> Non
     assert payload.steps[0].introduced_constraints[1].expression_latex == r"x \ne -1"
     assert payload.steps[1].before_latex == (
         r"\left(x + 1\right) \cdot \left(x^{2} - 4\right)"
-        r" = \frac{\xcancel{x + 1}}"
-        r"{\xcancel{x + 1}}"
+        r" = \frac{\textcolor{#ffffff}{\xcancel{\textcolor{#ff5362}{x + 1}}}}"
+        r"{\textcolor{#ffffff}{\xcancel{\textcolor{#ff5362}{x + 1}}}}"
     )
     assert tuple(note.label for note in payload.steps[3].notes) == (
         "Rational-root test",
@@ -714,21 +714,28 @@ def test_fractional_linear_response_shows_real_lcd_cancellation() -> None:
     assert tuple(step.rule for step in payload.steps) == (
         "Multiply both sides by the denominator",
         "Cancel the common factors",
-        "Collect variable terms",
-        "Divide by the coefficient",
+        "Subtract the variable term from both sides",
+        "Combine the variable terms",
+        "Subtract the constant from both sides",
+        "Simplify both sides",
+        "Divide both sides by the coefficient",
+        "Simplify the quotients",
     )
     assert payload.steps[0].introduced_constraints == ()
-    assert payload.steps[0].after_latex.startswith(r"\textcolor{#4f8cff}{2} \cdot \left(")
-    assert (
-        payload.steps[0].after_latex.count(r"\textcolor{#4f8cff}{2}")
-        == _INTRODUCED_MULTIPLIER_COUNT
-    )
+    highlighted_product = r"\textcolor{#4f8cff}{2 \cdot \left("
+    assert payload.steps[0].after_latex.startswith(highlighted_product)
+    assert payload.steps[0].after_latex.count(highlighted_product) == _INTRODUCED_MULTIPLIER_COUNT
     assert r"1 \cdot" not in payload.steps[0].after_latex
-    assert payload.steps[1].before_latex.count(r"\xcancel{2}") == _CROSSED_NUMERIC_FACTOR_COUNT
-    assert r"\color" not in payload.steps[1].before_latex
+    canceled_two = r"\textcolor{#ffffff}{\xcancel{\textcolor{#ff5362}{2}}}"
+    assert payload.steps[1].before_latex.count(canceled_two) == _CROSSED_NUMERIC_FACTOR_COUNT
     assert payload.steps[1].after_latex == r"5 \cdot x + 4 = 3 \cdot x + 20"
     assert payload.steps[2].before_latex == payload.steps[1].after_latex
-    assert payload.steps[2].after_latex == r"2 \cdot x = 16"
+    assert payload.steps[2].after_latex == (
+        r"5 \cdot x + 4 - 3 \cdot x = 3 \cdot x + 20 - 3 \cdot x"
+    )
+    assert payload.steps[5].after_latex == r"2 \cdot x = 16"
+    assert payload.steps[6].after_latex == r"\frac{2 \cdot x}{2} = \frac{16}{2}"
+    assert payload.steps[7].after_latex == "x = 8"
 
 
 def test_frontend_labels_approximate_results_as_numerical() -> None:

@@ -256,9 +256,7 @@ def test_nonzero_term_limit_uses_the_nth_term_divergence_test(solver: Solver) ->
     result = solver.solve("sum((n+1)/n,n,1,oo)")
     assert isinstance(result, DivergentResult)
     assert result.kind is DivergenceKind.POSITIVE_INFINITY
-    assert tuple(step.rule for step in result.steps) == (
-        "Apply the nth-term divergence test",
-    )
+    assert tuple(step.rule for step in result.steps) == ("Apply the nth-term divergence test",)
     assert result.steps[0].notes[0].label == "Term limit"
 
 
@@ -423,7 +421,12 @@ def test_two_by_two_elimination_uses_smallest_integer_multipliers(solver: Solver
     [
         (
             "solve(2*x+3=7,x)",
-            ("Collect variable terms", "Divide by the coefficient"),
+            (
+                "Subtract the constant from both sides",
+                "Simplify both sides",
+                "Divide both sides by the coefficient",
+                "Simplify the quotients",
+            ),
         ),
         (
             "solve(x^2-4=0,x)",
@@ -442,8 +445,14 @@ def test_two_by_two_elimination_uses_smallest_integer_multipliers(solver: Solver
             (
                 "Multiply both sides by the denominator",
                 "Cancel the common factors",
-                "Collect variable terms",
-                "Divide by the coefficient",
+                "Expand both sides",
+                "Subtract the variable term from both sides",
+                "Combine the variable terms",
+                "Add the constant to both sides",
+                "Simplify both sides",
+                "Divide both sides by the coefficient",
+                "Simplify the quotients",
+                "Write the variable on the left",
             ),
         ),
     ],
@@ -472,24 +481,34 @@ def test_fractional_linear_equation_clears_the_actual_denominator(
     assert tuple(step.rule for step in result.steps) == (
         "Multiply both sides by the denominator",
         "Cancel the common factors",
-        "Collect variable terms",
-        "Divide by the coefficient",
+        "Subtract the variable term from both sides",
+        "Combine the variable terms",
+        "Subtract the constant from both sides",
+        "Simplify both sides",
+        "Divide both sides by the coefficient",
+        "Simplify the quotients",
     )
     assert result.steps[0].introduced_constraints == ()
     assert format_latex_expression(result.steps[0].after) == (
-        r"\textcolor{#4f8cff}{2} \cdot \left(\frac{5 \cdot x}{2} + 2\right)"
-        r" = \textcolor{#4f8cff}{2} \cdot \left(\frac{3 \cdot x}{2} + 10\right)"
+        r"\textcolor{#4f8cff}{2 \cdot \left(\textcolor{#f4f4f5}"
+        r"{\frac{5 \cdot x}{2} + 2}\right)}"
+        r" = \textcolor{#4f8cff}{2 \cdot \left(\textcolor{#f4f4f5}"
+        r"{\frac{3 \cdot x}{2} + 10}\right)}"
     )
     cancellation = format_latex_expression(result.steps[1].before)
-    assert cancellation.count(r"\xcancel{2}") == _CROSSED_NUMERIC_FACTOR_COUNT
+    canceled_two = r"\textcolor{#ffffff}{\xcancel{\textcolor{#ff5362}{2}}}"
+    assert cancellation.count(canceled_two) == _CROSSED_NUMERIC_FACTOR_COUNT
     assert r"\cancel{" not in cancellation
-    assert r"\color" not in cancellation
     assert format_latex_expression(result.steps[1].after) == r"5 \cdot x + 4 = 3 \cdot x + 20"
     assert format_latex_expression(result.steps[2].before) == (
         format_latex_expression(result.steps[1].after)
     )
-    assert format_latex_expression(result.steps[2].after) == r"2 \cdot x = 16"
-    assert format_latex_expression(result.steps[3].after) == "x = 8"
+    assert format_latex_expression(result.steps[2].after) == (
+        r"5 \cdot x + 4 - 3 \cdot x = 3 \cdot x + 20 - 3 \cdot x"
+    )
+    assert format_latex_expression(result.steps[5].after) == r"2 \cdot x = 16"
+    assert format_latex_expression(result.steps[6].after) == (r"\frac{2 \cdot x}{2} = \frac{16}{2}")
+    assert format_latex_expression(result.steps[7].after) == "x = 8"
 
 
 @pytest.mark.parametrize(
@@ -501,7 +520,10 @@ def test_fractional_linear_equation_clears_the_actual_denominator(
             (
                 "Multiply both sides by the denominator",
                 "Cancel the common factors",
-                "Collect variable terms",
+                "Subtract the variable term from both sides",
+                "Combine the variable terms",
+                "Subtract the constant from both sides",
+                "Simplify both sides",
             ),
         ),
         (
@@ -510,8 +532,12 @@ def test_fractional_linear_equation_clears_the_actual_denominator(
             (
                 "Multiply both sides by the denominator",
                 "Cancel the common factors",
-                "Collect variable terms",
-                "Divide by the coefficient",
+                "Subtract the variable term from both sides",
+                "Combine the variable terms",
+                "Add the constant to both sides",
+                "Simplify both sides",
+                "Divide both sides by the coefficient",
+                "Simplify the quotients",
             ),
         ),
     ],
@@ -528,12 +554,13 @@ def test_nearby_numeric_fraction_equations_use_their_lcd(
     assert tuple(step.rule for step in result.steps) == expected_rules
     assert result.steps[0].introduced_constraints == ()
     multiplied = format_latex_expression(result.steps[0].after)
-    highlighted_multiplier = rf"\textcolor{{#4f8cff}}{{{multiplier}}}"
-    assert multiplied.startswith(rf"{highlighted_multiplier} \cdot \left(")
-    assert multiplied.count(highlighted_multiplier) == _INTRODUCED_MULTIPLIER_COUNT
+    highlighted_product = rf"\textcolor{{#4f8cff}}{{{multiplier} \cdot \left("
+    assert multiplied.startswith(highlighted_product)
+    assert multiplied.count(highlighted_product) == _INTRODUCED_MULTIPLIER_COUNT
     cancellation = format_latex_expression(result.steps[1].before)
     assert r"\xcancel" in cancellation
-    assert r"\color" not in cancellation
+    assert r"\textcolor{#ff5362}" in cancellation
+    assert r"\textcolor{#ffffff}" in cancellation
 
 
 def test_exponential_linear_equation_uses_lambert_w_steps(solver: Solver) -> None:
@@ -577,13 +604,15 @@ def test_rational_equation_reducing_to_cubic_has_human_steps(solver: Solver) -> 
         format_latex_expression(item.expression) for item in result.steps[0].introduced_constraints
     ) == (r"x + 1 \ne 0", r"x \ne -1")
     assert format_latex_expression(result.steps[0].after) == (
-        r"\textcolor{#4f8cff}{x + 1} \cdot \left(x^{2} - 4\right)"
-        r" = \textcolor{#4f8cff}{x + 1} \cdot \left(\frac{1}{x + 1}\right)"
+        r"\textcolor{#4f8cff}{\left(x + 1\right) \cdot \left("
+        r"\textcolor{#f4f4f5}{x^{2} - 4}\right)}"
+        r" = \textcolor{#4f8cff}{\left(x + 1\right) \cdot \left("
+        r"\textcolor{#f4f4f5}{\frac{1}{x + 1}}\right)}"
     )
     assert format_latex_expression(result.steps[1].before) == (
         r"\left(x + 1\right) \cdot \left(x^{2} - 4\right)"
-        r" = \frac{\xcancel{x + 1}}"
-        r"{\xcancel{x + 1}}"
+        r" = \frac{\textcolor{#ffffff}{\xcancel{\textcolor{#ff5362}{x + 1}}}}"
+        r"{\textcolor{#ffffff}{\xcancel{\textcolor{#ff5362}{x + 1}}}}"
     )
     assert format_latex_expression(result.steps[1].after) == (
         r"\left(x + 1\right) \cdot \left(x^{2} - 4\right) = 1"
