@@ -141,7 +141,18 @@
               <button type="button" class="example" data-expression="\lim_{x\to0}\frac{\sin(x)}{x}">limit</button>
               <button type="button" class="example" data-expression="\sum_{n=1}^{10}n^2">sum</button>
             </div>
-            <button id="solve-button" class="solve-button" type="submit">Solve</button>
+            <div class="solve-action">
+              <div id="runtime-status" class="runtime-status" data-state="loading"
+                role="status" aria-live="polite">
+                <span class="runtime-status-indicator" aria-hidden="true"></span>
+                <div class="runtime-status-copy">
+                  <span id="runtime-status-text">Starting the Python solver in the background</span>
+                  <progress id="runtime-progress" max="5" value="0"
+                    aria-label="Python solver loading progress"></progress>
+                </div>
+              </div>
+              <button id="solve-button" class="solve-button" type="submit">Solve</button>
+            </div>
           </footer>
         </form>
       </section>

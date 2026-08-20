@@ -14,6 +14,9 @@ const expressionField = document.querySelector("#expression-field");
 const mobileKeyboardProxy = document.querySelector("#mobile-keyboard-proxy");
 const mathKeyboardButton = document.querySelector("#math-keyboard-button");
 const solveButton = document.querySelector("#solve-button");
+const runtimeStatus = document.querySelector("#runtime-status");
+const runtimeStatusText = document.querySelector("#runtime-status-text");
+const runtimeProgress = document.querySelector("#runtime-progress");
 const resultSection = document.querySelector("#result-section");
 const statusText = document.querySelector("#status-text");
 const answerBlock = document.querySelector("#answer-block");
@@ -25,6 +28,33 @@ const errorBox = document.querySelector("#error-box");
 const themeToggle = document.querySelector("#theme-toggle");
 const themePreference = window.matchMedia("(prefers-color-scheme: dark)");
 const themeStorageKey = "stepsolver-theme";
+let latestRuntimeStatus;
+let solveInProgress = false;
+
+function renderRuntimeStatus(status) {
+  latestRuntimeStatus = status;
+  runtimeStatus.dataset.state = status.state;
+  runtimeStatusText.textContent = status.message;
+  runtimeProgress.max = status.total;
+  runtimeProgress.value = status.stage;
+  runtimeProgress.setAttribute("aria-valuetext", `${status.message}, ${status.stage} of ${status.total}`);
+  if (solveInProgress && status.state === "loading") {
+    statusText.textContent = status.message;
+    statusText.classList.add("is-loading");
+  }
+}
+
+function renderSolveActivity(message) {
+  runtimeStatus.dataset.state = "solving";
+  runtimeStatusText.textContent = message;
+  runtimeProgress.removeAttribute("value");
+  runtimeProgress.setAttribute("aria-valuetext", message);
+  statusText.textContent = message;
+  statusText.classList.add("is-loading");
+}
+
+solverClient.subscribeRuntimeStatus(renderRuntimeStatus);
+void solverClient.warmup().catch(() => {});
 
 function storedTheme() {
   try {
@@ -452,17 +482,22 @@ function buildPayload() {
 async function solve() {
   if (usesMobileKeyboard()) mobileKeyboardProxy.blur();
   hideMathVirtualKeyboard();
+  solveInProgress = true;
   solveButton.disabled = true;
-  solveButton.textContent = "Solving…";
   resultSection.classList.remove("hidden");
   errorBox.classList.add("hidden");
   statusText.classList.remove("is-error");
+  answerBlock.classList.add("hidden");
+  workingBlock.classList.add("hidden");
   stepsContainer.replaceChildren();
+  renderSolveActivity(
+    latestRuntimeStatus?.state === "ready"
+      ? "Sending the problem to Python"
+      : latestRuntimeStatus?.message ?? "Preparing the Python solver"
+  );
   try {
     const payload = await solverClient.solve(buildPayload(), (message) => {
-      solveButton.textContent = message;
-      statusText.textContent = message.replace("…", "");
-      statusText.classList.add("is-loading");
+      renderSolveActivity(message);
     });
     statusText.classList.remove("is-loading");
     const completed =
@@ -499,8 +534,9 @@ async function solve() {
     errorBox.textContent = error instanceof Error ? error.message : "Unexpected browser error.";
     errorBox.classList.remove("hidden");
   } finally {
+    solveInProgress = false;
     solveButton.disabled = false;
-    solveButton.textContent = "Solve";
+    if (latestRuntimeStatus) renderRuntimeStatus(latestRuntimeStatus);
   }
 }
 
@@ -594,18 +630,4 @@ for (const example of document.querySelectorAll(".example")) {
     if (usesMobileKeyboard()) focusMobileKeyboard();
     else expressionField.focus();
   });
-}
-
-function warmSolver() {
-  void solverClient.warmup().catch(() => {});
-}
-
-expressionField.addEventListener("focus", warmSolver, { once: true });
-
-const connection = navigator.connection;
-const constrainedConnection =
-  connection?.saveData || connection?.effectiveType === "slow-2g" || connection?.effectiveType === "2g";
-if (!constrainedConnection) {
-  if ("requestIdleCallback" in window) window.requestIdleCallback(warmSolver, { timeout: 2500 });
-  else window.setTimeout(warmSolver, 1200);
 }

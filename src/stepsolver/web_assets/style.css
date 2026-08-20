@@ -500,6 +500,75 @@ math-field {
 .example:hover,
 .example:focus-visible { color: var(--accent); outline: none; text-decoration: underline; text-underline-offset: 4px; }
 
+.solve-action {
+  display: flex;
+  min-width: 220px;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 14px;
+}
+
+.runtime-status {
+  display: grid;
+  width: min(260px, 32vw);
+  grid-template-columns: 9px minmax(0, 1fr);
+  align-items: center;
+  gap: 9px;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 650;
+  line-height: 1.35;
+}
+
+.runtime-status-indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--muted);
+}
+
+.runtime-status[data-state="loading"] .runtime-status-indicator,
+.runtime-status[data-state="solving"] .runtime-status-indicator {
+  background: var(--accent);
+  animation: runtime-pulse 1.2s ease-in-out infinite;
+}
+
+.runtime-status[data-state="ready"] { color: var(--success); }
+.runtime-status[data-state="ready"] .runtime-status-indicator { background: var(--success); }
+.runtime-status[data-state="error"] { color: var(--error); }
+.runtime-status[data-state="error"] .runtime-status-indicator { background: var(--error); }
+
+.runtime-status-copy { min-width: 0; }
+#runtime-status-text { overflow-wrap: anywhere; }
+
+.runtime-status progress {
+  display: block;
+  width: 100%;
+  height: 3px;
+  overflow: hidden;
+  margin-top: 5px;
+  border: 0;
+  border-radius: 0;
+  background: var(--line);
+  color: var(--accent);
+  accent-color: var(--accent);
+}
+
+.runtime-status progress::-webkit-progress-bar { background: var(--line); }
+.runtime-status progress::-webkit-progress-value { background: currentcolor; }
+.runtime-status progress::-moz-progress-bar { background: currentcolor; }
+.runtime-status[data-state="ready"] progress { color: var(--success); }
+.runtime-status[data-state="error"] progress { color: var(--error); }
+
+@keyframes runtime-pulse {
+  0%, 100% { opacity: .35; transform: scale(.82); }
+  50% { opacity: 1; transform: scale(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .runtime-status-indicator { animation: none !important; }
+}
+
 .solve-button {
   min-width: 132px;
   border: 0;
@@ -845,6 +914,8 @@ pre { overflow-x: auto; color: var(--muted); font: 12px/1.65 var(--mono); white-
   .symbol-key-wide { flex-basis: 92px; width: 92px; min-height: 57px; }
   .symbol-key-system { flex-basis: 88px; }
   .problem-actions { align-items: stretch; flex-direction: column; }
+  .solve-action { width: 100%; align-items: stretch; flex-direction: column; gap: 10px; }
+  .runtime-status { width: 100%; }
   .solve-button { width: 100%; }
   .solution-panel { margin-top: 48px; padding-top: 32px; }
   .answer-block {

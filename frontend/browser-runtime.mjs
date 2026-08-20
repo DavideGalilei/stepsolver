@@ -3,7 +3,24 @@
 let nextRequestId = 0;
 let worker;
 const pendingRequests = new Map();
+const runtimeListeners = new Set();
 let warmupPromise;
+let runtimeSnapshot = Object.freeze({
+  state: "idle",
+  stage: 0,
+  total: 5,
+  message: "Starting the Python solver in the background"
+});
+
+function publishRuntimeStatus(status) {
+  runtimeSnapshot = Object.freeze({
+    state: status.state,
+    stage: status.stage,
+    total: status.total,
+    message: status.message
+  });
+  for (const listener of runtimeListeners) listener(runtimeSnapshot);
+}
 
 function solverWorker() {
   if (!worker) {
@@ -11,6 +28,10 @@ function solverWorker() {
       type: "module"
     });
     worker.addEventListener("message", ({ data }) => {
+      if (data.type === "runtime-status") {
+        publishRuntimeStatus(data);
+        return;
+      }
       const pending = pendingRequests.get(data.id);
       if (!pending) return;
       if (data.type === "progress") {
@@ -27,6 +48,13 @@ function solverWorker() {
       }
       pendingRequests.clear();
       worker = undefined;
+      warmupPromise = undefined;
+      publishRuntimeStatus({
+        state: "error",
+        stage: 0,
+        total: runtimeSnapshot.total,
+        message: "Python solver worker stopped unexpectedly"
+      });
     });
   }
   return worker;
@@ -42,6 +70,11 @@ export function createSolverClient() {
   }
 
   return {
+    subscribeRuntimeStatus(listener) {
+      runtimeListeners.add(listener);
+      listener(runtimeSnapshot);
+      return () => runtimeListeners.delete(listener);
+    },
     warmup() {
       warmupPromise ??= request({ action: "warmup" }).catch((error) => {
         warmupPromise = undefined;

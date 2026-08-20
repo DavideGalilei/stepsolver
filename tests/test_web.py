@@ -156,15 +156,12 @@ def test_frontend_handles_large_math_and_warms_the_browser_runtime() -> None:
         homepage = client.get("/")
         stylesheet = client.get("/static/style.css")
         script = client.get("/static/app.js")
-        runtime = client.get("/static/runtime.mjs")
     assert 'class="math-viewport result-viewport"' in homepage.text
     assert 'aria-label="Scrollable answer"' in homepage.text
     assert 'id="mobile-keyboard-proxy"' in homepage.text
     assert 'id="math-keyboard-button"' in homepage.text
     assert 'inputmode="text"' in homepage.text
     assert "createMathViewport" in script.text
-    assert "solverClient.warmup()" in script.text
-    assert '"requestIdleCallback" in window' in script.text
     assert "keyboard-sink" not in script.text
     assert 'mobileKeyboardProxy.addEventListener("beforeinput"' in script.text
     assert 'mobileKeyboardProxy.addEventListener("compositionend"' in script.text
@@ -180,7 +177,6 @@ def test_frontend_handles_large_math_and_warms_the_browser_runtime() -> None:
     assert "querySelector('[part=\"content\"]')" in script.text
     assert 'classList.add("ML__focused")' in script.text
     assert "window.mathVirtualKeyboard?.hide()" in script.text
-    assert "async warmup()" in runtime.text
     assert ".math-viewport" in stylesheet.text
     assert ".primary-math-field::part(virtual-keyboard-toggle)" in stylesheet.text
     assert ".mobile-keyboard-proxy" in stylesheet.text
@@ -204,6 +200,27 @@ def test_frontend_handles_large_math_and_warms_the_browser_runtime() -> None:
     assert "pointer-events: none" in stylesheet.text
     assert "user-select: none" in stylesheet.text
     assert "-webkit-overflow-scrolling: touch" in stylesheet.text
+
+
+def test_python_runtime_preloads_with_visible_stage_progress() -> None:
+    """Python startup should begin immediately and expose its current phase beside Solve."""
+    with TestClient(create_app()) as client:
+        homepage = client.get("/")
+        stylesheet = client.get("/static/style.css")
+        script = client.get("/static/app.js")
+        runtime = client.get("/static/runtime.mjs")
+
+    assert 'id="runtime-status"' in homepage.text
+    assert 'id="runtime-progress"' in homepage.text
+    assert "solverClient.subscribeRuntimeStatus(renderRuntimeStatus)" in script.text
+    assert "void solverClient.warmup()" in script.text
+    assert '"requestIdleCallback" in window' not in script.text
+    assert "renderSolveActivity(message)" in script.text
+    assert 'solveButton.textContent = "Solving…"' not in script.text
+    assert "async warmup()" in runtime.text
+    assert "subscribeRuntimeStatus(listener)" in runtime.text
+    assert ".runtime-status" in stylesheet.text
+    assert "prefers-reduced-motion: reduce" in stylesheet.text
 
 
 def test_mobile_sections_use_internal_safe_area_padding() -> None:
