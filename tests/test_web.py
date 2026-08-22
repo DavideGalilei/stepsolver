@@ -504,6 +504,39 @@ def test_additive_radicand_series_is_reported_as_proved_divergence() -> None:
     assert "Sum(" not in payload.formatted_ascii
 
 
+def test_reciprocal_factorial_tail_has_an_exact_human_web_solution() -> None:
+    """The editor's Factorial node should reach the exponential-series derivation."""
+    with TestClient(create_app()) as client:
+        response = client.post(
+            "/api/solve",
+            json={
+                "latex": r"\sum_{n=3}^{+\infty}\frac{1}{n!}",
+                "math_json": [
+                    "Sum",
+                    ["Divide", 1, ["Factorial", "n"]],
+                    ["Tuple", "n", 3, "PositiveInfinity"],
+                ],
+            },
+        )
+    payload = SolveResponse.model_validate_json(response.text)
+    assert response.status_code == _HTTP_OK
+    assert payload.status == "exact"
+    assert payload.result_latex == r"e - \frac{5}{2}"
+    assert tuple(step.rule for step in payload.steps) == (
+        "Subtract the omitted exponential-series terms",
+        "Evaluate the omitted finite terms",
+    )
+    assert payload.steps[0].before_latex == r"\sum_{n=3}^{\infty} \frac{1}{n!}"
+    assert payload.steps[0].after_latex == (
+        r"e - \sum_{n=0}^{2} \frac{1}{n!}"
+    )
+    assert payload.steps[1].notes[0].expression_latex == (
+        r"\sum_{n=0}^{2} \frac{1}{n!} = \frac{5}{2}"
+    )
+    assert "factorial(n)" not in payload.formatted_ascii
+    assert r"\operatorname{factorial}" not in response.text
+
+
 def test_exact_solve_response_contains_latex_steps() -> None:
     """Exact API responses should carry both ASCII and generated LaTeX."""
     with TestClient(create_app()) as client:

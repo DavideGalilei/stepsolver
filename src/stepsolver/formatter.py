@@ -65,6 +65,8 @@ def _format_function_call(expression: FunctionCall, *, parent_precedence: int) -
             return f"({format_expression(value)})"
         case "nth_root", (radicand, index):
             return f"root({format_expression(radicand)}, {format_expression(index)})"
+        case "factorial", (operand,):
+            return f"{format_expression(operand, parent_precedence=40)}!"
         case _:
             arguments = ", ".join(format_expression(item) for item in expression.arguments)
             return f"{expression.name}({arguments})"

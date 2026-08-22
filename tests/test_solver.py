@@ -174,6 +174,60 @@ def test_common_sums_show_human_first_identities(
 
 
 @pytest.mark.parametrize(
+    ("query", "rules", "answer"),
+    [
+        (
+            "sum(1/factorial(n),n,0,oo)",
+            ("Apply the exponential-series identity",),
+            "Result: E",
+        ),
+        (
+            "sum(1/factorial(n),n,1,oo)",
+            (
+                "Subtract the omitted exponential-series terms",
+                "Evaluate the omitted finite terms",
+            ),
+            "Result: -1 + E",
+        ),
+        (
+            "sum(1/factorial(n),n,3,oo)",
+            (
+                "Subtract the omitted exponential-series terms",
+                "Evaluate the omitted finite terms",
+            ),
+            "Result: -5 / 2 + E",
+        ),
+        (
+            "sum(2^n/factorial(n),n,3,oo)",
+            (
+                "Subtract the omitted exponential-series terms",
+                "Evaluate the omitted finite terms",
+            ),
+            "Result: -5 + exp(2)",
+        ),
+    ],
+)
+def test_factorial_series_tails_use_the_exponential_series(
+    solver: Solver,
+    query: str,
+    rules: tuple[str, ...],
+    answer: str,
+) -> None:
+    """Factorial tails should subtract an explicit finite prefix from e^x."""
+    result = solver.solve(query)
+    assert isinstance(result, ExactResult)
+    assert tuple(step.rule for step in result.steps) == rules
+    assert format_ascii(result).endswith(answer)
+    rendered_steps = " ".join(
+        format_latex_expression(expression)
+        for step in result.steps
+        for expression in (step.before, step.after)
+    )
+    assert r"\operatorname{factorial}" not in rendered_steps
+    assert "factorial(n)" not in rendered_steps
+
+
+@pytest.mark.parametrize(
     ("query", "answer"),
     [
         ("sum(sin(n*pi/2)/n,n,1,oo)", "Result: pi / 4"),

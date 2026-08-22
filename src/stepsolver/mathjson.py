@@ -51,7 +51,6 @@ _FUNCTIONS: dict[str, str] = {
     "Root": "root",
     "Abs": "abs",
     "Gamma": "gamma",
-    "Factorial": "factorial",
 }
 _RELATIONS: dict[str, RelationOperator] = {
     "Equal": RelationOperator.EQUAL,
@@ -160,6 +159,12 @@ def expression_from_mathjson(value: JsonValue) -> Expression:
         _exact_arity(node, 1, name=head)
         return UnaryExpression(
             operator=UnaryOperator.NEGATIVE,
+            operand=expression_from_mathjson(arguments[0]),
+        )
+    if head == "Factorial":
+        _exact_arity(node, 1, name=head)
+        return UnaryExpression(
+            operator=UnaryOperator.FACTORIAL,
             operand=expression_from_mathjson(arguments[0]),
         )
     relation = _RELATIONS.get(head)

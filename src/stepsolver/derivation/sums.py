@@ -106,7 +106,10 @@ def find_undefined_summation(
     _numerator, denominator = sp.fraction(sp.together(expression))
     if denominator == sp.Integer(1):
         return None
-    roots = sp.solve(denominator, variable)
+    try:
+        roots = sp.solve(denominator, variable)
+    except (NotImplementedError, TypeError, ValueError):
+        return None
     if not is_object_sequence(roots):
         return None
     included = tuple(
@@ -235,6 +238,113 @@ def _derive_power_sum(
             explanation="Evaluate the products and division.",
             verification_method=VerificationMethod.EXACT_ARITHMETIC,
             verification_detail="The displayed arithmetic equals the exact result.",
+        ),
+    )
+
+
+def _factorial_series_base(expression: sp.Basic, variable: sp.Symbol) -> sp.Basic | None:
+    """Match ``base**n / n!`` with a constant base."""
+    numerator = sp.simplify(expression * sp.factorial(variable))
+    if numerator == sp.Integer(1):
+        return sp.Integer(1)
+    if not numerator.is_Pow or len(numerator.args) != _GEOMETRIC_POWER_ARITY:
+        return None
+    base, exponent = numerator.args
+    if exponent != variable or base.has(variable):
+        return None
+    return base
+
+
+def _derive_factorial_series_tail(
+    expression: sp.Basic,
+    variable: sp.Symbol,
+    lower: sp.Basic,
+    upper: sp.Basic,
+    result: sp.Basic,
+) -> tuple[BackendDerivationStep, ...]:
+    """Derive a tail of the exponential power series with explicit omitted terms."""
+    if (
+        upper != sp.oo
+        or lower.is_integer is not True
+        or lower.is_nonnegative is not True
+    ):
+        return ()
+    base = _factorial_series_base(expression, variable)
+    if base is None:
+        return ()
+    full_value = sp.exp(base)
+    generic_base = sp.Symbol("x", real=True)
+    identity = BackendIdentity(
+        left=BackendSigma(
+            expression=generic_base**variable / sp.factorial(variable),
+            variable=variable,
+            lower=sp.Integer(0),
+            upper=sp.oo,
+        ),
+        right=sp.exp(generic_base),
+    )
+    tail = BackendSigma(
+        expression=expression,
+        variable=variable,
+        lower=lower,
+        upper=upper,
+    )
+    if lower == sp.Integer(0):
+        if sp.simplify(full_value - result) != sp.Integer(0):
+            return ()
+        return (
+            BackendDerivationStep(
+                rule="Apply the exponential-series identity",
+                before=tail,
+                after=full_value,
+                explanation="This is the Maclaurin series for the exponential function.",
+                verification_method=VerificationMethod.BACKEND_IDENTITY,
+                verification_detail="The exponential power-series identity applies exactly.",
+                notes=(BackendMathNote(label="Identity", expression=identity),),
+            ),
+        )
+
+    prefix_upper = lower - 1
+    prefix_sigma = BackendSigma(
+        expression=expression,
+        variable=variable,
+        lower=sp.Integer(0),
+        upper=prefix_upper,
+    )
+    prefix_value = sp.summation(expression, (variable, sp.Integer(0), prefix_upper))
+    expected = sp.simplify(full_value - prefix_value)
+    if sp.simplify(expected - result) != sp.Integer(0):
+        return ()
+    rewritten_tail = BackendDifference(left=full_value, right=prefix_sigma)
+    evaluated_tail = BackendDifference(left=full_value, right=prefix_value)
+    return (
+        BackendDerivationStep(
+            rule="Subtract the omitted exponential-series terms",
+            before=tail,
+            after=rewritten_tail,
+            explanation=(
+                "Start with the full exponential series at n = 0, then subtract every term "
+                f"before n = {lower}."
+            ),
+            verification_method=VerificationMethod.BACKEND_IDENTITY,
+            verification_detail="Removing the finite prefix leaves exactly the requested tail.",
+            notes=(BackendMathNote(label="Exponential-series identity", expression=identity),),
+        ),
+        BackendDerivationStep(
+            rule="Evaluate the omitted finite terms",
+            before=rewritten_tail,
+            after=evaluated_tail,
+            explanation=(
+                "Evaluate the factorials in the finite prefix and combine those rational terms."
+            ),
+            verification_method=VerificationMethod.EXACT_ARITHMETIC,
+            verification_detail="The finite prefix was evaluated exactly.",
+            notes=(
+                BackendMathNote(
+                    label="Finite prefix",
+                    expression=BackendIdentity(left=prefix_sigma, right=prefix_value),
+                ),
+            ),
         ),
     )
 
@@ -1194,6 +1304,7 @@ def derive_sum(
     """Derive common finite sums and convergent or divergent series."""
     for strategy in (
         _derive_power_sum,
+        _derive_factorial_series_tail,
         _derive_p_series,
         _derive_shifted_p_series,
         _derive_geometric_series,

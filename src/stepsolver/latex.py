@@ -258,6 +258,9 @@ def _format_function(expression: FunctionCall) -> str:
         radicand = format_latex_expression(arguments[0])
         index = format_latex_expression(arguments[1])
         return rf"\sqrt[{index}]{{{radicand}}}"
+    if name == "factorial" and len(arguments) == 1:
+        operand = format_latex_expression(arguments[0], parent_precedence=40)
+        return f"{operand}!"
     if name == "abs" and len(arguments) == 1:
         return rf"\left|{format_latex_expression(arguments[0])}\right|"
     if name == "differential" and len(arguments) == 1:
@@ -349,6 +352,8 @@ def format_latex_expression(expression: Expression, *, parent_precedence: int = 
     if isinstance(expression, ApproximateNumber):
         return expression.text
     if isinstance(expression, Symbol):
+        if expression.name == "E":
+            return "e"
         return _escape_identifier(expression.name)
     if isinstance(expression, Constant):
         constants = {"pi": r"\pi", "e": "e", "i": "i", "oo": r"\infty"}

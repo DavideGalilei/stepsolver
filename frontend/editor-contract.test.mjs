@@ -33,6 +33,18 @@ test("MathJSON contract: indexed root containing an additive radicand", () => {
   ]);
 });
 
+test("MathJSON contract: reciprocal-factorial series tail", () => {
+  const parsed = computeEngine.parse(
+    String.raw`\sum_{n=3}^{+\infty}\frac{1}{n!}`,
+    { form: "raw" },
+  );
+  assert.deepEqual(parsed.json, [
+    "Sum",
+    ["Divide", 1, ["Factorial", "n"]],
+    ["Tuple", "n", 3, "PositiveInfinity"],
+  ]);
+});
+
 for (const editorCase of cases) {
   test(`MathJSON contract: ${editorCase.name}`, () => {
     const parsed = computeEngine.parse(editorCase.latex, { form: "raw" });

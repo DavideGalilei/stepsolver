@@ -232,6 +232,11 @@ class SympyConverter:
     def from_sympy(self, value: sp.Basic) -> Expression:
         """Convert a SymPy scalar to the closest public AST expression."""
         integration_constant = sp.Symbol("C")
+        if value.func == sp.factorial and len(value.args) == 1:
+            return UnaryExpression(
+                operator=UnaryOperator.FACTORIAL,
+                operand=self.from_sympy(value.args[0]),
+            )
         if value.func == sp.Abs and len(value.args) == 1:
             return FunctionCall(
                 name=Identifier("abs"),

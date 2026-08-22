@@ -114,6 +114,8 @@ def _exact_result_latex(result: ExactResult) -> str:
         solutions = _single_variable_solutions_latex(result.value)
         if solutions is not None:
             return solutions
+    if result.query.operation is Operation.SUM and result.steps:
+        return format_latex_expression(result.steps[-1].after)
     return format_latex_value(result.value)
 
 

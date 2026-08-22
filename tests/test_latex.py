@@ -26,6 +26,11 @@ def test_sum_groups_an_additive_summand() -> None:
     assert format_latex_expression(expression) == (r"\sum_{n=1}^{\infty} \left(2 + 2^{n}\right)")
 
 
+def test_factorial_function_uses_postfix_math_notation() -> None:
+    """Backend factorial calls should never leak as operator-name text."""
+    assert format_latex_expression(parse_expression("factorial(n)")) == "n!"
+
+
 def test_relation_and_constants_latex() -> None:
     """Relations and built-in constants should receive conventional symbols."""
     expression = parse_expression("x <= 2*pi")

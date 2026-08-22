@@ -150,6 +150,12 @@ def test_indexed_root_mathjson_uses_the_supported_root_function() -> None:
     assert format_expression(expression) == "root(2 ^ n, n)"
 
 
+def test_factorial_mathjson_uses_postfix_factorial_not_an_unknown_function() -> None:
+    """MathLive factorial notation should remain a typed postfix operation."""
+    expression = expression_from_mathjson(["Factorial", "n"])
+    assert format_expression(expression) == "n!"
+
+
 def test_mathjson_string_literal_is_rejected() -> None:
     """Compute Engine string values must not become mathematical symbols."""
     with pytest.raises(QueryError, match="string literals"):
