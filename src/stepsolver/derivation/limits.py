@@ -18,6 +18,135 @@ from stepsolver.results import VerificationMethod
 _POWER_ARITY = 2
 
 
+def _derive_factorial_recurrence_limit(
+    expression: sp.Basic,
+    variable: sp.Symbol,
+    point: sp.Basic,
+    direction: str | None,
+    result: sp.Basic,
+) -> tuple[BackendDerivationStep, ...]:
+    """Cancel neighboring factorials before evaluating an infinite limit."""
+    if point not in {sp.oo, -sp.oo} or not expression.has(sp.factorial(variable)):
+        return ()
+    simplified = sp.simplify(expression)
+    if simplified == expression or simplified.has(sp.factorial):
+        return ()
+    try:
+        simplified_result = sp.limit(simplified, variable, point)
+    except (NotImplementedError, TypeError, ValueError):
+        return ()
+    if sp.simplify(simplified_result - result) != sp.Integer(0):
+        return ()
+    displayed = BackendLimit(
+        expression=expression,
+        variable=variable,
+        point=point,
+        direction=direction,
+    )
+    simplified_limit = BackendLimit(
+        expression=simplified,
+        variable=variable,
+        point=point,
+        direction=direction,
+    )
+    generic = sp.Symbol("k", integer=True, positive=True)
+    recurrence = BackendIdentity(
+        left=sp.factorial(generic + 1),
+        right=(generic + 1) * sp.factorial(generic),
+    )
+    return (
+        BackendDerivationStep(
+            rule="Apply the factorial recurrence",
+            before=displayed,
+            after=simplified_limit,
+            explanation="Expand the larger neighboring factorial, then cancel the common one.",
+            verification_method=VerificationMethod.SYMBOLIC_EQUIVALENCE,
+            verification_detail="The factorial recurrence gives the simplified quotient exactly.",
+            notes=(BackendMathNote(label="Factorial recurrence", expression=recurrence),),
+        ),
+        BackendDerivationStep(
+            rule="Evaluate the simplified rational limit",
+            before=simplified_limit,
+            after=result,
+            explanation="Compare the remaining leading powers as the variable tends to infinity.",
+            verification_method=VerificationMethod.BACKEND_IDENTITY,
+            verification_detail="The simplified rational expression has the displayed limit.",
+        ),
+    )
+
+
+def _derive_infinite_radical_conjugate(
+    expression: sp.Basic,
+    variable: sp.Symbol,
+    point: sp.Basic,
+    direction: str | None,
+    result: sp.Basic,
+) -> tuple[BackendDerivationStep, ...]:
+    """Rationalize ``x*(sqrt(x**2+c)-x)`` at positive infinity."""
+    if point != sp.oo:
+        return ()
+    difference = sp.simplify(expression / variable)
+    radicand = sp.simplify((difference + variable) ** 2)
+    constant = sp.simplify(radicand - variable**2)
+    if constant.has(variable) or constant.is_positive is not True:
+        return ()
+    root = sp.sqrt(variable**2 + constant)
+    if sp.simplify(difference - (root - variable)) != sp.Integer(0):
+        return ()
+    rationalized = constant * variable / (root + variable)
+    normalized = constant / (sp.sqrt(1 + constant / variable**2) + 1)
+    if sp.simplify(result - constant / 2) != sp.Integer(0):
+        return ()
+    displayed = BackendLimit(
+        expression=expression,
+        variable=variable,
+        point=point,
+        direction=direction,
+    )
+    rationalized_limit = BackendLimit(
+        expression=rationalized,
+        variable=variable,
+        point=point,
+        direction=direction,
+    )
+    normalized_limit = BackendLimit(
+        expression=normalized,
+        variable=variable,
+        point=point,
+        direction=direction,
+    )
+    return (
+        BackendDerivationStep(
+            rule="Multiply by the conjugate",
+            before=displayed,
+            after=rationalized_limit,
+            explanation="Use the conjugate so the difference of squares removes the subtraction.",
+            verification_method=VerificationMethod.SYMBOLIC_EQUIVALENCE,
+            verification_detail="Multiplying by the conjugate quotient preserves the expression.",
+            notes=(BackendMathNote(label="Conjugate", expression=root + variable),),
+        ),
+        BackendDerivationStep(
+            rule="Divide by the leading variable",
+            before=rationalized_limit,
+            after=normalized_limit,
+            explanation=(
+                "Divide numerator and denominator by the positive variable to expose terms "
+                "that vanish at infinity."
+            ),
+            verification_method=VerificationMethod.SYMBOLIC_EQUIVALENCE,
+            verification_detail="The normalized quotient is equal for sufficiently large values.",
+        ),
+        BackendDerivationStep(
+            rule="Evaluate the normalized limit",
+            before=normalized_limit,
+            after=result,
+            explanation="The reciprocal-square term tends to zero, so substitute its limit.",
+            verification_method=VerificationMethod.EXACT_ARITHMETIC,
+            verification_detail="Continuity of the square root gives the exact value.",
+        ),
+    )
+
+
 def _constant_scale(
     expression: sp.Basic,
     reference: sp.Basic,
@@ -655,10 +784,12 @@ def derive_limit(
 ) -> tuple[BackendDerivationStep, ...]:
     """Derive familiar limits with the shortest standard student method."""
     strategies = (
+        _derive_factorial_recurrence_limit,
         _derive_sine_limit,
         _derive_standard_zero_limit,
         _derive_variable_power_limit,
         _derive_radical_rationalization,
+        _derive_infinite_radical_conjugate,
         _derive_algebraic_limit,
     )
     for strategy in strategies:

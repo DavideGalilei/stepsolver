@@ -156,6 +156,19 @@ def test_factorial_mathjson_uses_postfix_factorial_not_an_unknown_function() -> 
     assert format_expression(expression) == "n!"
 
 
+@pytest.mark.parametrize(
+    ("head", "function"),
+    [("Arsinh", "asinh")],
+)
+def test_inverse_hyperbolic_mathjson_uses_supported_functions(
+    head: str,
+    function: str,
+) -> None:
+    """MathLive inverse-hyperbolic heads should map to backend-supported names."""
+    expression = expression_from_mathjson([head, "x"])
+    assert format_expression(expression) == f"{function}(x)"
+
+
 def test_mathjson_string_literal_is_rejected() -> None:
     """Compute Engine string values must not become mathematical symbols."""
     with pytest.raises(QueryError, match="string literals"):

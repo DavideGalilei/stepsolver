@@ -45,6 +45,13 @@ test("MathJSON contract: reciprocal-factorial series tail", () => {
   ]);
 });
 
+test("MathJSON contract: inverse hyperbolic function", () => {
+  const parsed = computeEngine.parse(String.raw`\operatorname{arsinh}(x)`, {
+    form: "raw",
+  });
+  assert.deepEqual(parsed.json, ["Arsinh", "x"]);
+});
+
 for (const editorCase of cases) {
   test(`MathJSON contract: ${editorCase.name}`, () => {
     const parsed = computeEngine.parse(editorCase.latex, { form: "raw" });

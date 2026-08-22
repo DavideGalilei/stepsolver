@@ -9,11 +9,13 @@ import sympy as sp
 from stepsolver.derivation.model import (
     BackendDerivationStep,
     BackendDerivative,
+    BackendDifference,
     BackendDifferential,
     BackendIdentity,
     BackendIntegral,
     BackendMathNote,
     BackendNotEqual,
+    BackendProduct,
     BackendSum,
 )
 from stepsolver.results import VerificationMethod
@@ -23,6 +25,84 @@ if TYPE_CHECKING:
 
 _QUADRATIC_DEGREE = 2
 _MINIMUM_PRODUCT_FACTORS = 2
+
+
+def _derive_power_log_integral(
+    integrand: sp.Basic,
+    variable: sp.Symbol,
+    result: sp.Basic,
+) -> tuple[BackendDerivationStep, ...]:
+    """Integrate ``c*x**m*log(x)`` by parts for nonnegative integer m."""
+    logarithm = sp.log(variable)
+    if not integrand.has(logarithm):
+        return ()
+    polynomial_part = sp.simplify(integrand / logarithm)
+    if not polynomial_part.is_polynomial(variable):
+        return ()
+    polynomial = sp.Poly(polynomial_part, variable)
+    degree = polynomial.degree()
+    coefficient = polynomial.coeff_monomial(variable**degree)
+    if sp.simplify(polynomial_part - coefficient * variable**degree) != sp.Integer(0):
+        return ()
+    next_degree = degree + 1
+    integrated_polynomial = coefficient * variable**next_degree / next_degree
+    remaining_integrand = sp.simplify(integrated_polynomial / variable)
+    integration_constant = sp.Symbol("C")
+    formula = sp.Add(
+        integrated_polynomial * logarithm,
+        -sp.integrate(remaining_integrand, variable),
+        integration_constant,
+        evaluate=False,
+    )
+    if sp.simplify(formula - result) != sp.Integer(0):
+        return ()
+    parts_expression = BackendDifference(
+        left=BackendProduct(factors=(integrated_polynomial, logarithm)),
+        right=BackendIntegral(integrand=remaining_integrand, variable=variable),
+    )
+    displayed_formula = BackendSum(
+        terms=(
+            BackendDifference(
+                left=BackendProduct(factors=(integrated_polynomial, logarithm)),
+                right=sp.integrate(remaining_integrand, variable),
+            ),
+            integration_constant,
+        ),
+    )
+    return (
+        BackendDerivationStep(
+            rule="Choose integration by parts",
+            before=BackendIntegral(integrand=integrand, variable=variable),
+            after=parts_expression,
+            explanation=(
+                "Let u = log(x) and integrate the power factor to obtain v, then apply "
+                "integral u dv = uv - integral v du."
+            ),
+            verification_method=VerificationMethod.SUBSTITUTION,
+            verification_detail="The integration-by-parts identity produces the reduced integral.",
+            notes=(
+                BackendMathNote(
+                    label="Choose u",
+                    expression=BackendIdentity(left=sp.Symbol("u"), right=logarithm),
+                ),
+                BackendMathNote(
+                    label="Compute v",
+                    expression=BackendIdentity(
+                        left=sp.Symbol("v"),
+                        right=integrated_polynomial,
+                    ),
+                ),
+            ),
+        ),
+        BackendDerivationStep(
+            rule="Evaluate the simpler remaining integral",
+            before=parts_expression,
+            after=displayed_formula,
+            explanation="Apply the power rule to the simpler remaining integral and add C.",
+            verification_method=VerificationMethod.DIFFERENTIATION,
+            verification_detail="Differentiating the final expression recovers the integrand.",
+        ),
+    )
 
 
 def derive_log_derivative_integral(
@@ -313,11 +393,36 @@ def derive_basic_antiderivative(
     result: sp.Basic,
 ) -> tuple[BackendDerivationStep, ...]:
     """Derive direct elementary antiderivatives from differentiation rules."""
+    power_log = _derive_power_log_integral(integrand, variable, result)
+    if power_log:
+        return power_log
     integration_constant = sp.Symbol("C")
     candidates = (
         (sp.sin(variable), -sp.cos(variable), "Use the sine antiderivative"),
         (sp.cos(variable), sp.sin(variable), "Use the cosine antiderivative"),
         (sp.exp(variable), sp.exp(variable), "Use the exponential antiderivative"),
+        (sp.sinh(variable), sp.cosh(variable), "Use the hyperbolic sine antiderivative"),
+        (sp.cosh(variable), sp.sinh(variable), "Use the hyperbolic cosine antiderivative"),
+        (
+            sp.tan(variable),
+            -sp.log(sp.cos(variable)),
+            "Use the logarithmic derivative of cosine",
+        ),
+        (
+            sp.Pow(1 - variable**2, sp.Rational(-1, 2)),
+            sp.asin(variable),
+            "Use the inverse-sine derivative pattern",
+        ),
+        (
+            sp.Pow(1 + variable**2, sp.Rational(-1, 2)),
+            sp.asinh(variable),
+            "Use the inverse-hyperbolic-sine derivative pattern",
+        ),
+        (
+            variable * sp.Pow(variable**2 + 1, sp.Rational(-1, 2)),
+            sp.sqrt(variable**2 + 1),
+            "Use the reverse chain rule for the square root",
+        ),
     )
     for candidate_integrand, antiderivative, rule in candidates:
         if str(sp.simplify(integrand - candidate_integrand)) != "0":

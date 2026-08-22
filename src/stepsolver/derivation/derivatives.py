@@ -12,6 +12,7 @@ from stepsolver.derivation.model import (
     BackendDifference,
     BackendIdentity,
     BackendMathNote,
+    BackendNotEqual,
     BackendProduct,
     BackendQuotient,
     BackendStepConstraint,
@@ -24,6 +25,88 @@ if TYPE_CHECKING:
 
 _BINARY_ARITY = 2
 _MINIMUM_PRODUCT_FACTORS = 2
+
+
+def _derive_gamma_family(
+    expression: sp.Basic,
+    variable: sp.Symbol,
+    result: sp.Basic,
+) -> tuple[BackendDerivationStep, ...]:
+    """Differentiate gamma and factorial expressions using the digamma function."""
+    if expression.func not in {sp.gamma, sp.factorial} or len(expression.args) != 1:
+        return ()
+    argument = expression.args[0]
+    if expression.func == sp.factorial:
+        rewritten = sp.gamma(argument + 1)
+        if sp.simplify(sp.diff(expression, variable) - result) != sp.Integer(0):
+            return ()
+        return (
+            BackendDerivationStep(
+                rule="Rewrite the factorial with the gamma function",
+                before=BackendDerivative(expression=expression, variable=variable),
+                after=BackendDerivative(expression=rewritten, variable=variable),
+                explanation="Use z! = Gamma(z + 1) so the derivative has a standard form.",
+                verification_method=VerificationMethod.SYMBOLIC_EQUIVALENCE,
+                verification_detail="The factorial-gamma identity holds on their common domain.",
+                notes=(
+                    BackendMathNote(
+                        label="Factorial-gamma identity",
+                        expression=BackendIdentity(left=expression, right=rewritten),
+                    ),
+                ),
+            ),
+            BackendDerivationStep(
+                rule="Differentiate gamma with the digamma function",
+                before=BackendDerivative(expression=rewritten, variable=variable),
+                after=result,
+                explanation=(
+                    "Use Gamma'(u) = Gamma(u) psi(u), then multiply by the inner derivative."
+                ),
+                verification_method=VerificationMethod.DIFFERENTIATION,
+                verification_detail="The gamma derivative and chain rule give the exact result.",
+            ),
+        )
+    return _verified_derivative_steps(
+        rule="Differentiate gamma with the digamma function",
+        expression=expression,
+        variable=variable,
+        raw_derivative=result,
+        result=result,
+        explanation="Use Gamma'(u) = Gamma(u) psi(u), then apply the chain rule.",
+        notes=(),
+    )
+
+
+def _derive_absolute_value(
+    expression: sp.Basic,
+    variable: sp.Symbol,
+    result: sp.Basic,
+) -> tuple[BackendDerivationStep, ...]:
+    """Differentiate an absolute value away from its nondifferentiable zeros."""
+    if expression.func != sp.Abs or len(expression.args) != 1:
+        return ()
+    argument = expression.args[0]
+    if sp.simplify(sp.diff(expression, variable) - result) != sp.Integer(0):
+        return ()
+    return (
+        BackendDerivationStep(
+            rule="Differentiate the absolute value piecewise",
+            before=BackendDerivative(expression=expression, variable=variable),
+            after=result,
+            explanation=(
+                "Away from zeros of the inside expression, the slope is its derivative times "
+                "the sign of that expression."
+            ),
+            verification_method=VerificationMethod.DIFFERENTIATION,
+            verification_detail="The positive and negative branches have the displayed slopes.",
+            introduced_constraints=(
+                BackendStepConstraint(
+                    explanation="The absolute value can fail to be differentiable at a zero.",
+                    expression=BackendNotEqual(left=argument, right=sp.Integer(0)),
+                ),
+            ),
+        ),
+    )
 
 
 def _verified_derivative_steps(
@@ -412,6 +495,30 @@ def _reciprocal(argument: sp.Basic) -> sp.Basic:
     return sp.Pow(argument, -1, evaluate=False)
 
 
+def _inverse_sine_derivative(argument: sp.Basic) -> sp.Basic:
+    return sp.Pow(1 - argument**2, sp.Rational(-1, 2), evaluate=False)
+
+
+def _inverse_cosine_derivative(argument: sp.Basic) -> sp.Basic:
+    return -_inverse_sine_derivative(argument)
+
+
+def _inverse_tangent_derivative(argument: sp.Basic) -> sp.Basic:
+    return sp.Pow(1 + argument**2, -1, evaluate=False)
+
+
+def _tangent_derivative(argument: sp.Basic) -> sp.Basic:
+    return 1 + sp.tan(argument) ** 2
+
+
+def _hyperbolic_tangent_derivative(argument: sp.Basic) -> sp.Basic:
+    return 1 - sp.tanh(argument) ** 2
+
+
+def _inverse_hyperbolic_sine_derivative(argument: sp.Basic) -> sp.Basic:
+    return sp.Pow(1 + argument**2, sp.Rational(-1, 2), evaluate=False)
+
+
 def _derive_function_chain(
     expression: sp.Basic,
     variable: sp.Symbol,
@@ -425,6 +532,22 @@ def _derive_function_chain(
         (sp.cos, _negative_sine, "Differentiate the cosine"),
         (sp.exp, sp.exp, "Differentiate the exponential"),
         (sp.log, _reciprocal, "Differentiate the logarithm"),
+        (sp.tan, _tangent_derivative, "Differentiate the tangent"),
+        (sp.asin, _inverse_sine_derivative, "Differentiate the inverse sine"),
+        (sp.acos, _inverse_cosine_derivative, "Differentiate the inverse cosine"),
+        (sp.atan, _inverse_tangent_derivative, "Differentiate the inverse tangent"),
+        (sp.sinh, sp.cosh, "Differentiate the hyperbolic sine"),
+        (sp.cosh, sp.sinh, "Differentiate the hyperbolic cosine"),
+        (
+            sp.tanh,
+            _hyperbolic_tangent_derivative,
+            "Differentiate the hyperbolic tangent",
+        ),
+        (
+            sp.asinh,
+            _inverse_hyperbolic_sine_derivative,
+            "Differentiate the inverse hyperbolic sine",
+        ),
     )
     for function, outer_derivative, direct_rule in candidates:
         if expression.func != function or len(expression.args) != 1:
@@ -524,6 +647,8 @@ def derive_derivative(
 ) -> tuple[BackendDerivationStep, ...]:
     """Derive a first derivative using the most specific familiar rule."""
     strategies = (
+        _derive_gamma_family,
+        _derive_absolute_value,
         _derive_general_power,
         _derive_quotient,
         _derive_monomial,

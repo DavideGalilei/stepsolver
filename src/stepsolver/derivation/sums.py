@@ -349,6 +349,91 @@ def _derive_factorial_series_tail(
     )
 
 
+def _factorial_parity_family(slope: sp.Basic, offset: sp.Basic) -> str | None:
+    """Identify whether a linear factorial index selects even or odd terms."""
+    match (slope, offset):
+        case (value, parity) if value == sp.Integer(_SQUARE_POWER) and parity == sp.Integer(0):
+            return "even"
+        case (value, parity) if value == sp.Integer(_SQUARE_POWER) and parity == sp.Integer(1):
+            return "odd"
+        case _:
+            return None
+
+
+def _factorial_power_base(
+    numerator: sp.Basic,
+    factorial_index: sp.Basic,
+    variable: sp.Symbol,
+) -> sp.Basic | None:
+    """Extract the constant base from ``base**factorial_index`` or implicit one."""
+    if numerator == sp.Integer(1):
+        return sp.Integer(1)
+    if not numerator.is_Pow or len(numerator.args) != _GEOMETRIC_POWER_ARITY:
+        return None
+    base, exponent = numerator.args
+    if exponent != factorial_index or base.has(variable):
+        return None
+    return base
+
+
+def _derive_factorial_parity_series(
+    expression: sp.Basic,
+    variable: sp.Symbol,
+    lower: sp.Basic,
+    upper: sp.Basic,
+    result: sp.Basic,
+) -> tuple[BackendDerivationStep, ...]:
+    """Recognize the even and odd factorial subseries of the exponential."""
+    if lower != sp.Integer(0) or upper != sp.oo:
+        return ()
+    numerator, denominator = sp.fraction(sp.together(expression))
+    if denominator.func != sp.factorial or len(denominator.args) != 1:
+        return ()
+    factorial_index = sp.expand(denominator.args[0])
+    slope = sp.diff(factorial_index, variable)
+    offset = sp.simplify(factorial_index.subs(variable, sp.Integer(0)))
+    family = _factorial_parity_family(slope, offset)
+    if family is None:
+        return ()
+    function = sp.cosh if family == "even" else sp.sinh
+    rule = f"Apply the {family} exponential-series identity"
+    base = _factorial_power_base(numerator, factorial_index, variable)
+    if base is None:
+        return ()
+    expected = function(base)
+    if sp.simplify(expected - result) != sp.Integer(0):
+        return ()
+    generic = sp.Symbol("x", real=True)
+    identity = BackendIdentity(
+        left=BackendSigma(
+            expression=generic**factorial_index / sp.factorial(factorial_index),
+            variable=variable,
+            lower=sp.Integer(0),
+            upper=sp.oo,
+        ),
+        right=function(generic),
+    )
+    return (
+        BackendDerivationStep(
+            rule=rule,
+            before=BackendSigma(
+                expression=expression,
+                variable=variable,
+                lower=lower,
+                upper=upper,
+            ),
+            after=result,
+            explanation=(
+                f"Keep the {family}-indexed terms of the exponential power series; "
+                f"they form the {function.__name__} series."
+            ),
+            verification_method=VerificationMethod.BACKEND_IDENTITY,
+            verification_detail="The corresponding factorial subseries identity applies exactly.",
+            notes=(BackendMathNote(label="Identity", expression=identity),),
+        ),
+    )
+
+
 def _p_series_power(expression: sp.Basic, variable: sp.Symbol) -> int | None:
     return next(
         (
@@ -495,6 +580,87 @@ def _derive_shifted_p_series(
             sp.Integer(1),
             sp.oo,
             result,
+        ),
+    )
+
+
+def _derive_even_odd_p_series(
+    expression: sp.Basic,
+    variable: sp.Symbol,
+    lower: sp.Basic,
+    upper: sp.Basic,
+    _result: sp.Basic,
+) -> tuple[BackendDerivationStep, ...]:
+    """Derive the even or odd residue class of a convergent p-series."""
+    if upper != sp.oo:
+        return ()
+    even_base = 2 * variable
+    odd_base = 2 * variable + 1
+    match = next(
+        (
+            (family, power, coefficient)
+            for family, base, expected_lower in (
+                ("even", even_base, sp.Integer(1)),
+                ("odd", odd_base, sp.Integer(0)),
+            )
+            for power in range(2, 13)
+            if lower == expected_lower
+            and not (
+                coefficient := sp.simplify(expression * base**power)
+            ).has(variable)
+            and coefficient != sp.Integer(0)
+        ),
+        None,
+    )
+    if match is None:
+        return ()
+    family, power, coefficient = match
+    residue_factor = (
+        sp.Rational(1, 2**power)
+        if family == "even"
+        else sp.Integer(1) - sp.Rational(1, 2**power)
+    )
+    factor = sp.simplify(coefficient * residue_factor)
+    explanation = (
+        "Factor 2 from every even denominator, then use the p-series identity."
+        if family == "even"
+        else "Subtract the even-indexed p-series from the full positive p-series."
+    )
+    zeta_value = sp.zeta(sp.Integer(power))
+    expected = sp.simplify(factor * zeta_value)
+    index = sp.Symbol("k", integer=True, positive=True)
+    full_series = BackendSigma(
+        expression=index ** (-power),
+        variable=index,
+        lower=sp.Integer(1),
+        upper=sp.oo,
+    )
+    return (
+        BackendDerivationStep(
+            rule=f"Extract the {family} terms of the p-series",
+            before=BackendSigma(
+                expression=expression,
+                variable=variable,
+                lower=lower,
+                upper=upper,
+            ),
+            after=expected,
+            explanation=explanation,
+            verification_method=VerificationMethod.BACKEND_IDENTITY,
+            verification_detail="The residue-class decomposition of the p-series is exact.",
+            notes=(
+                BackendMathNote(
+                    label="Full p-series",
+                    expression=BackendIdentity(left=full_series, right=zeta_value),
+                ),
+                BackendMathNote(
+                    label=f"{family.title()}-term factor",
+                    expression=BackendIdentity(
+                        left=sp.Symbol("c", real=True),
+                        right=factor,
+                    ),
+                ),
+            ),
         ),
     )
 
@@ -673,6 +839,80 @@ def _derive_differentiated_geometric_series(
     )
 
 
+def _derive_second_moment_geometric_series(
+    expression: sp.Basic,
+    variable: sp.Symbol,
+    lower: sp.Basic,
+    upper: sp.Basic,
+    result: sp.Basic,
+) -> tuple[BackendDerivationStep, ...]:
+    """Sum ``c*n**2*r**n`` by differentiating the geometric identity twice."""
+    if lower != sp.Integer(1) or upper != sp.oo:
+        return ()
+    power_match = next(
+        (
+            match
+            for factor in expression.as_ordered_factors()
+            if (match := _variable_power(factor, variable)) is not None
+        ),
+        None,
+    )
+    if power_match is None:
+        return ()
+    exponential_base, exponential_exponent = power_match
+    exponent_slope = sp.diff(exponential_exponent, variable)
+    ratio = sp.simplify(exponential_base**exponent_slope)
+    coefficient = sp.simplify(expression / (variable**2 * ratio**variable))
+    if (
+        exponent_slope.has(variable)
+        or coefficient.has(variable)
+        or sp.simplify(sp.Lt(sp.Abs(ratio), sp.Integer(1))) is not sp.true
+    ):
+        return ()
+    formula = sp.simplify(coefficient * ratio * (1 + ratio) / (1 - ratio) ** 3)
+    if formula != result:
+        return ()
+    generic_ratio = sp.Symbol("r", real=True)
+    identity = BackendIdentity(
+        left=BackendSigma(
+            expression=variable**2 * generic_ratio**variable,
+            variable=variable,
+            lower=sp.Integer(1),
+            upper=sp.oo,
+        ),
+        right=generic_ratio * (1 + generic_ratio) / (1 - generic_ratio) ** 3,
+    )
+    return (
+        BackendDerivationStep(
+            rule="Differentiate the geometric-series identity twice",
+            before=BackendSigma(
+                expression=expression,
+                variable=variable,
+                lower=lower,
+                upper=upper,
+            ),
+            after=result,
+            explanation=(
+                "Differentiate the geometric series twice, then combine the resulting "
+                "first- and second-derivative terms and substitute the common ratio."
+            ),
+            verification_method=VerificationMethod.BACKEND_IDENTITY,
+            verification_detail="The second-moment geometric identity gives the exact sum.",
+            notes=(
+                BackendMathNote(label="Second-moment identity", expression=identity),
+                BackendMathNote(
+                    label="Common ratio",
+                    expression=BackendIdentity(left=generic_ratio, right=ratio),
+                ),
+                BackendMathNote(
+                    label="Convergence condition",
+                    expression=sp.Lt(sp.Abs(generic_ratio), sp.Integer(1)),
+                ),
+            ),
+        ),
+    )
+
+
 def _variable_power(
     factor: sp.Basic,
     variable: sp.Symbol,
@@ -690,6 +930,21 @@ def _variable_power(
     return None
 
 
+def _has_constant_numerator_quadratic_denominator(
+    expression: sp.Basic,
+    variable: sp.Symbol,
+) -> bool:
+    """Return whether a term can have two shifted linear denominator factors."""
+    numerator, denominator = sp.fraction(sp.cancel(expression))
+    if numerator.has(variable):
+        return False
+    try:
+        denominator_polynomial = sp.Poly(denominator, variable)
+    except sp.PolynomialError:
+        return False
+    return denominator_polynomial.degree() == _SQUARE_POWER
+
+
 def _derive_telescoping_rational_sum(
     expression: sp.Basic,
     variable: sp.Symbol,
@@ -698,33 +953,44 @@ def _derive_telescoping_rational_sum(
     result: sp.Basic,
 ) -> tuple[BackendDerivationStep, ...]:
     """Use partial fractions for c/(n(n+k)) and cancel interior terms."""
-    if lower.is_integer is not True or lower.is_positive is not True:
+    if (
+        lower.is_integer is not True
+        or not _has_constant_numerator_quadratic_denominator(expression, variable)
+    ):
         return ()
     match = next(
         (
-            (shift, sp.simplify(expression * variable * (variable + shift)))
+            (offset, shift, coefficient)
+            for offset in range(-6, 7)
             for shift in range(1, 7)
-            if not sp.simplify(expression * variable * (variable + shift)).has(variable)
+            if (
+                coefficient := sp.simplify(
+                    expression * (variable + offset) * (variable + offset + shift)
+                )
+            ) != sp.Integer(0)
+            and not coefficient.has(variable)
+            and sp.simplify(lower + offset).is_positive is True
         ),
         None,
     )
-    if match is None or match[1] == sp.Integer(0):
+    if match is None:
         return ()
-    shift, coefficient = match
+    offset, shift, coefficient = match
+    shifted_variable = variable + offset
     decomposition = coefficient / shift * (
-        1 / variable - 1 / (variable + shift)
+        1 / shifted_variable - 1 / (shifted_variable + shift)
     )
     if sp.simplify(decomposition - expression) != sp.Integer(0):
         return ()
     leading_terms = sp.Add(
-        *(1 / (lower + offset) for offset in range(shift)),
+        *(1 / (lower + offset + index) for index in range(shift)),
     )
     match upper:
         case value if value == sp.oo:
             boundary_value = sp.simplify(coefficient * leading_terms / shift)
         case value if value.is_integer is True:
             trailing_terms = sp.Add(
-                *(1 / (value + 1 + offset) for offset in range(shift)),
+                *(1 / (value + 1 + offset + index) for index in range(shift)),
             )
             boundary_value = sp.simplify(
                 coefficient * (leading_terms - trailing_terms) / shift
@@ -775,6 +1041,50 @@ def _derive_telescoping_rational_sum(
                     expression=BackendIdentity(left=boundary_value, right=result),
                 ),
             ),
+        ),
+    )
+
+
+def _derive_gregory_leibniz_series(
+    expression: sp.Basic,
+    variable: sp.Symbol,
+    lower: sp.Basic,
+    upper: sp.Basic,
+    result: sp.Basic,
+) -> tuple[BackendDerivationStep, ...]:
+    """Use the arctangent power series at x = 1."""
+    expected_term = (-1) ** variable / (2 * variable + 1)
+    if (
+        lower != sp.Integer(0)
+        or upper != sp.oo
+        or sp.simplify(expression - expected_term) != sp.Integer(0)
+        or sp.simplify(result - sp.pi / 4) != sp.Integer(0)
+    ):
+        return ()
+    generic = sp.Symbol("x", real=True)
+    identity = BackendIdentity(
+        left=BackendSigma(
+            expression=(-1) ** variable * generic ** (2 * variable + 1) / (2 * variable + 1),
+            variable=variable,
+            lower=sp.Integer(0),
+            upper=sp.oo,
+        ),
+        right=sp.atan(generic),
+    )
+    return (
+        BackendDerivationStep(
+            rule="Apply the Gregory-Leibniz arctangent series",
+            before=BackendSigma(
+                expression=expression,
+                variable=variable,
+                lower=lower,
+                upper=upper,
+            ),
+            after=result,
+            explanation="Set x = 1 in the arctangent power series, so arctan(1) = pi/4.",
+            verification_method=VerificationMethod.BACKEND_IDENTITY,
+            verification_detail="The convergent endpoint value of the arctangent series applies.",
+            notes=(BackendMathNote(label="Arctangent series", expression=identity),),
         ),
     )
 
@@ -1305,11 +1615,15 @@ def derive_sum(
     for strategy in (
         _derive_power_sum,
         _derive_factorial_series_tail,
+        _derive_factorial_parity_series,
         _derive_p_series,
         _derive_shifted_p_series,
+        _derive_even_odd_p_series,
         _derive_geometric_series,
         _derive_differentiated_geometric_series,
+        _derive_second_moment_geometric_series,
         _derive_telescoping_rational_sum,
+        _derive_gregory_leibniz_series,
         _derive_harmonic_sine_series,
         _derive_alternating_p_series,
         _derive_nth_root_power_divergence,

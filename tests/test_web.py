@@ -537,6 +537,24 @@ def test_reciprocal_factorial_tail_has_an_exact_human_web_solution() -> None:
     assert r"\operatorname{factorial}" not in response.text
 
 
+def test_inverse_hyperbolic_mathjson_reaches_a_human_derivative() -> None:
+    """The editor's Arsinh head should not become an unknown backend function."""
+    with TestClient(create_app()) as client:
+        response = client.post(
+            "/api/solve",
+            json={
+                "latex": r"\frac{\mathrm{d}}{\mathrm{d}x}\operatorname{arsinh}(x)",
+                "math_json": ["D", ["Arsinh", "x"], "x"],
+            },
+        )
+    payload = SolveResponse.model_validate_json(response.text)
+    assert response.status_code == _HTTP_OK
+    assert payload.status == "exact"
+    assert payload.steps[0].rule == "Differentiate the inverse hyperbolic sine"
+    assert payload.result_latex == r"\frac{1}{\sqrt{x^{2} + 1}}"
+    assert all(step.rule != "Compute exact result" for step in payload.steps)
+
+
 def test_exact_solve_response_contains_latex_steps() -> None:
     """Exact API responses should carry both ASCII and generated LaTeX."""
     with TestClient(create_app()) as client:

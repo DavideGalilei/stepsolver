@@ -68,6 +68,7 @@ _NAMED_FUNCTIONS: dict[str, str] = {
     "zeta": r"\zeta",
     "erf": r"\operatorname{erf}",
     "asinh": r"\operatorname{arsinh}",
+    "sign": r"\operatorname{sgn}",
 }
 
 
@@ -261,6 +262,13 @@ def _format_function(expression: FunctionCall) -> str:
     if name == "factorial" and len(arguments) == 1:
         operand = format_latex_expression(arguments[0], parent_precedence=40)
         return f"{operand}!"
+    if (
+        name == "polygamma"
+        and len(arguments) == 2
+        and isinstance(arguments[0], Number)
+        and arguments[0].value == 0
+    ):
+        return rf"\psi\left({format_latex_expression(arguments[1])}\right)"
     if name == "abs" and len(arguments) == 1:
         return rf"\left|{format_latex_expression(arguments[0])}\right|"
     if name == "differential" and len(arguments) == 1:

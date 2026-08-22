@@ -44,6 +44,7 @@ _FUNCTIONS: dict[str, str] = {
     "Sinh": "sinh",
     "Cosh": "cosh",
     "Tanh": "tanh",
+    "Arsinh": "asinh",
     "Exp": "exp",
     "Ln": "log",
     "Log": "log",
