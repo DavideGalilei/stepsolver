@@ -334,6 +334,13 @@ function createReadonlyMath(latex, className) {
   return field;
 }
 
+function createInlineMath(latex, className) {
+  const math = document.createElement("math-span");
+  math.className = className;
+  math.textContent = latex;
+  return math;
+}
+
 function enableTouchMathScrolling(viewport) {
   let gesture = null;
   const finishGesture = (event) => {
@@ -484,7 +491,7 @@ function createStepExplanation(step) {
   explanation.className = "step-explanation";
   for (const part of step.explanation_parts) {
     if (part.latex !== null) {
-      explanation.append(createReadonlyMath(part.latex, "step-explanation-math"));
+      explanation.append(createInlineMath(part.latex, "step-explanation-math"));
     } else if (part.text !== null) {
       explanation.append(document.createTextNode(part.text));
     }

@@ -724,18 +724,12 @@ math-field {
 .step p { max-width: 720px; margin: 0 0 16px; color: var(--muted); font-size: 14px; line-height: 1.65; }
 
 .step-explanation-math {
-  display: inline-block;
-  width: auto;
-  max-width: none;
-  min-width: 0;
-  min-height: 0;
-  margin: 0 .14em;
-  border: 0;
-  background: transparent;
-  padding: 0;
+  display: inline-flex;
+  margin: 0;
   color: inherit;
   font-size: 1.08em;
   line-height: 1;
+  white-space: nowrap;
   vertical-align: -.12em;
 }
 

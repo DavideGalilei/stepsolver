@@ -15,10 +15,19 @@ test("step explanations render structured mathematics through MathLive", () => {
   assert.match(appSource, /function createStepExplanation\(step\)/);
   assert.match(
     appSource,
-    /createReadonlyMath\(part\.latex, "step-explanation-math"\)/
+    /createInlineMath\(part\.latex, "step-explanation-math"\)/
   );
+  assert.match(appSource, /document\.createElement\("math-span"\)/);
+  assert.match(appSource, /math\.textContent = latex/);
   assert.match(appSource, /document\.createTextNode\(part\.text\)/);
   assert.doesNotMatch(appSource, /explanation\.textContent = step\.explanation/);
-  assert.match(styleSource, /\.step-explanation-math\s*\{/);
-  assert.match(styleSource, /display:\s*inline-block/);
+  assert.doesNotMatch(
+    appSource,
+    /createReadonlyMath\(part\.latex, "step-explanation-math"\)/
+  );
+  const inlineMathStyle = styleSource.match(/\.step-explanation-math\s*\{[^}]+\}/s);
+  assert.ok(inlineMathStyle);
+  assert.match(inlineMathStyle[0], /display:\s*inline-flex/);
+  assert.match(inlineMathStyle[0], /white-space:\s*nowrap/);
+  assert.match(inlineMathStyle[0], /margin:\s*0/);
 });
