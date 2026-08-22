@@ -494,9 +494,7 @@ def test_additive_radicand_series_is_reported_as_proved_divergence() -> None:
         "Simplify the indexed root",
         "Apply the nth-term divergence test",
     )
-    assert payload.steps[0].before_latex == (
-        r"\sum_{n=1}^{\infty} \sqrt[n]{2 \cdot 2^{n}}"
-    )
+    assert payload.steps[0].before_latex == (r"\sum_{n=1}^{\infty} \sqrt[n]{2 \cdot 2^{n}}")
     assert payload.steps[0].after_latex == r"\sum_{n=1}^{\infty} 2 \cdot \sqrt[n]{2}"
     assert payload.steps[-1].notes[0].expression_latex == (
         r"\lim_{n \to \infty} 2 \cdot \sqrt[n]{2} = 2"
@@ -527,9 +525,7 @@ def test_reciprocal_factorial_tail_has_an_exact_human_web_solution() -> None:
         "Evaluate the omitted finite terms",
     )
     assert payload.steps[0].before_latex == r"\sum_{n=3}^{\infty} \frac{1}{n!}"
-    assert payload.steps[0].after_latex == (
-        r"e - \sum_{n=0}^{2} \frac{1}{n!}"
-    )
+    assert payload.steps[0].after_latex == (r"e - \sum_{n=0}^{2} \frac{1}{n!}")
     assert payload.steps[1].notes[0].expression_latex == (
         r"\sum_{n=0}^{2} \frac{1}{n!} = \frac{5}{2}"
     )

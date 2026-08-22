@@ -94,9 +94,7 @@ def match_alternating_p_series(
         eta_value = (
             sp.log(sp.Integer(2))
             if power == 1
-            else sp.simplify(
-                (1 - sp.Integer(2) ** (1 - power)) * sp.zeta(sp.Integer(power))
-            )
+            else sp.simplify((1 - sp.Integer(2) ** (1 - power)) * sp.zeta(sp.Integer(power)))
         )
         return AlternatingPSeries(
             coefficient=coefficient,

@@ -94,6 +94,9 @@ def test_absolute_value_derivative_states_its_nondifferentiable_point(
     result = solver.solve("diff(abs(x),x)")
     assert isinstance(result, ExactResult)
     assert result.steps[0].introduced_constraints
-    assert format_latex_expression(
-        result.steps[0].introduced_constraints[0].expression,
-    ) == r"x \ne 0"
+    assert (
+        format_latex_expression(
+            result.steps[0].introduced_constraints[0].expression,
+        )
+        == r"x \ne 0"
+    )

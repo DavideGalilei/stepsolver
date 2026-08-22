@@ -72,8 +72,7 @@ def test_structural_integral_strategies_reject_unverified_near_matches() -> None
         derive_inverse_tangent_substitution(
             (variable + 1) / (variable**2 + 1),
             variable,
-            sp.integrate((variable + 1) / (variable**2 + 1), variable)
-            + integration_constant,
+            sp.integrate((variable + 1) / (variable**2 + 1), variable) + integration_constant,
         )
         == ()
     )

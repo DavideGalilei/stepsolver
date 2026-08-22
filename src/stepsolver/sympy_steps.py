@@ -218,9 +218,7 @@ class SympyStepBuilder:
             backend_value,
         )
         denominators = (
-            symbolic_denominators(original)
-            if description.rule == "Cancel common factors"
-            else ()
+            symbolic_denominators(original) if description.rule == "Cancel common factors" else ()
         )
         constraints = tuple(
             StepConstraint(

@@ -107,9 +107,7 @@ def _contains_function(expression: Expression) -> bool:
 def _is_exact_numeric(expression: Expression) -> bool:
     return all(
         isinstance(item, Number | UnaryExpression | BinaryExpression)
-        and not (
-            isinstance(item, UnaryExpression) and item.operator is UnaryOperator.FACTORIAL
-        )
+        and not (isinstance(item, UnaryExpression) and item.operator is UnaryOperator.FACTORIAL)
         for item in _walk(expression)
     )
 

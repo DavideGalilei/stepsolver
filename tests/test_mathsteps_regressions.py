@@ -110,9 +110,7 @@ def test_adapted_cancellation_cases_retain_original_domain_restrictions(
         format_expression(constraint.expression)
         for constraint in result.steps[0].introduced_constraints
     ) == (expected_constraint,)
-    assert "wherever the original denominators are nonzero" in (
-        result.steps[0].verification.detail
-    )
+    assert "wherever the original denominators are nonzero" in (result.steps[0].verification.detail)
     assert format_ascii(result).endswith(expected_result)
 
 

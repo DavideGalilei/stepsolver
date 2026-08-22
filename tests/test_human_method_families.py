@@ -347,7 +347,6 @@ def test_human_method_family_never_degrades_to_an_exact_result_only(
         f"{case.family} produced an exact answer without worked steps for {case.query}"
     )
     assert _OPAQUE_RULE not in actual_rules, (
-        f"{case.family} used the opaque fallback for {case.query}; "
-        f"expected {case.expected_rules}"
+        f"{case.family} used the opaque fallback for {case.query}; expected {case.expected_rules}"
     )
     assert actual_rules == case.expected_rules

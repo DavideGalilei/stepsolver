@@ -224,9 +224,7 @@ def _derive_general_power(
         return ()
     base_derivative = sp.diff(base, variable)
     exponent_derivative = sp.diff(exponent, variable)
-    logarithmic_derivative = (
-        exponent_derivative * sp.log(base) + exponent * base_derivative / base
-    )
+    logarithmic_derivative = exponent_derivative * sp.log(base) + exponent * base_derivative / base
     raw_derivative = expression * logarithmic_derivative
     generic_base = sp.Function("f")(variable)
     generic_exponent = sp.Function("g")(variable)

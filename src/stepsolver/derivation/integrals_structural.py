@@ -43,9 +43,7 @@ def _matching_functions(
     """Collect applications of one function without relying on broad tree queries."""
     current = (expression,) if expression.func == function else ()
     nested = tuple(
-        match
-        for argument in expression.args
-        for match in _matching_functions(argument, function)
+        match for argument in expression.args for match in _matching_functions(argument, function)
     )
     return (*current, *nested)
 
@@ -57,10 +55,7 @@ def derive_inverse_function_by_parts(
 ) -> tuple[BackendDerivationStep, ...]:
     """Use integration by parts for logarithms and inverse tangent of affine inputs."""
     _, inverse_function = integrand.as_independent(variable, as_Add=False)
-    if (
-        inverse_function.func not in {sp.log, sp.atan}
-        or len(inverse_function.args) != 1
-    ):
+    if inverse_function.func not in {sp.log, sp.atan} or len(inverse_function.args) != 1:
         return ()
     inner = inverse_function.args[0]
     inner_rate = sp.diff(inner, variable)
@@ -172,23 +167,14 @@ def derive_trig_power_substitution(
         for inner in sorted(_matching_functions(integrand, sp.cos), key=str)
     )
     for inner, differential_factor, name in (*sine_candidates, *cosine_candidates):
-        derivative_coefficient = sp.simplify(
-            sp.diff(inner, variable) / differential_factor
-        )
-        if (
-            derivative_coefficient == sp.Integer(0)
-            or derivative_coefficient.has(variable)
-        ):
+        derivative_coefficient = sp.simplify(sp.diff(inner, variable) / differential_factor)
+        if derivative_coefficient == sp.Integer(0) or derivative_coefficient.has(variable):
             continue
         for power in range(1, 9):
-            coefficient = sp.simplify(
-                integrand / (inner**power * differential_factor)
-            )
+            coefficient = sp.simplify(integrand / (inner**power * differential_factor))
             if coefficient.has(variable):
                 continue
-            transformed_coefficient = sp.simplify(
-                coefficient / derivative_coefficient
-            )
+            transformed_coefficient = sp.simplify(coefficient / derivative_coefficient)
             break
         else:
             continue
@@ -198,10 +184,9 @@ def derive_trig_power_substitution(
             integrand=transformed_integrand,
             variable=substitution,
         )
-        transformed_result = (
-            transformed_coefficient * substitution ** (power + 1) / (power + 1)
-            + sp.Symbol("C")
-        )
+        transformed_result = transformed_coefficient * substitution ** (power + 1) / (
+            power + 1
+        ) + sp.Symbol("C")
         formula = transformed_result.subs(substitution, inner)
         if not _matches_antiderivative(formula, result, variable):
             continue
@@ -359,11 +344,7 @@ def derive_cyclic_exponential_trig_integral(
         None,
     )
     trig = next(
-        (
-            factor
-            for factor in integrand.as_ordered_factors()
-            if factor.func in {sp.sin, sp.cos}
-        ),
+        (factor for factor in integrand.as_ordered_factors() if factor.func in {sp.sin, sp.cos}),
         None,
     )
     if exponential is None or trig is None:
