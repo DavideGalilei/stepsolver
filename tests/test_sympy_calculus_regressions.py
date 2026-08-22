@@ -164,17 +164,30 @@ def test_hard_series_use_telescoping_or_a_generating_identity(
     [
         (
             "limit((exp(x)-1)/x,x,0)",
-            ("Normalize to the standard exponential limit",),
+            (
+                "Check direct substitution",
+                "Apply L'Hôpital's rule",
+                "Substitute into the transformed limit",
+            ),
             "Result: 1",
         ),
         (
             "limit(log(1+x)/x,x,0)",
-            ("Normalize to the standard logarithm limit",),
+            (
+                "Check direct substitution",
+                "Apply L'Hôpital's rule",
+                "Substitute into the transformed limit",
+            ),
             "Result: 1",
         ),
         (
             "limit((1-cos(x))/x^2,x,0)",
-            ("Use the standard cosine limit",),
+            (
+                "Check direct substitution",
+                "Apply L'Hôpital's rule",
+                "Apply L'Hôpital's rule again",
+                "Substitute into the transformed limit",
+            ),
             "Result: 1/2",
         ),
         (

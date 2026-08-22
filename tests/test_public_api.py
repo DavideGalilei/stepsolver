@@ -55,13 +55,13 @@ def test_presentation_adapter_keeps_inline_math_out_of_plaintext_explanations() 
 
     step = solve_payload(result).steps[0]
     assert tuple(part.text for part in step.explanation_parts if part.text is not None) == (
-        "Let ",
-        " equal the exponent, factor out its constant rate, and apply ",
+        "Substitute ",
+        ". Both the numerator and denominator become zero, giving the indeterminate form ",
         ".",
     )
     assert tuple(part.latex for part in step.explanation_parts if part.latex is not None) == (
-        "u",
-        r"\lim_{u \to 0} \frac{e^{u} - 1}{u} = 1",
+        "x = 0",
+        r"\frac{0}{0}",
     )
 
 

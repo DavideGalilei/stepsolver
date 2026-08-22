@@ -87,7 +87,11 @@
     "latex": "\\lim_{x\\to0}\\frac{\\sin(x)}{x}",
     "math_json": ["Limit", ["Function", ["Divide", ["Sin", "x"], "x"], "x"], 0],
     "result_latex": "1",
-    "expected_rules": ["Use the standard sine limit"]
+    "expected_rules": [
+      "Check direct substitution",
+      "Apply L'Hôpital's rule",
+      "Substitute into the transformed limit"
+    ]
   },
   {
     "name": "standard exponential limit",
@@ -102,7 +106,11 @@
       0
     ],
     "result_latex": "1",
-    "expected_rules": ["Normalize to the standard exponential limit"]
+    "expected_rules": [
+      "Check direct substitution",
+      "Apply L'Hôpital's rule",
+      "Substitute into the transformed limit"
+    ]
   },
   {
     "name": "finite sum",

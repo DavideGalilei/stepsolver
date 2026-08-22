@@ -117,8 +117,22 @@ def solver() -> Solver:
                 "Evaluate the limit",
             ),
         ),
-        ("limit(sin(x)/x,x,0)", ("Use the standard sine limit",)),
-        ("limit(sin(3*x)/x,x,0)", ("Normalize to the standard sine limit",)),
+        (
+            "limit(sin(x)/x,x,0)",
+            (
+                "Check direct substitution",
+                "Apply L'Hôpital's rule",
+                "Substitute into the transformed limit",
+            ),
+        ),
+        (
+            "limit(sin(3*x)/x,x,0)",
+            (
+                "Check direct substitution",
+                "Apply L'Hôpital's rule",
+                "Substitute into the transformed limit",
+            ),
+        ),
         (
             "limit((x^2-1)/(x-1),x,1)",
             ("Factor and cancel the common factor", "Substitute into the simplified expression"),

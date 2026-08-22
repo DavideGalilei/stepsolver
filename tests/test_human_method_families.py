@@ -7,6 +7,17 @@ import pytest
 from stepsolver import ExactResult, Solver
 
 _OPAQUE_RULE = "Compute exact result"
+_LHOPITAL_RULES = (
+    "Check direct substitution",
+    "Apply L'Hôpital's rule",
+    "Substitute into the transformed limit",
+)
+_REPEATED_LHOPITAL_RULES = (
+    "Check direct substitution",
+    "Apply L'Hôpital's rule",
+    "Apply L'Hôpital's rule again",
+    "Substitute into the transformed limit",
+)
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -214,57 +225,57 @@ _CASES = (
     _case(
         "scaled exponential limits",
         "limit((exp(3*x)-1)/x,x,0)",
-        "Normalize to the standard exponential limit",
+        *_LHOPITAL_RULES,
     ),
     _case(
         "scaled exponential limits",
         "limit((exp(2*x)-1)/(3*x),x,0)",
-        "Normalize to the standard exponential limit",
+        *_LHOPITAL_RULES,
     ),
     _case(
         "scaled logarithm limits",
         "limit(log(1+2*x)/x,x,0)",
-        "Normalize to the standard logarithm limit",
+        *_LHOPITAL_RULES,
     ),
     _case(
         "scaled logarithm limits",
         "limit(log(1+4*(x-1))/(2*(x-1)),x,1)",
-        "Normalize to the standard logarithm limit",
+        *_LHOPITAL_RULES,
     ),
     _case(
         "scaled cosine limits",
         "limit((1-cos(4*x))/x^2,x,0)",
-        "Use the standard cosine limit",
+        *_REPEATED_LHOPITAL_RULES,
     ),
     _case(
         "scaled cosine limits",
         "limit((1-cos(3*(x+2)))/(2*(x+2)^2),x,-2)",
-        "Use the standard cosine limit",
+        *_REPEATED_LHOPITAL_RULES,
     ),
     _case(
         "shifted sine limits",
         "limit(sin(x-2)/(x-2),x,2)",
-        "Use the standard sine limit",
+        *_LHOPITAL_RULES,
     ),
     _case(
         "scaled shifted sine limits",
         "limit(sin(3*(x-2))/(2*(x-2)),x,2)",
-        "Normalize to the standard sine limit",
+        *_LHOPITAL_RULES,
     ),
     _case(
         "shifted exponential limits",
         "limit((exp(x-2)-1)/(x-2),x,2)",
-        "Normalize to the standard exponential limit",
+        *_LHOPITAL_RULES,
     ),
     _case(
         "shifted logarithm limits",
         "limit(log(1+x-3)/(x-3),x,3)",
-        "Normalize to the standard logarithm limit",
+        *_LHOPITAL_RULES,
     ),
     _case(
         "shifted cosine limits",
         "limit((1-cos(x-4))/(x-4)^2,x,4)",
-        "Use the standard cosine limit",
+        *_REPEATED_LHOPITAL_RULES,
     ),
     _case(
         "exponential-definition limits",

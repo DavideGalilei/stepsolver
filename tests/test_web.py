@@ -653,7 +653,13 @@ def test_visual_limit_tuple_is_accepted() -> None:
     assert response.status_code == _HTTP_OK
     assert payload.status == "exact"
     assert payload.result_latex == "1"
-    assert [step.rule for step in payload.steps] == ["Use the standard sine limit"]
+    assert [step.rule for step in payload.steps] == [
+        "Check direct substitution",
+        "Apply L'Hôpital's rule",
+        "Substitute into the transformed limit",
+    ]
+    assert payload.steps[0].after_latex == r"\frac{0}{0}"
+    assert payload.steps[1].after_latex == r"\lim_{x \to 0} \frac{\cos\left(x\right)}{1}"
 
 
 def test_reciprocal_quadratic_integral_contains_detailed_latex_steps() -> None:
