@@ -48,6 +48,23 @@ def test_presentation_adapter_renders_equation_solutions_for_students() -> None:
     assert payload.result_latex == r"x = -2\quad\text{or}\quad x = 2"
 
 
+def test_presentation_adapter_keeps_inline_math_out_of_plaintext_explanations() -> None:
+    """Mixed explanations should expose mathematical fragments as renderable LaTeX."""
+    result = Solver().solve("limit((exp(x)-1)/x, x, 0)")
+    assert isinstance(result, ExactResult)
+
+    step = solve_payload(result).steps[0]
+    assert tuple(part.text for part in step.explanation_parts if part.text is not None) == (
+        "Let ",
+        " equal the exponent, factor out its constant rate, and apply ",
+        ".",
+    )
+    assert tuple(part.latex for part in step.explanation_parts if part.latex is not None) == (
+        "u",
+        r"\lim_{u \to 0} \frac{e^{u} - 1}{u} = 1",
+    )
+
+
 def test_parser_and_backend_can_be_composed_explicitly() -> None:
     """Parsing, orchestration, and symbolic execution should remain separate layers."""
     query = parse("limit(sin(x)/x, x, 0)")

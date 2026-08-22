@@ -7,6 +7,7 @@ import sympy as sp
 from stepsolver.derivation.model import (
     BackendDerivationStep,
     BackendIdentity,
+    BackendInlineMath,
     BackendLimit,
     BackendMathNote,
     BackendNotEqual,
@@ -379,6 +380,14 @@ def _derive_standard_zero_limit(
                 and sp.simplify(result - rate) == sp.Integer(0)
             ):
                 generic = sp.Symbol("u", real=True)
+                standard_limit = BackendIdentity(
+                    left=BackendLimit(
+                        expression=(sp.exp(generic) - 1) / generic,
+                        variable=generic,
+                        point=sp.Integer(0),
+                    ),
+                    right=sp.Integer(1),
+                )
                 return (
                     BackendDerivationStep(
                         rule="Normalize to the standard exponential limit",
@@ -388,19 +397,19 @@ def _derive_standard_zero_limit(
                             "Use u equal to the exponent, factor out its constant rate, and "
                             "apply lim (eᵘ-1)/u = 1."
                         ),
+                        explanation_parts=(
+                            "Let ",
+                            BackendInlineMath(expression=generic),
+                            " equal the exponent, factor out its constant rate, and apply ",
+                            BackendInlineMath(expression=standard_limit),
+                            ".",
+                        ),
                         verification_method=VerificationMethod.BACKEND_IDENTITY,
                         verification_detail="The normalized quotient is the standard limit.",
                         notes=(
                             BackendMathNote(
                                 label="Standard exponential limit",
-                                expression=BackendIdentity(
-                                    left=BackendLimit(
-                                        expression=(sp.exp(generic) - 1) / generic,
-                                        variable=generic,
-                                        point=sp.Integer(0),
-                                    ),
-                                    right=sp.Integer(1),
-                                ),
+                                expression=standard_limit,
                             ),
                         ),
                     ),
@@ -422,6 +431,14 @@ def _derive_standard_zero_limit(
                 and sp.simplify(result - rate) == sp.Integer(0)
             ):
                 generic = sp.Symbol("u", real=True)
+                standard_limit = BackendIdentity(
+                    left=BackendLimit(
+                        expression=sp.log(1 + generic) / generic,
+                        variable=generic,
+                        point=sp.Integer(0),
+                    ),
+                    right=sp.Integer(1),
+                )
                 return (
                     BackendDerivationStep(
                         rule="Normalize to the standard logarithm limit",
@@ -431,19 +448,22 @@ def _derive_standard_zero_limit(
                             "Use u for the increment inside the logarithm, factor out its "
                             "constant rate, and apply lim log(1+u)/u = 1."
                         ),
+                        explanation_parts=(
+                            "Use ",
+                            BackendInlineMath(expression=generic),
+                            (
+                                " for the increment inside the logarithm, factor out its "
+                                "constant rate, and apply "
+                            ),
+                            BackendInlineMath(expression=standard_limit),
+                            ".",
+                        ),
                         verification_method=VerificationMethod.BACKEND_IDENTITY,
                         verification_detail="The normalized quotient is the standard limit.",
                         notes=(
                             BackendMathNote(
                                 label="Standard logarithm limit",
-                                expression=BackendIdentity(
-                                    left=BackendLimit(
-                                        expression=sp.log(1 + generic) / generic,
-                                        variable=generic,
-                                        point=sp.Integer(0),
-                                    ),
-                                    right=sp.Integer(1),
-                                ),
+                                expression=standard_limit,
                             ),
                         ),
                     ),
@@ -469,6 +489,10 @@ def _derive_standard_zero_limit(
                 and sp.simplify(result - expected) == sp.Integer(0)
             ):
                 generic = sp.Symbol("u", real=True)
+                half_angle_identity = BackendIdentity(
+                    left=1 - sp.cos(generic),
+                    right=2 * sp.sin(generic / 2) ** 2,
+                )
                 return (
                     BackendDerivationStep(
                         rule="Use the standard cosine limit",
@@ -477,6 +501,11 @@ def _derive_standard_zero_limit(
                         explanation=(
                             "Normalize the angle and use 1-cos(u) = 2sin²(u/2), reducing the "
                             "limit to the standard sine limit."
+                        ),
+                        explanation_parts=(
+                            "Normalize the angle and use ",
+                            BackendInlineMath(expression=half_angle_identity),
+                            ", reducing the limit to the standard sine limit.",
                         ),
                         verification_method=VerificationMethod.BACKEND_IDENTITY,
                         verification_detail="The half-angle identity gives the exact limit.",

@@ -47,6 +47,7 @@ from stepsolver.derivation.model import (
     BackendUndefined,
 )
 from stepsolver.results import (
+    InlineMath,
     SolutionStep,
     StepConstraint,
     StepNote,
@@ -69,6 +70,12 @@ class SympyDerivationRenderer:
             before=self.derivation_expression(step.before),
             after=self.derivation_expression(step.after),
             explanation=step.explanation,
+            explanation_parts=tuple(
+                part
+                if isinstance(part, str)
+                else InlineMath(expression=self.derivation_expression(part.expression))
+                for part in step.explanation_parts
+            ),
             verification=Verification(
                 method=step.verification_method,
                 detail=step.verification_detail,

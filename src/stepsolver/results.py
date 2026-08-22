@@ -54,6 +54,13 @@ class StepConstraint:
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
+class InlineMath:
+    """One mathematical fragment embedded in a prose explanation."""
+
+    expression: Expression
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
 class SolutionStep:
     """One verified mathematical transformation."""
 
@@ -62,6 +69,7 @@ class SolutionStep:
     after: Expression
     explanation: str
     verification: Verification
+    explanation_parts: tuple[str | InlineMath, ...] = ()
     notes: tuple[StepNote, ...] = ()
     introduced_constraints: tuple[StepConstraint, ...] = ()
 

@@ -479,6 +479,19 @@ function createStepArrow() {
   return arrow;
 }
 
+function createStepExplanation(step) {
+  const explanation = document.createElement("p");
+  explanation.className = "step-explanation";
+  for (const part of step.explanation_parts) {
+    if (part.latex !== null) {
+      explanation.append(createReadonlyMath(part.latex, "step-explanation-math"));
+    } else if (part.text !== null) {
+      explanation.append(document.createTextNode(part.text));
+    }
+  }
+  return explanation;
+}
+
 function createStep(step) {
   const article = document.createElement("article");
   article.className = "step";
@@ -488,8 +501,7 @@ function createStep(step) {
   const body = document.createElement("div");
   const heading = document.createElement("h3");
   heading.textContent = step.rule;
-  const explanation = document.createElement("p");
-  explanation.textContent = step.explanation;
+  const explanation = createStepExplanation(step);
   const notes = createNotes(step);
   const transformation = document.createElement("div");
   transformation.className = "step-transformation";

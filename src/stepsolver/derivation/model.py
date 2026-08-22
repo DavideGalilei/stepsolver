@@ -289,6 +289,13 @@ class BackendStepConstraint:
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
+class BackendInlineMath:
+    """One mathematical fragment embedded in a prose explanation."""
+
+    expression: BackendExpression
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
 class BackendDerivationStep:
     """One backend-native transformation awaiting conversion to the public AST."""
 
@@ -298,5 +305,6 @@ class BackendDerivationStep:
     explanation: str
     verification_method: VerificationMethod
     verification_detail: str
+    explanation_parts: tuple[str | BackendInlineMath, ...] = ()
     notes: tuple[BackendMathNote, ...] = ()
     introduced_constraints: tuple[BackendStepConstraint, ...] = ()

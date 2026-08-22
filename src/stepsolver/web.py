@@ -51,6 +51,15 @@ class StepConstraintResponse(BaseModel):
     expression_latex: str
 
 
+class ExplanationPartResponse(BaseModel):
+    """One prose or inline-math fragment in a rendered explanation."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    text: str | None = None
+    latex: str | None = None
+
+
 class StepResponse(BaseModel):
     """One browser-renderable verified solution step."""
 
@@ -59,6 +68,7 @@ class StepResponse(BaseModel):
     number: int
     rule: str
     explanation: str
+    explanation_parts: tuple[ExplanationPartResponse, ...]
     before_ascii: str
     after_ascii: str
     before_latex: str

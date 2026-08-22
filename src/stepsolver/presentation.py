@@ -19,6 +19,14 @@ from stepsolver.results import (
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
+class ExplanationPartPayload:
+    """One prose or inline-math fragment in a browser explanation."""
+
+    text: str | None = None
+    latex: str | None = None
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
 class StepNotePayload:
     """One labeled identity or substitution displayed with a step."""
 
@@ -43,6 +51,7 @@ class StepPayload:
     number: int
     rule: str
     explanation: str
+    explanation_parts: tuple[ExplanationPartPayload, ...]
     before_ascii: str
     after_ascii: str
     before_latex: str
@@ -126,6 +135,18 @@ def _step_payloads(result: SolveResult) -> tuple[StepPayload, ...]:
             number=index,
             rule=step.rule,
             explanation=step.explanation,
+            explanation_parts=(
+                tuple(
+                    ExplanationPartPayload(text=part)
+                    if isinstance(part, str)
+                    else ExplanationPartPayload(
+                        latex=format_latex_expression(part.expression),
+                    )
+                    for part in step.explanation_parts
+                )
+                if step.explanation_parts
+                else (ExplanationPartPayload(text=step.explanation),)
+            ),
             before_ascii=format_expression(step.before),
             after_ascii=format_expression(step.after),
             before_latex=format_latex_expression(step.before),
