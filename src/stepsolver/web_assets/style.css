@@ -848,7 +848,23 @@ math-field {
   font-size: 21px;
 }
 
-.step-arrow { color: var(--accent); font-size: 22px; font-weight: 700; text-align: center; }
+.step-arrow {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  color: var(--accent);
+}
+
+.step-arrow-icon {
+  width: 24px;
+  height: 24px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.25;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
 .step-math-after { border-bottom: 2px solid var(--accent); background: linear-gradient(to top, var(--accent-wash), transparent 65%); }
 
 .step-verification { margin-top: 13px; color: var(--muted); font-size: 12px; }

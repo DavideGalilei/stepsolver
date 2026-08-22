@@ -458,6 +458,27 @@ function createConstraints(step) {
   return constraints;
 }
 
+function createStepArrow() {
+  const icon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  icon.classList.add("step-arrow-icon");
+  icon.setAttribute("viewBox", "0 0 24 24");
+  icon.setAttribute("aria-hidden", "true");
+  icon.setAttribute("focusable", "false");
+
+  const shaft = document.createElementNS("http://www.w3.org/2000/svg", "path");
+  shaft.setAttribute("d", "M5 12h14");
+  const head = document.createElementNS("http://www.w3.org/2000/svg", "path");
+  head.setAttribute("d", "m13 6 6 6-6 6");
+  icon.append(shaft, head);
+
+  const arrow = document.createElement("div");
+  arrow.className = "step-arrow";
+  arrow.setAttribute("role", "img");
+  arrow.setAttribute("aria-label", "becomes");
+  arrow.append(icon);
+  return arrow;
+}
+
 function createStep(step) {
   const article = document.createElement("article");
   article.className = "step";
@@ -474,10 +495,7 @@ function createStep(step) {
   transformation.className = "step-transformation";
   const before = createReadonlyMath(step.before_latex, "step-math");
   const beforeViewport = createMathViewport(before, "step-math-viewport");
-  const arrow = document.createElement("div");
-  arrow.className = "step-arrow";
-  arrow.textContent = "→";
-  arrow.setAttribute("aria-label", "becomes");
+  const arrow = createStepArrow();
   const after = createReadonlyMath(step.after_latex, "step-math step-math-after");
   const afterViewport = createMathViewport(after, "step-math-viewport");
   transformation.append(beforeViewport, arrow, afterViewport);
