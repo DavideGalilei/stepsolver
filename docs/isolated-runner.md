@@ -26,7 +26,7 @@ non-ASCII mathematics are rejected. A successful response is:
   "solution": {
     "normalized_expression": "solve(x ^ 2 - 4 = 0, x)",
     "status": "exact",
-    "result": "x = -2 or x = 2",
+    "result": "[{x: -2}, {x: 2}]",
     "latex": "x = -2\\quad\\text{or}\\quad x = 2",
     "reason": null,
     "steps": []

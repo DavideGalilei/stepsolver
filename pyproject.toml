@@ -18,6 +18,7 @@ dependencies = [
 [project.scripts]
 stepsolver = "stepsolver.cli:main"
 stepsolver-web = "stepsolver.web:main"
+stepsolver-isolated = "stepsolver.isolated_runner:main"
 
 [tool.poetry]
 packages = [{ include = "stepsolver", from = "src" }]

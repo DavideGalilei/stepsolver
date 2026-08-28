@@ -6,8 +6,29 @@ from stepsolver.ast import (
     Query,
 )
 from stepsolver.backend import SymbolicBackend
-from stepsolver.errors import BackendError, ParseError, QueryError, StepSolverError
-from stepsolver.formatter import format_ascii, format_expression
+from stepsolver.errors import (
+    BackendError,
+    LimitCategory,
+    LimitError,
+    LimitViolation,
+    ParseError,
+    QueryError,
+    StepSolverError,
+)
+from stepsolver.formatter import format_ascii, format_expression, format_value
+from stepsolver.isolated import (
+    DEFAULT_ISOLATED_LIMITS,
+    IsolatedConstraint,
+    IsolatedLimits,
+    IsolatedNote,
+    IsolatedSolution,
+    IsolatedStep,
+    ValidatedSolveRequest,
+    bounded_solution,
+    parse_isolated_request,
+    solve_isolated,
+    validate_solve_request,
+)
 from stepsolver.latex import format_latex_expression, format_latex_value
 from stepsolver.parser import parse, parse_expression
 from stepsolver.presentation import (
@@ -42,12 +63,21 @@ from stepsolver.solver import Solver
 from stepsolver.sympy_backend import SympyBackend
 
 __all__ = [
+    "DEFAULT_ISOLATED_LIMITS",
     "BackendError",
     "BooleanValue",
     "DivergenceKind",
     "DivergentResult",
     "ExactResult",
     "Expression",
+    "IsolatedConstraint",
+    "IsolatedLimits",
+    "IsolatedNote",
+    "IsolatedSolution",
+    "IsolatedStep",
+    "LimitCategory",
+    "LimitError",
+    "LimitViolation",
     "MappingEntry",
     "MappingValue",
     "MathValue",
@@ -73,13 +103,19 @@ __all__ = [
     "SympyBackend",
     "UndefinedResult",
     "UnsolvedResult",
+    "ValidatedSolveRequest",
     "Verification",
     "VerificationMethod",
+    "bounded_solution",
     "format_ascii",
     "format_expression",
     "format_latex_expression",
     "format_latex_value",
+    "format_value",
     "parse",
     "parse_expression",
+    "parse_isolated_request",
+    "solve_isolated",
     "solve_payload",
+    "validate_solve_request",
 ]

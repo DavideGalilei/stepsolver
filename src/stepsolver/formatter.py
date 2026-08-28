@@ -120,7 +120,8 @@ def format_expression(expression: Expression, *, parent_precedence: int = 0) -> 
     return rendered
 
 
-def _format_value(value: MathValue) -> str:
+def format_value(value: MathValue) -> str:
+    """Render one typed mathematical value as bounded-friendly ASCII."""
     if isinstance(value, NoSolutionValue):
         return "No solution"
     if isinstance(value, ScalarValue):
@@ -128,10 +129,10 @@ def _format_value(value: MathValue) -> str:
     if isinstance(value, BooleanValue):
         return "true" if value.value else "false"
     if isinstance(value, SequenceValue):
-        return f"[{', '.join(_format_value(item) for item in value.items)}]"
+        return f"[{', '.join(format_value(item) for item in value.items)}]"
     if isinstance(value, MappingValue):
         entries = ", ".join(
-            f"{format_expression(entry.key)}: {_format_value(entry.value)}"
+            f"{format_expression(entry.key)}: {format_value(entry.value)}"
             for entry in value.entries
         )
         return f"{{{entries}}}"
@@ -160,7 +161,7 @@ def format_ascii(result: SolveResult) -> str:
             for constraint in step.introduced_constraints
         )
     if isinstance(result, ExactResult):
-        lines.append(f"Result: {_format_value(result.value)}")
+        lines.append(f"Result: {format_value(result.value)}")
     elif isinstance(result, DivergentResult):
         lines.append(f"Diverges: {result.reason}")
     elif isinstance(result, UndefinedResult):
