@@ -5,7 +5,9 @@ from __future__ import annotations
 import json
 from dataclasses import asdict, dataclass
 from enum import Enum
-from typing import Literal, cast
+from typing import Literal
+
+from pydantic import BaseModel, ConfigDict, ValidationError, field_validator
 
 from stepsolver.ast import (
     ApproximateNumber,
@@ -62,6 +64,20 @@ class IsolatedLimits:
 
 
 DEFAULT_ISOLATED_LIMITS = IsolatedLimits()
+
+
+class _SolveRequestPayload(BaseModel):
+    model_config = ConfigDict(extra="forbid", strict=True)
+
+    expression: str
+
+    @field_validator("expression")
+    @classmethod
+    def require_ascii_expression(cls, value: str) -> str:
+        if not value.isascii():
+            message = "expression must contain only ASCII characters"
+            raise ValueError(message)
+        return value
 
 
 class IsolatedErrorCode(Enum):
@@ -288,25 +304,11 @@ def parse_isolated_request(
     if len(document) > limits.request_bytes:
         raise LimitError(LimitViolation.REQUEST_BYTES)
     try:
-        value = cast("object", json.loads(document))
-    except (UnicodeDecodeError, json.JSONDecodeError) as error:
-        message = "request must be one UTF-8 JSON document"
+        request = _SolveRequestPayload.model_validate_json(document)
+    except ValidationError as error:
+        message = "request must contain one ASCII expression"
         raise ParseError(message, position=0) from error
-    if not isinstance(value, dict):
-        message = "request must contain only an expression"
-        raise ParseError(message, position=0)
-    request = cast("dict[object, object]", value)
-    if set(request) != {"expression"}:
-        message = "request must contain only an expression"
-        raise ParseError(message, position=0)
-    expression = request["expression"]
-    if not isinstance(expression, str):
-        message = "expression must be a string"
-        raise ParseError(message, position=0)
-    if not expression.isascii():
-        message = "expression must contain only ASCII characters"
-        raise ParseError(message, position=0)
-    return validate_solve_request(expression, limits)
+    return validate_solve_request(request.expression, limits)
 
 
 def _normalized_expression(query: Query) -> str:
