@@ -25,11 +25,13 @@ from stepsolver.results import (
     NoSolutionValue,
     SolutionStep,
     SolveResult,
+    StepNote,
     UndefinedResult,
     UnsolvedResult,
     Verification,
     VerificationMethod,
 )
+from stepsolver.sympy_contours import ContourExpression, evaluate_rational_circle
 from stepsolver.sympy_conversion import SympyConverter
 from stepsolver.sympy_execution import SympyExecutor
 from stepsolver.sympy_rendering import SympyDerivationRenderer
@@ -75,14 +77,19 @@ class SympyBackend:
         identity_reason = self._identity_equation_reason(query)
         if identity_reason is not None:
             return UnsolvedResult(query=query, reason=identity_reason, steps=())
-        integral_domain_reason = self._integral_domain_reason(query)
-        if integral_domain_reason is not None:
-            return UnsolvedResult(query=query, reason=integral_domain_reason, steps=())
         undefined_sum = self._undefined_sum_result(query)
         if undefined_sum is not None:
             return undefined_sum
         backend_value = self._executor.execute(query)
         backend_value = self._real_solve_result(query, backend_value)
+        integral_domain_reason = self._integral_domain_reason(
+            query,
+            antiderivative_has_logarithm=(
+                isinstance(backend_value, sp.Basic) and backend_value.has(sp.log)
+            ),
+        )
+        if integral_domain_reason is not None:
+            return UnsolvedResult(query=query, reason=integral_domain_reason, steps=())
         detailed_steps = self._steps.detailed_steps(query, backend_value)
         divergence = self._divergence_kind(query, backend_value, detailed_steps)
         if divergence is not None:
@@ -107,6 +114,15 @@ class SympyBackend:
         )
         if detailed_steps:
             return ExactResult(query=query, value=value, steps=detailed_steps)
+        if query.operation is Operation.INTEGRATE:
+            return UnsolvedResult(
+                query=query,
+                reason=(
+                    "The symbolic backend found an antiderivative, but StepSolver does "
+                    "not yet have a substantive verified human derivation for it."
+                ),
+                steps=(),
+            )
         after = self._converter.step_expression(backend_value)
         step = SolutionStep(
             rule="Compute exact result",
@@ -264,7 +280,12 @@ class SympyBackend:
             )
         return None
 
-    def _integral_domain_reason(self, query: Query) -> str | None:
+    def _integral_domain_reason(
+        self,
+        query: Query,
+        *,
+        antiderivative_has_logarithm: bool,
+    ) -> str | None:
         if query.operation is not Operation.INTEGRATE or len(query.arguments) != _EQUATION_ARITY:
             return None
         variable_node = query.arguments[1]
@@ -283,7 +304,7 @@ class SympyBackend:
         if not is_object_sequence(roots):
             return None
         has_real_pole = any(isinstance(root, sp.Basic) and root.is_real is True for root in roots)
-        if not has_real_pole or not sp.integrate(integrand, variable).has(sp.log):
+        if not has_real_pole or not antiderivative_has_logarithm:
             return None
         return (
             "This antiderivative requires logarithms of absolute values and explicit domain "
@@ -327,6 +348,91 @@ class SympyBackend:
             arguments=(transformed_integrand, parameter, lower, upper),
             source=query.source,
         )
+        backend_integrand = self._converter.to_sympy(integrand)
+        backend_variable = self._converter.to_sympy(variable)
+        backend_path = self._converter.to_sympy(path)
+        backend_parameter = self._converter.to_sympy(parameter)
+        backend_lower = self._converter.to_sympy(lower)
+        backend_upper = self._converter.to_sympy(upper)
+        if not isinstance(backend_variable, sp.Symbol) or not isinstance(
+            backend_parameter, sp.Symbol
+        ):
+            message = "contour variables did not convert to symbols"
+            raise BackendError(message)
+        circle = evaluate_rational_circle(
+            ContourExpression(
+                integrand=backend_integrand,
+                variable=backend_variable,
+                path=backend_path,
+                parameter=backend_parameter,
+                lower=backend_lower,
+                upper=backend_upper,
+            )
+        )
+        if circle is not None:
+            residue_notes = tuple(
+                StepNote(
+                    label=f"Residue at {pole}",
+                    expression=self._converter.from_sympy(residue),
+                )
+                for pole, residue in circle.enclosed_residues
+            )
+            residue_sum_expression = self._converter.from_sympy(circle.residue_sum)
+            residue_factor_expression = self._converter.from_sympy(
+                2 * sp.pi * sp.I * circle.winding_number
+            )
+            residue_theorem_expression = BinaryExpression(
+                operator=BinaryOperator.MULTIPLY,
+                left=residue_factor_expression,
+                right=residue_sum_expression,
+            )
+            transformation = FunctionCall(
+                name=Identifier(Operation.INTEGRATE.value),
+                arguments=(transformed_integrand, parameter, lower, upper),
+            )
+            contour_steps = (
+                SolutionStep(
+                    rule="parameterize contour",
+                    before=query_expression(query),
+                    after=transformation,
+                    explanation=(
+                        "Substitute the circular path and multiply by its parameter derivative."
+                    ),
+                    verification=Verification(
+                        method=VerificationMethod.SUBSTITUTION,
+                        detail=("The contour identity dz = gamma'(t) dt was applied structurally."),
+                    ),
+                ),
+                SolutionStep(
+                    rule="sum enclosed residues",
+                    before=transformation,
+                    after=residue_sum_expression,
+                    explanation=("Find the poles inside the circle and add their residues."),
+                    notes=residue_notes,
+                    verification=Verification(
+                        method=VerificationMethod.SYMBOLIC_EQUIVALENCE,
+                        detail="Each listed residue was computed from the rational integrand.",
+                    ),
+                ),
+                SolutionStep(
+                    rule="apply the residue theorem",
+                    before=residue_theorem_expression,
+                    after=self._converter.from_sympy(circle.value),
+                    explanation=(
+                        "Multiply the enclosed-residue sum by 2*pi*i and the contour's "
+                        "winding number."
+                    ),
+                    verification=Verification(
+                        method=VerificationMethod.EXACT_ARITHMETIC,
+                        detail="The residue theorem factor and residue sum were combined exactly.",
+                    ),
+                ),
+            )
+            return ExactResult(
+                query=query,
+                value=self._converter.to_value(circle.value),
+                steps=contour_steps,
+            )
         backend_result = self._executor.execute(transformed_query)
         non_exact_reason = self._non_exact_reason(backend_result)
         if non_exact_reason is not None:
@@ -336,7 +442,7 @@ class SympyBackend:
             name=Identifier(Operation.INTEGRATE.value),
             arguments=(transformed_integrand, parameter, lower, upper),
         )
-        steps = (
+        fallback_steps = (
             SolutionStep(
                 rule="parameterize contour",
                 before=query_expression(query),
@@ -358,4 +464,4 @@ class SympyBackend:
                 ),
             ),
         )
-        return ExactResult(query=query, value=value, steps=steps)
+        return ExactResult(query=query, value=value, steps=fallback_steps)

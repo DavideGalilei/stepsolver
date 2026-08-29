@@ -11,10 +11,11 @@ from stepsolver import (
     UndefinedResult,
     UnsolvedResult,
     format_ascii,
+    format_expression,
     format_latex_expression,
 )
 
-_CONTOUR_STEP_COUNT = 2
+_CONTOUR_STEP_COUNT = 3
 _CROSSED_NUMERIC_FACTOR_COUNT = 4
 _INTRODUCED_MULTIPLIER_COUNT = 2
 
@@ -1038,6 +1039,74 @@ def test_reversed_contour_reverses_sign(solver: Solver) -> None:
     result = solver.solve("contour_integrate(1/z,z,exp(i*t),t,2*pi,0)")
     assert isinstance(result, ExactResult)
     assert "Result: -2 * i * pi" in format_ascii(result)
+
+
+def test_rational_circle_contour_sums_all_enclosed_residues(solver: Solver) -> None:
+    """A rational circle integral must not trust a branch-sensitive parameter integral."""
+    result = solver.solve("contour_integrate((z^2+1)/(z*(z-1)^2*(z+2)),z,3*exp(i*t),t,0,2*pi)")
+    assert isinstance(result, ExactResult)
+    assert tuple(step.rule for step in result.steps) == (
+        "parameterize contour",
+        "sum enclosed residues",
+        "apply the residue theorem",
+    )
+    assert tuple(note.label for note in result.steps[1].notes) == (
+        "Residue at -2",
+        "Residue at 0",
+        "Residue at 1",
+    )
+    assert tuple(format_expression(note.expression) for note in result.steps[1].notes) == (
+        "-5/18",
+        "1/2",
+        "-2/9",
+    )
+    assert all(step.rule != "Compute exact result" for step in result.steps)
+    assert "Result: 0" in format_ascii(result)
+
+
+def test_shifted_circle_contour_uses_the_enclosed_pole(solver: Solver) -> None:
+    """Circle recognition should preserve a nonzero center and exact radius."""
+    result = solver.solve("contour_integrate(1/(z-1),z,1+2*exp(i*t),t,0,2*pi)")
+    assert isinstance(result, ExactResult)
+    assert tuple(note.label for note in result.steps[1].notes) == ("Residue at 1",)
+    assert "Result: 2 * i * pi" in format_ascii(result)
+
+
+def test_circle_contour_excludes_poles_outside_its_radius(solver: Solver) -> None:
+    """Only poles strictly inside the path contribute to the residue sum."""
+    result = solver.solve("contour_integrate(1/(z*(z-1)),z,exp(i*t)/2,t,0,2*pi)")
+    assert isinstance(result, ExactResult)
+    assert tuple(note.label for note in result.steps[1].notes) == ("Residue at 0",)
+    assert "Result: -2 * i * pi" in format_ascii(result)
+
+
+def test_circle_contour_rejects_a_pole_on_the_path(solver: Solver) -> None:
+    """A contour through a pole is undefined and must not produce a residue answer."""
+    result = solver.solve("contour_integrate(1/(z-1),z,exp(i*t),t,0,2*pi)")
+    assert isinstance(result, UnsolvedResult)
+    assert "passes through a pole" in result.reason
+
+
+def test_non_circular_contour_uses_the_parameter_integral(solver: Solver) -> None:
+    """Paths outside the circle specialization should retain the general exact route."""
+    result = solver.solve("contour_integrate(z,z,t,t,0,1)")
+    assert isinstance(result, ExactResult)
+    assert tuple(step.rule for step in result.steps) == (
+        "parameterize contour",
+        "evaluate parameter integral",
+    )
+    assert "Result: 1/2" in format_ascii(result)
+
+
+def test_integral_without_human_derivation_is_not_returned_as_exact(
+    solver: Solver,
+) -> None:
+    """A backend antiderivative alone must not masquerade as a worked solution."""
+    result = solver.solve("integrate(1/(x^4+1),x)")
+    assert isinstance(result, UnsolvedResult)
+    assert result.steps == ()
+    assert "substantive verified human derivation" in result.reason
+    assert "Compute exact result" not in format_ascii(result)
 
 
 def test_matrix_inverse_is_structured(solver: Solver) -> None:
