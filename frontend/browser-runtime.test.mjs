@@ -35,6 +35,7 @@ test("warmup exposes shared Python runtime stages before solve", async () => {
   const steps = [
     "Download the Python runtime",
     "Load Python's package installer",
+    "Install Pydantic validation support",
     "Install the SymPy mathematics engine",
     "Install StepSolver",
     "Import the StepSolver Python code"
@@ -47,16 +48,16 @@ test("warmup exposes shared Python runtime stages before solve", async () => {
   worker.emit("message", {
     type: "runtime-status",
     state: "loading",
-    stage: 3,
-    total: 5,
+    stage: 4,
+    total: 6,
     message: "Install the SymPy mathematics engine",
     steps
   });
   worker.emit("message", {
     type: "runtime-status",
     state: "ready",
-    stage: 5,
-    total: 5,
+    stage: 6,
+    total: 6,
     message: "Python solver ready",
     steps
   });
@@ -66,8 +67,8 @@ test("warmup exposes shared Python runtime stages before solve", async () => {
   assert.equal(statuses.at(-2).message, "Install the SymPy mathematics engine");
   assert.deepEqual(statuses.at(-1), {
     state: "ready",
-    stage: 5,
-    total: 5,
+    stage: 6,
+    total: 6,
     message: "Python solver ready",
     steps
   });
@@ -83,6 +84,7 @@ test("worker reports each concrete Python initialization phase", () => {
   const phases = [
     "Download the Python runtime",
     "Load Python's package installer",
+    "Install Pydantic validation support",
     "Install the SymPy mathematics engine",
     "Install StepSolver",
     "Import the StepSolver Python code",
@@ -96,4 +98,11 @@ test("worker reports each concrete Python initialization phase", () => {
     previousIndex = index;
   }
   assert.match(source, /searchParams\.set\("v", "__STEPSOLVER_WHEEL_VERSION__"\)/);
+
+  const pydanticInstall = source.indexOf('loadPackage("pydantic")');
+  const stepSolverInstall = source.indexOf("micropip.install(stepsolver_wheel_url");
+  const stepSolverImport = source.indexOf("from stepsolver.browser import solve_mathjson_json");
+  assert.ok(pydanticInstall >= 0, "the worker should install Pydantic");
+  assert.ok(pydanticInstall < stepSolverInstall, "Pydantic should precede StepSolver installation");
+  assert.ok(pydanticInstall < stepSolverImport, "Pydantic should precede StepSolver import");
 });

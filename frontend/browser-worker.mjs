@@ -8,6 +8,7 @@ wheelUrl.searchParams.set("v", "__STEPSOLVER_WHEEL_VERSION__");
 const RUNTIME_STEPS = Object.freeze([
   "Download the Python runtime",
   "Load Python's package installer",
+  "Install Pydantic validation support",
   "Install the SymPy mathematics engine",
   "Install StepSolver",
   "Import the StepSolver Python code"
@@ -40,13 +41,16 @@ async function createRuntime() {
     await pyodide.runPythonAsync("import micropip");
 
     runtimeStatus("loading", 3, RUNTIME_STEPS[2]);
-    await pyodide.runPythonAsync('await micropip.install("sympy==1.14.0")');
+    await pyodide.loadPackage("pydantic");
 
     runtimeStatus("loading", 4, RUNTIME_STEPS[3]);
+    await pyodide.runPythonAsync('await micropip.install("sympy==1.14.0")');
+
+    runtimeStatus("loading", 5, RUNTIME_STEPS[4]);
     pyodide.globals.set("stepsolver_wheel_url", wheelUrl.href);
     await pyodide.runPythonAsync("await micropip.install(stepsolver_wheel_url, deps=False)");
 
-    runtimeStatus("loading", 5, RUNTIME_STEPS[4]);
+    runtimeStatus("loading", 6, RUNTIME_STEPS[5]);
     await pyodide.runPythonAsync(`
 from stepsolver.browser import solve_mathjson_json
 `);
