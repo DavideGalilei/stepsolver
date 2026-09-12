@@ -211,12 +211,18 @@ def test_python_runtime_preloads_but_only_shows_progress_after_submit() -> None:
         stylesheet = client.get("/static/style.css")
         script = client.get("/static/app.js")
         runtime = client.get("/static/runtime.mjs")
+        prewarm = client.get("/static/prewarm.mjs")
 
     assert 'id="runtime-status"' not in homepage.text
     assert 'id="solver-progress" class="solver-progress hidden"' in homepage.text
     assert "runtime-status-indicator" not in homepage.text
     assert 'id="runtime-progress"' in homepage.text
     assert 'id="runtime-steps"' in homepage.text
+    assert homepage.text.index('src="./static/prewarm.mjs"') < homepage.text.index(
+        'src="./static/app.js"'
+    )
+    assert 'from "./runtime.mjs"' in prewarm.text
+    assert "createSolverClient().warmup()" in prewarm.text
     assert "solverClient.subscribeRuntimeStatus(renderRuntimeStatus)" in script.text
     assert "void solverClient.warmup()" in script.text
     assert '"requestIdleCallback" in window' not in script.text

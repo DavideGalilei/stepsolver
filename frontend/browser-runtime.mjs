@@ -8,7 +8,7 @@ let warmupPromise;
 let runtimeSnapshot = Object.freeze({
   state: "idle",
   stage: 0,
-  total: 5,
+  total: 6,
   message: "Starting the Python solver in the background",
   steps: Object.freeze([])
 });

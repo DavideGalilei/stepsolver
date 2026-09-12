@@ -76,6 +76,18 @@ test("warmup exposes shared Python runtime stages before solve", async () => {
   const lateStatuses = [];
   client.subscribeRuntimeStatus((status) => lateStatuses.push(status));
   assert.equal(lateStatuses[0].state, "ready");
+
+  const secondClient = createSolverClient();
+  const solving = secondClient.solve({ math_json: ["Add", 1, 1] });
+  assert.equal(WorkerStub.instance, worker);
+  assert.deepEqual(worker.messages.at(-1), {
+    id: 1,
+    action: "solve",
+    mathJson: ["Add", 1, 1]
+  });
+  worker.emit("message", { id: 1, type: "result", payload: { status: "exact" } });
+  assert.deepEqual(await solving, { status: "exact" });
+  assert.equal(statuses.filter((status) => status.state === "loading").length, 1);
   unsubscribe();
 });
 
