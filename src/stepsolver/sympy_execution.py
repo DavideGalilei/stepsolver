@@ -9,6 +9,7 @@ from stepsolver.ast import (
 )
 from stepsolver.errors import BackendError, QueryError
 from stepsolver.sympy_conversion import SympyConverter
+from stepsolver.sympy_integrals import match_sine_square_root_integral
 from stepsolver.sympy_series import match_alternating_p_series, match_harmonic_sine_series
 from stepsolver.sympy_support import expect_arity, expect_integer, expect_symbol
 
@@ -46,6 +47,25 @@ def _evaluate_indefinite_integral(
                     evaluate=False,
                 )
     return antiderivative + integration_constant
+
+
+def _evaluate_definite_integral(
+    integrand: sp.Basic,
+    variable: sp.Basic,
+    lower: sp.Basic,
+    upper: sp.Basic,
+) -> sp.Basic:
+    """Evaluate a definite integral, including independently verified special families."""
+    if isinstance(variable, sp.Symbol):
+        sine_square_root = match_sine_square_root_integral(
+            integrand,
+            variable,
+            lower,
+            upper,
+        )
+        if sine_square_root is not None:
+            return sine_square_root.value
+    return sp.integrate(integrand, (variable, lower, upper))
 
 
 class SympyExecutor:
@@ -129,13 +149,11 @@ class SympyExecutor:
                 variable = self._converter.to_sympy(arguments[1])
                 if len(arguments) == 2:
                     return _evaluate_indefinite_integral(integrand, variable)
-                return sp.integrate(
+                return _evaluate_definite_integral(
                     integrand,
-                    (
-                        variable,
-                        self._converter.to_sympy(arguments[2]),
-                        self._converter.to_sympy(arguments[3]),
-                    ),
+                    variable,
+                    self._converter.to_sympy(arguments[2]),
+                    self._converter.to_sympy(arguments[3]),
                 )
             case Operation.CONTOUR_INTEGRATE:
                 raise BackendError("contour integrals require the dedicated execution path")

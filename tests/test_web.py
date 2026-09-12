@@ -417,6 +417,36 @@ def test_browser_runtime_serializes_the_same_solver_payload() -> None:
     assert payload.steps[0].before_latex.startswith(r"\int_{0}^{\pi}")
 
 
+def test_browser_runtime_solves_the_reported_trigonometric_square_root() -> None:
+    """The graphical integral should cross the browser boundary with its full derivation."""
+    source = json.dumps(
+        [
+            "Integrate",
+            ["Sqrt", ["Subtract", 1, ["Power", ["Cos", "x"], 2]]],
+            ["Tuple", "x", 0, ["Multiply", 2, "Pi"]],
+        ]
+    )
+    payload = SolveResponse.model_validate_json(solve_mathjson_json(source))
+
+    assert payload.status == "exact"
+    assert payload.result_latex == "4"
+    assert tuple(step.rule for step in payload.steps) == (
+        "Use the Pythagorean identity",
+        "Use the principal square root",
+        "Split at the zeros of sine",
+        "Remove the absolute value on each interval",
+        "Evaluate each definite integral",
+        "Add the interval contributions",
+    )
+    assert payload.steps[0].explanation_parts[1].latex == (
+        r"\sin\left(x\right)^{2} + \cos\left(x\right)^{2} = 1"
+    )
+    assert payload.steps[1].explanation_parts[3].latex == r"\sqrt{y^{2}} = \left|y\right|"
+    assert all(step.rule != "Compute exact result" for step in payload.steps)
+    assert "Abs(" not in payload.model_dump_json()
+    assert "**" not in payload.model_dump_json()
+
+
 def test_undefined_sum_payload_never_exposes_backend_complex_infinity() -> None:
     """An included singular term should cross the API as a typed undefined result."""
     with TestClient(create_app()) as client:
