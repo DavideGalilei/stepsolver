@@ -1,7 +1,7 @@
 """Conversion between StepSolver values and SymPy objects."""
 
 import re
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from fractions import Fraction
 from typing import assert_never
 
@@ -47,6 +47,98 @@ from stepsolver.sympy_support import (
 _INTEGER_PATTERN = re.compile(r"^-?[0-9]+$")
 _RATIONAL_PATTERN = re.compile(r"^-?[0-9]+/[0-9]+$")
 _DECIMAL_PATTERN = re.compile(r"^-?[0-9]+\.[0-9]+$")
+
+_UNARY_FUNCTIONS: dict[str, Callable[[sp.Basic], sp.Basic]] = {
+    "sin": sp.sin,
+    "cos": sp.cos,
+    "tan": sp.tan,
+    "asin": sp.asin,
+    "acos": sp.acos,
+    "atan": sp.atan,
+    "sinh": sp.sinh,
+    "asinh": sp.asinh,
+    "cosh": sp.cosh,
+    "tanh": sp.tanh,
+    "exp": sp.exp,
+    "sqrt": sp.sqrt,
+    "abs": sp.Abs,
+    "factorial": sp.factorial,
+    "gamma": sp.gamma,
+}
+
+_SUPPORTED_FUNCTION_NAMES: frozenset[str] = frozenset(
+    {
+        *_UNARY_FUNCTIONS,
+        "log",
+        "root",
+        Operation.DIFFERENTIATE.value,
+        "matrix",
+    }
+)
+
+# Calculus operations may use an abstract function such as f(x).  Single-letter
+# names keep that support explicit instead of accepting arbitrary user-supplied
+# function names.
+_ABSTRACT_FUNCTION_NAMES: frozenset[str] = frozenset("abcdfghjklmnopqrstuvwxyz")
+
+
+def unsupported_function_name(
+    expression: Expression,
+    *,
+    allow_abstract: bool = False,
+    allowed_names: frozenset[str] = frozenset(),
+) -> str | None:
+    """Return the first function name outside the explicit supported registry."""
+    if isinstance(expression, FunctionCall):
+        name = str(expression.name)
+        abstract = allow_abstract and name in _ABSTRACT_FUNCTION_NAMES
+        if name not in _SUPPORTED_FUNCTION_NAMES and name not in allowed_names and not abstract:
+            return name
+        for argument in expression.arguments:
+            unsupported = unsupported_function_name(
+                argument,
+                allow_abstract=allow_abstract,
+                allowed_names=allowed_names,
+            )
+            if unsupported is not None:
+                return unsupported
+        return None
+    if isinstance(expression, UnaryExpression):
+        return unsupported_function_name(
+            expression.operand,
+            allow_abstract=allow_abstract,
+            allowed_names=allowed_names,
+        )
+    if isinstance(expression, BinaryExpression):
+        return unsupported_function_name(
+            expression.left,
+            allow_abstract=allow_abstract,
+            allowed_names=allowed_names,
+        ) or unsupported_function_name(
+            expression.right,
+            allow_abstract=allow_abstract,
+            allowed_names=allowed_names,
+        )
+    if isinstance(expression, Relation):
+        return unsupported_function_name(
+            expression.left,
+            allow_abstract=allow_abstract,
+            allowed_names=allowed_names,
+        ) or unsupported_function_name(
+            expression.right,
+            allow_abstract=allow_abstract,
+            allowed_names=allowed_names,
+        )
+    if isinstance(expression, SequenceExpression):
+        for item in expression.items:
+            unsupported = unsupported_function_name(
+                item,
+                allow_abstract=allow_abstract,
+                allowed_names=allowed_names,
+            )
+            if unsupported is not None:
+                return unsupported
+    return None
 
 
 class SympyConverter:
@@ -115,24 +207,7 @@ class SympyConverter:
         """Convert a public function call to a supported SymPy function."""
         arguments = tuple(self.to_sympy(argument) for argument in expression.arguments)
         name = str(expression.name)
-        unary_functions = {
-            "sin": sp.sin,
-            "cos": sp.cos,
-            "tan": sp.tan,
-            "asin": sp.asin,
-            "acos": sp.acos,
-            "atan": sp.atan,
-            "sinh": sp.sinh,
-            "asinh": sp.asinh,
-            "cosh": sp.cosh,
-            "tanh": sp.tanh,
-            "exp": sp.exp,
-            "sqrt": sp.sqrt,
-            "abs": sp.Abs,
-            "factorial": sp.factorial,
-            "gamma": sp.gamma,
-        }
-        unary = unary_functions.get(name)
+        unary = _UNARY_FUNCTIONS.get(name)
         if unary is not None:
             if len(arguments) != 1:
                 raise QueryError(f"{name} expects one argument")
@@ -155,6 +230,8 @@ class SympyConverter:
             if len(expression.arguments) == 3:
                 order = expect_integer(expression.arguments[2], role="derivative order")
             return sp.diff(arguments[0], arguments[1], order)
+        if name == "matrix":
+            raise QueryError("matrix is only valid as an argument to a matrix operation")
         return sp.Function(name)(*arguments)
 
     def equations(self, expression: Expression) -> sp.Basic | Sequence[sp.Basic]:

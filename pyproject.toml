@@ -120,6 +120,8 @@ explicit-preview-rules = false
     "too-many-branches",
     "too-many-return-statements",
 ]
+"src/stepsolver/sympy_matrix_steps.py" = ["too-many-arguments"]
+"src/stepsolver/sympy_equation_steps.py" = ["too-many-arguments"]
 "src/stepsolver/sympy_steps.py" = ["magic-value-comparison"]
 "src/stepsolver/sympy_support.py" = [
     "f-string-in-exception",

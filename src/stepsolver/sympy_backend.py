@@ -7,11 +7,13 @@ from stepsolver.ast import (
     BinaryOperator,
     Constant,
     ConstantName,
+    Expression,
     FunctionCall,
     Identifier,
     Operation,
     Query,
     Relation,
+    SequenceExpression,
     Symbol,
     UnaryExpression,
     UnaryOperator,
@@ -32,7 +34,7 @@ from stepsolver.results import (
     VerificationMethod,
 )
 from stepsolver.sympy_contours import ContourExpression, evaluate_rational_circle
-from stepsolver.sympy_conversion import SympyConverter
+from stepsolver.sympy_conversion import SympyConverter, unsupported_function_name
 from stepsolver.sympy_execution import SympyExecutor
 from stepsolver.sympy_rendering import SympyDerivationRenderer
 from stepsolver.sympy_steps import SympyStepBuilder
@@ -40,9 +42,7 @@ from stepsolver.sympy_support import (
     contains_unevaluated_operation,
     expect_arity,
     expect_symbol,
-    is_object_mapping,
     is_object_sequence,
-    is_real_expression,
     query_expression,
     substitute,
 )
@@ -51,6 +51,38 @@ from stepsolver.sympy_verification import SympyVerifier
 _EQUATION_ARITY = 2
 _DEFINITE_INTEGRAL_ARITY = 4
 _BOUNDED_OPERATION_ARITY = 4
+
+# Calculus operations may legitimately carry an abstract function such as f(x)
+# or the dependent variable y(x) in an ODE.  Their unevaluated backend objects
+# are already rejected by the exact-result boundary.  Algebra operations must
+# use the documented function registry instead.
+_SYMBOLIC_FUNCTION_OPERATIONS: frozenset[Operation] = frozenset(
+    {
+        Operation.DIFFERENTIATE,
+        Operation.INTEGRATE,
+        Operation.LIMIT,
+        Operation.SERIES,
+        Operation.SUM,
+        Operation.PRODUCT,
+        Operation.DSOLVE,
+        Operation.RSOLVE,
+    }
+)
+
+
+_EXPLAINED_OPERATIONS: frozenset[Operation] = frozenset(
+    {
+        Operation.MATRIX,
+        Operation.DETERMINANT,
+        Operation.INVERSE,
+        Operation.RANK,
+        Operation.RREF,
+        Operation.EIGENVALUES,
+        Operation.DSOLVE,
+        Operation.RSOLVE,
+        Operation.SOLVE_INEQUALITY,
+    }
+)
 
 
 class SympyBackend:
@@ -68,20 +100,20 @@ class SympyBackend:
         """Solve a validated query and translate the result to StepSolver values."""
         try:
             return self._solve(query)
+        except ZeroDivisionError:
+            return UndefinedResult(
+                query=query,
+                reason="This expression is undefined because a denominator is zero.",
+                steps=(),
+            )
         except (BackendError, NotImplementedError, QueryError, TypeError, ValueError) as error:
             return UnsolvedResult(query=query, reason=str(error), steps=())
 
     def _solve(self, query: Query) -> SolveResult:
-        if query.operation is Operation.CONTOUR_INTEGRATE:
-            return self._solve_contour(query)
-        identity_reason = self._identity_equation_reason(query)
-        if identity_reason is not None:
-            return UnsolvedResult(query=query, reason=identity_reason, steps=())
-        undefined_sum = self._undefined_sum_result(query)
-        if undefined_sum is not None:
-            return undefined_sum
+        precheck = self._precheck_result(query)
+        if precheck is not None:
+            return precheck
         backend_value = self._executor.execute(query)
-        backend_value = self._real_solve_result(query, backend_value)
         integral_domain_reason = self._integral_domain_reason(
             query,
             antiderivative_has_logarithm=(
@@ -123,6 +155,15 @@ class SympyBackend:
                 ),
                 steps=(),
             )
+        if query.operation in _EXPLAINED_OPERATIONS:
+            return UnsolvedResult(
+                query=query,
+                reason=(
+                    "The symbolic backend computed a result, but StepSolver does not yet have a "
+                    "verified human derivation for this input."
+                ),
+                steps=(),
+            )
         after = self._converter.step_expression(backend_value)
         step = SolutionStep(
             rule="Compute exact result",
@@ -135,20 +176,98 @@ class SympyBackend:
         )
         return ExactResult(query=query, value=value, steps=(step,))
 
+    def _precheck_result(self, query: Query) -> SolveResult | None:
+        """Handle validation and undefined cases before backend execution."""
+        if query.operation is Operation.CONTOUR_INTEGRATE:
+            return self._solve_contour(query)
+        unsupported_reason = self._unsupported_function_reason(query)
+        if unsupported_reason is not None:
+            return UnsolvedResult(query=query, reason=unsupported_reason, steps=())
+        identity_reason = self._identity_equation_reason(query)
+        if identity_reason is not None:
+            return UnsolvedResult(query=query, reason=identity_reason, steps=())
+        undefined_sum = self._undefined_sum_result(query)
+        if undefined_sum is not None:
+            return undefined_sum
+        return self._undefined_division_result(query)
+
     @staticmethod
-    def _real_solve_result(query: Query, backend_value: object) -> object:
-        if query.operation is not Operation.SOLVE or not is_object_sequence(backend_value):
-            return backend_value
-        filtered: list[object] = []
-        for solution in backend_value:
-            if not is_object_mapping(solution):
-                return backend_value
-            values = tuple(solution.values())
-            if all(
-                not isinstance(value, sp.Basic) or is_real_expression(value) for value in values
+    def _unsupported_function_reason(query: Query) -> str | None:
+        """Reject unchecked function names before they can be echoed as an answer."""
+        allow_abstract = query.operation in _SYMBOLIC_FUNCTION_OPERATIONS
+        allowed_names: frozenset[str] = frozenset()
+        if (
+            query.operation in {Operation.DSOLVE, Operation.RSOLVE}
+            and len(query.arguments) == _EQUATION_ARITY
+            and isinstance(query.arguments[1], FunctionCall)
+        ):
+            allowed_names = frozenset({str(query.arguments[1].name)})
+        for argument in query.arguments:
+            name = unsupported_function_name(
+                argument,
+                allow_abstract=allow_abstract,
+                allowed_names=allowed_names,
+            )
+            if name is not None:
+                return (
+                    f"Unsupported function: {name}. StepSolver only evaluates documented functions."
+                )
+        return None
+
+    def _undefined_division_result(self, query: Query) -> UndefinedResult | None:
+        """Return the typed undefined result for an identically zero denominator."""
+        for argument in query.arguments:
+            if self._contains_zero_denominator(argument):
+                return UndefinedResult(
+                    query=query,
+                    reason="This expression is undefined because a denominator is zero.",
+                    steps=(),
+                )
+        return None
+
+    def _contains_zero_denominator(self, expression: Expression) -> bool:
+        """Detect division by an expression that simplifies to zero."""
+        if isinstance(expression, BinaryExpression):
+            if expression.operator is BinaryOperator.DIVIDE and self._simplifies_to_zero(
+                expression.right
             ):
-                filtered.append(solution)
-        return filtered
+                return True
+            if (
+                expression.operator is BinaryOperator.POWER
+                and self._simplifies_to_negative(expression.right)
+                and self._simplifies_to_zero(expression.left)
+            ):
+                return True
+            return self._contains_zero_denominator(
+                expression.left
+            ) or self._contains_zero_denominator(expression.right)
+        if isinstance(expression, UnaryExpression):
+            return self._contains_zero_denominator(expression.operand)
+        if isinstance(expression, FunctionCall):
+            return any(
+                self._contains_zero_denominator(argument) for argument in expression.arguments
+            )
+        if isinstance(expression, Relation):
+            return self._contains_zero_denominator(
+                expression.left
+            ) or self._contains_zero_denominator(expression.right)
+        if isinstance(expression, SequenceExpression):
+            return any(self._contains_zero_denominator(item) for item in expression.items)
+        return False
+
+    def _simplifies_to_zero(self, expression: Expression) -> bool:
+        """Check whether an expression is identically zero in the backend."""
+        try:
+            return sp.simplify(self._converter.to_sympy(expression)) == sp.Integer(0)
+        except (BackendError, QueryError, TypeError, ValueError):
+            return False
+
+    def _simplifies_to_negative(self, expression: Expression) -> bool:
+        """Check whether a numeric exponent is definitely negative."""
+        try:
+            return sp.simplify(self._converter.to_sympy(expression)).is_negative is True
+        except (BackendError, QueryError, TypeError, ValueError):
+            return False
 
     @staticmethod
     def _divergence_reasons(operation: Operation) -> dict[DivergenceKind, str]:

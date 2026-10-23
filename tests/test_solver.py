@@ -6,13 +6,18 @@ from stepsolver import (
     DivergenceKind,
     DivergentResult,
     ExactResult,
+    MappingValue,
     NoSolutionValue,
+    ScalarValue,
+    SequenceValue,
     Solver,
     UndefinedResult,
     UnsolvedResult,
     format_ascii,
     format_expression,
     format_latex_expression,
+    parse_expression,
+    solve_payload,
 )
 
 _CONTOUR_STEP_COUNT = 3
@@ -127,6 +132,126 @@ def test_constant_zero_denominator_is_undefined_for_every_term(solver: Solver) -
     assert "zero denominator at every index" in result.steps[0].explanation
     assert "1 / 0" in rendered
     assert "zoo" not in rendered
+
+
+@pytest.mark.parametrize(
+    "query",
+    [
+        "1/(x-x)",
+        "simplify(1/(x-x))",
+        "sqrt(1/(x-x))",
+        "1/0",
+        "diff(1/(x-x),x)",
+    ],
+)
+def test_undefined_division_returns_a_typed_undefined_result(
+    solver: Solver,
+    query: str,
+) -> None:
+    """A denominator that is identically zero must never produce a verified answer."""
+    result = solver.solve(query)
+    assert isinstance(result, UndefinedResult)
+    assert "zero" in result.reason.lower() or "undefined" in result.reason.lower()
+    assert solve_payload(result).status == "undefined"
+    assert "zoo" not in format_ascii(result)
+
+
+def test_valid_symbolic_division_is_unaffected_by_zero_denominator_handling(
+    solver: Solver,
+) -> None:
+    """Ordinary rational simplification must still produce an exact result."""
+    result = solver.solve("simplify((x^2-1)/(x-1))")
+    assert isinstance(result, ExactResult)
+    assert "Result: x + 1" in format_ascii(result)
+
+
+@pytest.mark.parametrize(
+    "query",
+    [
+        "frobnicate(x)",
+        "frobnicate(x + 1)",
+        "sin(frobnicate(x))",
+        "frobnicate(x) + 1",
+        "diff(frobnicate(x),x)",
+    ],
+)
+def test_unknown_function_calls_are_rejected_before_verification(
+    solver: Solver,
+    query: str,
+) -> None:
+    """An unrecognized call must not be echoed back as a checked exact answer."""
+    result = solver.solve(query)
+    assert isinstance(result, UnsolvedResult)
+    assert "frobnicate" in result.reason
+    assert result.steps == ()
+    assert solve_payload(result).status == "unsolved"
+
+
+def test_ln_is_a_documented_alias_for_the_natural_logarithm(solver: Solver) -> None:
+    """Inline ln notation should behave exactly like the supported log function."""
+    assert format_expression(parse_expression("ln(x)")) == "log(x)"
+    aliased = solver.solve("diff(ln(x),x)")
+    natural = solver.solve("diff(log(x),x)")
+    assert isinstance(aliased, ExactResult)
+    assert isinstance(natural, ExactResult)
+    assert tuple(step.rule for step in aliased.steps) == tuple(step.rule for step in natural.steps)
+    assert format_ascii(aliased).splitlines()[-1] == format_ascii(natural).splitlines()[-1]
+
+
+@pytest.mark.parametrize(
+    ("function", "derivative"),
+    [
+        ("sin", "cos(x)"),
+        ("cos", "-sin(x)"),
+        ("exp", "exp(x)"),
+        ("log", "1 / x"),
+    ],
+)
+def test_documented_functions_remain_supported(
+    solver: Solver,
+    function: str,
+    derivative: str,
+) -> None:
+    """The stricter function validation must keep documented functions working."""
+    result = solver.solve(f"diff({function}(x),x)")
+    assert isinstance(result, ExactResult)
+    assert derivative in format_ascii(result)
+
+
+def _single_variable_solution_values(result: ExactResult) -> set[str]:
+    """Collect the displayed value of each single-variable solution mapping."""
+    assert isinstance(result.value, SequenceValue)
+    values: set[str] = set()
+    for mapping in result.value.items:
+        assert isinstance(mapping, MappingValue)
+        assert len(mapping.entries) == 1
+        entry_value = mapping.entries[0].value
+        assert isinstance(entry_value, ScalarValue)
+        values.add(format_expression(entry_value.expression))
+    return values
+
+
+@pytest.mark.parametrize(
+    ("query", "expected_roots"),
+    [
+        ("solve(x^2+1=0,x)", {"i", "-i"}),
+        ("solve(x^2+2*x+5=0,x)", {"-1 + 2 * i", "-1 - 2 * i"}),
+    ],
+)
+def test_negative_discriminant_returns_the_complete_complex_solution_set(
+    solver: Solver,
+    query: str,
+    expected_roots: set[str],
+) -> None:
+    """Complex roots are part of the exact solution set and must not be discarded."""
+    result = solver.solve(query)
+    assert isinstance(result, ExactResult)
+    assert _single_variable_solution_values(result) == expected_roots
+    assert result.steps
+    assert all(step.rule != "Compute exact result" for step in result.steps)
+    payload = solve_payload(result)
+    assert payload.result_latex is not None
+    assert "i" in payload.result_latex
 
 
 @pytest.mark.parametrize(
@@ -776,7 +901,7 @@ def test_rational_equation_reducing_to_cubic_has_human_steps(solver: Solver) -> 
             (
                 "Factor the polynomial",
                 "Apply the zero-product property",
-                "Keep the real solutions",
+                "List all solutions",
             ),
         ),
         (
@@ -787,7 +912,7 @@ def test_rational_equation_reducing_to_cubic_has_human_steps(solver: Solver) -> 
                 "Keep the real solutions",
             ),
         ),
-        ("solve(x^5-x+1=0,x)", ("Approximate the real roots",)),
+        ("solve(x^5-x+1=0,x)", ("Approximate all complex roots",)),
         (
             "solve(x^3=1/(x+1),x)",
             (
@@ -797,7 +922,7 @@ def test_rational_equation_reducing_to_cubic_has_human_steps(solver: Solver) -> 
                 "Approximate the real roots",
             ),
         ),
-        ("solve(x^4+x+1=0,x)", ("Check for real roots",)),
+        ("solve(x^4+x+1=0,x)", ("Approximate all complex roots",)),
     ],
 )
 def test_higher_degree_polynomials_do_not_fall_back_to_answer_only(
@@ -880,7 +1005,7 @@ def test_dirichlet_integral_has_a_parameter_derivation(solver: Solver) -> None:
         ),
         (
             "solve(x^2+1=0,x)",
-            ("Calculate the discriminant", "Conclude there are no real solutions"),
+            ("Apply the quadratic formula",),
         ),
         (
             "solve(x=x+1,x)",
@@ -950,14 +1075,6 @@ def test_identity_equations_do_not_return_a_false_empty_set(
     assert isinstance(result, UnsolvedResult)
     assert "identity" not in result.reason.lower() or "domain" in result.reason.lower()
     assert "universal solution set" in result.reason
-
-
-def test_no_real_solution_is_rendered_as_the_empty_set(solver: Solver) -> None:
-    """A negative discriminant should end with mathematical empty-set notation."""
-    result = solver.solve("solve(x^2+1=0,x)")
-    assert isinstance(result, ExactResult)
-    assert isinstance(result.value, NoSolutionValue)
-    assert format_latex_expression(result.steps[-1].after) == r"\varnothing"
 
 
 def test_denominator_restrictions_are_explicit_and_filter_candidates(

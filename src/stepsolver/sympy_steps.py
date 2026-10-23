@@ -65,6 +65,8 @@ from stepsolver.results import (
     VerificationMethod,
 )
 from stepsolver.sympy_conversion import SympyConverter
+from stepsolver.sympy_equation_steps import SympyEquationStepBuilder
+from stepsolver.sympy_matrix_steps import SympyMatrixStepBuilder
 from stepsolver.sympy_rendering import SympyDerivationRenderer
 from stepsolver.sympy_support import is_object_mapping, is_object_sequence
 
@@ -167,6 +169,8 @@ class SympyStepBuilder:
         """Use shared conversion and rendering collaborators."""
         self._converter = converter
         self._renderer = renderer
+        self._matrix_steps = SympyMatrixStepBuilder(converter)
+        self._equation_steps = SympyEquationStepBuilder(converter)
 
     def detailed_steps(
         self,
@@ -193,6 +197,17 @@ class SympyStepBuilder:
                 steps = self.detailed_limit_steps(query, backend_value)
             case Operation.SUM:
                 steps = self.detailed_sum_steps(query, backend_value)
+            case (
+                Operation.MATRIX
+                | Operation.DETERMINANT
+                | Operation.INVERSE
+                | Operation.RANK
+                | Operation.RREF
+                | Operation.EIGENVALUES
+            ):
+                steps = self._matrix_steps.steps(query, backend_value)
+            case Operation.DSOLVE | Operation.RSOLVE | Operation.SOLVE_INEQUALITY:
+                steps = self._equation_steps.steps(query, backend_value)
             case _:
                 steps = ()
         return steps

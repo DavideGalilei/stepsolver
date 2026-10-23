@@ -22,7 +22,6 @@ from stepsolver.derivation.model import (
     EquationBackendExpression,
 )
 from stepsolver.results import VerificationMethod
-from stepsolver.sympy_support import is_real_expression
 
 _ROOT_VERIFICATION_DIGITS = 12
 _DISPLAY_DIGITS = 7
@@ -121,11 +120,15 @@ def solution_set(
     variable: sp.Symbol,
     excluded_values: tuple[sp.Basic, ...] = (),
 ) -> frozenset[str]:
-    """Return a deterministic solution set after original exclusions."""
+    """Return a deterministic complex solution set after original exclusions."""
     equations = expression if isinstance(expression, tuple) else (expression,)
+    # Solving with a real-assumption symbol silently drops non-real roots.  Verify
+    # equation transformations over the same complex domain used by the solver.
+    complex_variable = sp.Symbol(variable.name)
     roots: set[str] = set()
     for equation in equations:
-        solved = sp.solve(equation, variable)
+        complex_equation = equation.xreplace({variable: complex_variable})
+        solved = sp.solve(complex_equation, complex_variable)
         if not _is_basic_sequence(solved):
             message = "equation verification did not produce a root sequence"
             raise TypeError(message)
@@ -136,7 +139,6 @@ def solution_set(
                 else str(sp.N(root, _ROOT_VERIFICATION_DIGITS))
             )
             for root in solved
-            if is_real_expression(root)
             if not any(
                 sp.simplify(root - excluded) == sp.Integer(0) for excluded in excluded_values
             )
@@ -146,7 +148,9 @@ def solution_set(
 
 def relations(variable: sp.Symbol, roots: tuple[sp.Basic, ...]) -> tuple[sp.Basic, ...]:
     """Represent roots as explicit equations for display."""
-    return tuple(sp.Eq(variable, root) for root in roots)
+    # A real-assumption display symbol makes Eq(x, complex_root) evaluate to False.
+    # Keep the relation structural so non-real roots can be shown and verified.
+    return tuple(sp.Eq(variable, root, evaluate=False) for root in roots)
 
 
 def _positive_divisors(value: int) -> tuple[int, ...]:

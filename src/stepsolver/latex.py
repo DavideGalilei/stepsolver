@@ -33,6 +33,10 @@ _PRECEDENCE: dict[BinaryOperator, int] = {
     BinaryOperator.DIVIDE: 20,
     BinaryOperator.POWER: 30,
 }
+
+# LaTeX braces already group a negative exponent, so unary signs only need
+# parentheses when they appear in a power's base (precedence 31).
+_UNARY_PRECEDENCE = _PRECEDENCE[BinaryOperator.POWER]
 _GREEK_SYMBOLS: frozenset[str] = frozenset(
     {
         "alpha",
@@ -332,7 +336,8 @@ def _format_binary(expression: BinaryExpression, *, parent_precedence: int) -> s
             right=expression.left,
         )
     precedence = _PRECEDENCE[operator]
-    left = format_latex_expression(expression.left, parent_precedence=precedence)
+    left_precedence = precedence + 1 if operator is BinaryOperator.POWER else precedence
+    left = format_latex_expression(expression.left, parent_precedence=left_precedence)
     right_precedence = precedence if operator is BinaryOperator.POWER else precedence + 1
     right = format_latex_expression(expression.right, parent_precedence=right_precedence)
     if operator is BinaryOperator.DIVIDE:
@@ -353,10 +358,30 @@ def _format_binary(expression: BinaryExpression, *, parent_precedence: int) -> s
     return rendered
 
 
+def _format_number(expression: Number, *, parent_precedence: int) -> str:
+    """Render a number, grouping a negative value when a parent requires it."""
+    rendered = _format_fraction(expression.value)
+    if expression.value < 0 and parent_precedence > _UNARY_PRECEDENCE:
+        return rf"\left({rendered}\right)"
+    return rendered
+
+
+def _format_unary(expression: UnaryExpression, *, parent_precedence: int) -> str:
+    """Render a unary expression with precedence-aware grouping."""
+    operand = format_latex_expression(expression.operand, parent_precedence=40)
+    if expression.operator is UnaryOperator.FACTORIAL:
+        rendered = f"{operand}!"
+    else:
+        rendered = f"{expression.operator.value}{operand}"
+    if parent_precedence > _UNARY_PRECEDENCE:
+        return rf"\left({rendered}\right)"
+    return rendered
+
+
 def format_latex_expression(expression: Expression, *, parent_precedence: int = 0) -> str:
     """Render one StepSolver expression as LaTeX."""
     if isinstance(expression, Number):
-        return _format_fraction(expression.value)
+        return _format_number(expression, parent_precedence=parent_precedence)
     if isinstance(expression, ApproximateNumber):
         return expression.text
     if isinstance(expression, Symbol):
@@ -391,10 +416,7 @@ def format_latex_expression(expression: Expression, *, parent_precedence: int = 
             f"{format_latex_expression(expression.right)}"
         )
     if isinstance(expression, UnaryExpression):
-        operand = format_latex_expression(expression.operand, parent_precedence=40)
-        if expression.operator is UnaryOperator.FACTORIAL:
-            return f"{operand}!"
-        return f"{expression.operator.value}{operand}"
+        return _format_unary(expression, parent_precedence=parent_precedence)
     return _format_binary(expression, parent_precedence=parent_precedence)
 
 

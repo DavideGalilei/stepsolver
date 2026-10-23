@@ -38,6 +38,8 @@ _PRECEDENCE: dict[BinaryOperator, int] = {
     BinaryOperator.POWER: 30,
 }
 
+_UNARY_PRECEDENCE = 25
+
 
 def _format_fraction(value: Fraction) -> str:
     if value.denominator == 1:
@@ -74,10 +76,30 @@ def _format_function_call(expression: FunctionCall, *, parent_precedence: int) -
             return f"{expression.name}({arguments})"
 
 
+def _format_number(expression: Number, *, parent_precedence: int) -> str:
+    """Render a number, grouping a negative value when a parent requires it."""
+    rendered = _format_fraction(expression.value)
+    if expression.value < 0 and parent_precedence > _UNARY_PRECEDENCE:
+        return f"({rendered})"
+    return rendered
+
+
+def _format_unary(expression: UnaryExpression, *, parent_precedence: int) -> str:
+    """Render a unary expression with precedence-aware grouping."""
+    operand = format_expression(expression.operand, parent_precedence=40)
+    if expression.operator is UnaryOperator.FACTORIAL:
+        rendered = f"{operand}!"
+    else:
+        rendered = f"{expression.operator.value}{operand}"
+    if parent_precedence > _UNARY_PRECEDENCE:
+        return f"({rendered})"
+    return rendered
+
+
 def format_expression(expression: Expression, *, parent_precedence: int = 0) -> str:
     """Render a mathematical expression using parseable ASCII syntax."""
     if isinstance(expression, Number):
-        return _format_fraction(expression.value)
+        return _format_number(expression, parent_precedence=parent_precedence)
     if isinstance(expression, ApproximateNumber):
         return expression.text
     if isinstance(expression, Symbol):
@@ -96,10 +118,7 @@ def format_expression(expression: Expression, *, parent_precedence: int = 0) -> 
             f"{format_expression(expression.right)}"
         )
     if isinstance(expression, UnaryExpression):
-        operand = format_expression(expression.operand, parent_precedence=40)
-        if expression.operator is UnaryOperator.FACTORIAL:
-            return f"{operand}!"
-        return f"{expression.operator.value}{operand}"
+        return _format_unary(expression, parent_precedence=parent_precedence)
     if (
         expression.operator is BinaryOperator.ADD
         and isinstance(expression.left, Symbol)
@@ -111,7 +130,8 @@ def format_expression(expression: Expression, *, parent_precedence: int = 0) -> 
             right=expression.left,
         )
     precedence = _PRECEDENCE[expression.operator]
-    left = format_expression(expression.left, parent_precedence=precedence)
+    left_precedence = precedence + 1 if expression.operator is BinaryOperator.POWER else precedence
+    left = format_expression(expression.left, parent_precedence=left_precedence)
     right_precedence = precedence if expression.operator is BinaryOperator.POWER else precedence + 1
     right = format_expression(expression.right, parent_precedence=right_precedence)
     rendered = f"{left} {expression.operator.value} {right}"

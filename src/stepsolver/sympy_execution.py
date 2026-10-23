@@ -1,5 +1,7 @@
 """Dispatch StepSolver operations to SymPy."""
 
+from collections.abc import Sequence
+
 import sympy as sp
 
 from stepsolver.ast import (
@@ -11,7 +13,14 @@ from stepsolver.errors import BackendError, QueryError
 from stepsolver.sympy_conversion import SympyConverter
 from stepsolver.sympy_integrals import match_sine_square_root_integral
 from stepsolver.sympy_series import match_alternating_p_series, match_harmonic_sine_series
-from stepsolver.sympy_support import expect_arity, expect_integer, expect_symbol
+from stepsolver.sympy_support import (
+    expect_arity,
+    expect_integer,
+    expect_symbol,
+    is_object_mapping,
+    is_object_sequence,
+    is_real_expression,
+)
 
 
 def _evaluate_indefinite_integral(
@@ -47,6 +56,65 @@ def _evaluate_indefinite_integral(
                     evaluate=False,
                 )
     return antiderivative + integration_constant
+
+
+def _single_polynomial_target(
+    equations: sp.Basic | Sequence[sp.Basic],
+    symbols: tuple[sp.Basic, ...],
+) -> tuple[sp.Equality, sp.Symbol] | None:
+    """Return a lone equation that is polynomial in its only unknown, if it is one."""
+    if len(symbols) != 1 or not isinstance(equations, sp.Equality):
+        return None
+    variable = symbols[0]
+    if not isinstance(variable, sp.Symbol):
+        return None
+    difference = equations.lhs - equations.rhs
+    if difference.free_symbols != {variable} or not difference.is_polynomial(variable):
+        return None
+    return equations, variable
+
+
+def _solve_polynomial_over_complex_numbers(
+    equation: sp.Equality,
+    variable: sp.Symbol,
+) -> list[dict[sp.Basic, sp.Basic]]:
+    """Solve without the real-only assumption, then restore the caller's symbol."""
+    complex_variable = sp.Symbol(variable.name)
+    raw_solutions = sp.solve(
+        equation.xreplace({variable: complex_variable}), complex_variable, dict=True
+    )
+    if not is_object_sequence(raw_solutions):
+        return []
+    solutions: list[dict[sp.Basic, sp.Basic]] = []
+    for solution in raw_solutions:
+        if not is_object_mapping(solution):
+            return []
+        root = solution.get(complex_variable)
+        if not isinstance(root, sp.Basic):
+            return []
+        solutions.append({variable: root})
+    return solutions
+
+
+def _solve_equations(
+    equations: sp.Basic | Sequence[sp.Basic],
+    symbols: tuple[sp.Basic, ...],
+) -> object:
+    """Solve equations, keeping non-real roots only for isolated polynomial equations."""
+    polynomial_target = _single_polynomial_target(equations, symbols)
+    if polynomial_target is not None:
+        return _solve_polynomial_over_complex_numbers(*polynomial_target)
+    raw_solutions = sp.solve(equations, *symbols, dict=True)
+    if not is_object_sequence(raw_solutions):
+        return []
+    filtered: list[object] = []
+    for solution in raw_solutions:
+        if not is_object_mapping(solution):
+            return []
+        values = tuple(solution.values())
+        if all(not isinstance(value, sp.Basic) or is_real_expression(value) for value in values):
+            filtered.append(solution)
+    return filtered
 
 
 def _evaluate_definite_integral(
@@ -121,7 +189,7 @@ class SympyExecutor:
                 expect_arity(query, 2)
                 equations = self._converter.equations(arguments[0])
                 symbols = self._converter.symbols(arguments[1])
-                return sp.solve(equations, *symbols, dict=True)
+                return _solve_equations(equations, symbols)
             case Operation.SOLVE_INEQUALITY:
                 expect_arity(query, 2)
                 symbol = expect_symbol(arguments[1], role="inequality variable")

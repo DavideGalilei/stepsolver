@@ -25,6 +25,7 @@ from stepsolver.derivation.model import (
     EquationBackendExpression,
 )
 from stepsolver.results import VerificationMethod
+from stepsolver.sympy_support import is_real_expression
 
 _DISPLAY_DIGITS = 7
 _MAX_RATIONAL_ROOT_CANDIDATES = 12
@@ -40,6 +41,8 @@ def derive_quadratic_steps(
     """Solve a quadratic with factoring or the quadratic formula."""
     steps: list[BackendDerivationStep] = []
     expression = polynomial.as_expr()
+    if any(sp.simplify(expression.subs(variable, root)) != sp.Integer(0) for root in roots):
+        return ()
     factored = sp.factor(expression)
     current: EquationBackendExpression = equation
     if str(factored) != str(expression) and (factored.is_Mul or factored.is_Pow):
@@ -159,8 +162,13 @@ def derive_quadratic_steps(
             ),
         )
     denominator = 2 * coefficient_a
-    negative_numerator = sp.Add(-coefficient_b, -sp.sqrt(discriminant), evaluate=False)
-    positive_numerator = sp.Add(-coefficient_b, sp.sqrt(discriminant), evaluate=False)
+    root_discriminant = sp.sqrt(discriminant)
+    if coefficient_b == sp.Integer(0):
+        negative_numerator = -root_discriminant
+        positive_numerator = root_discriminant
+    else:
+        negative_numerator = sp.Add(-coefficient_b, -root_discriminant, evaluate=False)
+        positive_numerator = sp.Add(-coefficient_b, root_discriminant, evaluate=False)
     generic_a = sp.Symbol("a", nonzero=True)
     generic_b = sp.Symbol("b")
     generic_c = sp.Symbol("c")
@@ -180,7 +188,10 @@ def derive_quadratic_steps(
                 "quadratic formula."
             ),
             verification_method=VerificationMethod.SOLUTION_SET_EQUIVALENCE,
-            verification_detail="The displayed quadratic-formula roots match the exact roots.",
+            verification_detail=(
+                "The displayed quadratic-formula roots were substituted into the equation and "
+                "each gave zero."
+            ),
             notes=(
                 BackendMathNote(
                     label="Quadratic formula",
@@ -263,14 +274,15 @@ def _factored_polynomial_steps(
         variable=variable,
         excluded_values=excluded_values,
     )
+    all_real = all(is_real_expression(root) for root in roots)
     append_if_changed(
         steps,
-        rule="Keep the real solutions",
+        rule="Keep the real solutions" if all_real else "List all solutions",
         before=current,
         after=relations(variable, roots),
         explanation=(
-            "Solve the lower-degree equations and keep the real values allowed by the "
-            "original domain."
+            "Solve the lower-degree equations and keep the values allowed by the original "
+            "domain, including non-real roots when they arise."
         ),
         variable=variable,
         excluded_values=excluded_values,
@@ -423,21 +435,30 @@ def derive_generic_polynomial_steps(
                 excluded_values=excluded_values,
             ),
         )
-    approximations = tuple(sp.N(root, 7) for root in roots)
+    approximations = tuple(sp.N(root, _DISPLAY_DIGITS) for root in roots)
+    all_real = all(is_real_expression(root) for root in roots)
     return (
         BackendDerivationStep(
-            rule="Approximate the real roots",
+            rule="Approximate the real roots" if all_real else "Approximate all complex roots",
             before=equation,
             after=BackendApproximateSolutions(variable=variable, roots=approximations),
             explanation=(
                 "The polynomial has no simpler exact factorization. Bracket each real root, "
                 "then refine it with Newton's method."
+                if all_real
+                else "The polynomial has non-real roots and no simpler exact factorization. "
+                "The displayed values approximate every root in the complex plane; the exact "
+                "algebraic roots remain in the result."
             ),
             verification_method=VerificationMethod.BACKEND_IDENTITY,
             verification_detail=(
                 "Substitution gives a residual consistent with the displayed precision; "
                 "the exact algebraic roots remain in the result."
             ),
-            notes=(BackendMathNote(label="Newton iteration", expression=BackendNewtonRule()),),
+            notes=(
+                (BackendMathNote(label="Newton iteration", expression=BackendNewtonRule()),)
+                if all_real
+                else (BackendMathNote(label="Root count", expression=sp.Integer(len(roots))),)
+            ),
         ),
     )

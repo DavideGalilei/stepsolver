@@ -142,6 +142,11 @@ The main abstractions are:
 ## Syntax
 
 ASCII input uses explicit operators. Write `2*x`, not `2x`. Constants include `pi`, `e`, `i`, and `oo`.
+Supported functions include `sin`, `cos`, `tan`, `asin`, `acos`, `atan`, `sinh`, `asinh`,
+`cosh`, `tanh`, `exp`, `sqrt`, `abs`, `factorial`, `gamma`, `log`, and `root`. `ln(x)` is
+accepted as an alias for the natural logarithm `log(x)`. Unknown function names are
+rejected instead of being echoed back as a result. Calculus operations may use
+single-letter abstract functions such as `f(x)`.
 
 | Area | Operations |
 | --- | --- |
