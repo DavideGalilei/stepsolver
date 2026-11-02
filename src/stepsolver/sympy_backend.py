@@ -47,6 +47,7 @@ from stepsolver.results import (
 )
 from stepsolver.sympy_contours import ContourExpression, evaluate_rational_circle
 from stepsolver.sympy_conversion import SympyConverter, unsupported_function_name
+from stepsolver.sympy_equivalence import expressions_equivalent
 from stepsolver.sympy_execution import SympyExecutor
 from stepsolver.sympy_numeric import solve_numeric
 from stepsolver.sympy_rendering import SympyDerivationRenderer
@@ -97,6 +98,7 @@ class SympyBackend:
 
     def solve(self, query: Query) -> SolveResult:
         """Solve a validated query and translate the result to StepSolver values."""
+        self._validate_query(query)
         try:
             return self._solve(query)
         except ZeroDivisionError:
@@ -312,13 +314,43 @@ class SympyBackend:
             residuals=tuple(float(str(root.residual)) for root in numeric.roots),
         )
 
-    def _precheck_result(self, query: Query) -> SolveResult | None:
-        """Handle validation and undefined cases before backend execution."""
-        if query.operation is Operation.CONTOUR_INTEGRATE:
-            return self._solve_contour(query)
+    def _validate_query(self, query: Query) -> None:
+        """Reject structurally invalid queries before any backend execution.
+
+        These failures describe the request itself rather than a mathematical
+        obstruction, so they surface as typed query errors instead of an
+        ``UnsolvedResult``. That keeps an unanswerable request distinguishable
+        from an honest symbolic decline.
+        """
         unsupported_reason = self._unsupported_function_reason(query)
         if unsupported_reason is not None:
-            return UnsolvedResult(query=query, reason=unsupported_reason, steps=())
+            raise QueryError(unsupported_reason)
+        missing_target = self._missing_target_variable_reason(query)
+        if missing_target is not None:
+            raise QueryError(missing_target)
+
+    def _missing_target_variable_reason(self, query: Query) -> str | None:
+        """Detect a solve target that the equation never mentions."""
+        if query.operation is not Operation.SOLVE or len(query.arguments) != _EQUATION_ARITY:
+            return None
+        equation_expression, variable_expression = query.arguments
+        if not isinstance(equation_expression, Relation) or not isinstance(
+            variable_expression, Symbol
+        ):
+            return None
+        equation = self._converter.to_sympy(equation_expression)
+        variable = self._converter.to_sympy(variable_expression)
+        if not isinstance(equation, sp.Rel) or not isinstance(variable, sp.Symbol):
+            return None
+        symbols = equation.free_symbols
+        if symbols and variable not in symbols:
+            return f"Target variable '{variable_expression.name}' does not appear in equation"
+        return None
+
+    def _precheck_result(self, query: Query) -> SolveResult | None:
+        """Handle undefined cases before backend execution."""
+        if query.operation is Operation.CONTOUR_INTEGRATE:
+            return self._solve_contour(query)
         undefined_sum = self._undefined_sum_result(query)
         if undefined_sum is not None:
             return undefined_sum
@@ -452,7 +484,10 @@ class SympyBackend:
     def _simplifies_to_zero(self, expression: Expression) -> bool:
         """Check whether an expression is identically zero in the backend."""
         try:
-            return sp.simplify(self._converter.to_sympy(expression)) == sp.Integer(0)
+            value = self._converter.to_sympy(expression)
+            if value == sp.Integer(0):
+                return True
+            return expressions_equivalent(value, sp.Integer(0))
         except (BackendError, QueryError, TypeError, ValueError):
             return False
 
@@ -649,8 +684,7 @@ class SympyBackend:
             return None
         if not equation.free_symbols <= {variable}:
             return None
-        difference = sp.simplify(equation.lhs - equation.rhs)
-        if difference != sp.Integer(0):
+        if not expressions_equivalent(equation.lhs, equation.rhs):
             return None
         denominator_expressions = domain_denominators(equation_expression)
         denominators = tuple(
@@ -764,10 +798,11 @@ class SympyBackend:
         equation, variable = query.arguments
         if not isinstance(equation, Relation) or not isinstance(variable, Symbol):
             return None
-        difference = sp.simplify(
-            self._converter.to_sympy(equation.left) - self._converter.to_sympy(equation.right)
+        difference_is_zero = expressions_equivalent(
+            self._converter.to_sympy(equation.left),
+            self._converter.to_sympy(equation.right),
         )
-        if difference != sp.Integer(0):
+        if not difference_is_zero:
             return None
         if equation.operator is not RelationOperator.EQUAL:
             return (

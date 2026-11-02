@@ -14,6 +14,7 @@ from stepsolver.derivation.model import (
     BackendStepConstraint,
 )
 from stepsolver.results import VerificationMethod
+from stepsolver.sympy_equivalence import expressions_equivalent
 from stepsolver.sympy_integrals import (
     ReciprocalLinearIntegral,
     match_reciprocal_linear_integral,
@@ -38,7 +39,7 @@ def _differentiates_on_real_intervals(
         negative_condition(denominator),
     )
     return all(
-        sp.simplify(refine_expression(difference, condition)) == sp.Integer(0)
+        expressions_equivalent(refine_expression(difference, condition), sp.Integer(0))
         for condition in conditions
     )
 
@@ -56,7 +57,7 @@ def _constraints(
             ),
         )
     ]
-    if sp.simplify(matched.denominator - variable) != sp.Integer(0):
+    if not expressions_equivalent(matched.denominator, variable):
         constraints.append(
             BackendStepConstraint(
                 explanation="This value is outside the domain of the integrand.",
@@ -78,7 +79,7 @@ def derive_reciprocal_linear_integral(
     matched = match_reciprocal_linear_integral(integrand, variable)
     if matched is None:
         return ()
-    if sp.simplify(matched.result - result) != sp.Integer(0):
+    if not expressions_equivalent(matched.result, result):
         return ()
     if not _differentiates_on_real_intervals(
         matched.antiderivative,

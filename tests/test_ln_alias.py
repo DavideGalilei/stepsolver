@@ -2,7 +2,7 @@
 
 import pytest
 
-from stepsolver import ExactResult, ParseError, Solver, format_ascii, parse_expression
+from stepsolver import ExactResult, ParseError, QueryError, Solver, format_ascii, parse_expression
 
 
 def test_ln_is_the_same_function_as_log() -> None:
@@ -44,6 +44,5 @@ def test_native_ln_works_inside_a_compound_argument() -> None:
 @pytest.mark.parametrize("query", ["lnsin(x)", "sinln(x)", "frobnicate(x)"])
 def test_ln_prefixes_and_unknown_functions_stay_unsupported(query: str) -> None:
     """Only the exact identifier ``ln`` should be recognized."""
-    result = Solver().solve(query)
-    assert not isinstance(result, ExactResult)
-    assert "Unsupported function" in format_ascii(result)
+    with pytest.raises(QueryError, match="Unsupported function"):
+        Solver().solve(query)

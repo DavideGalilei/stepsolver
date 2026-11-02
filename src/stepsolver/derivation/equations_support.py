@@ -5,6 +5,7 @@ from __future__ import annotations
 from collections.abc import Sequence
 from dataclasses import dataclass
 from fractions import Fraction
+from functools import lru_cache
 from math import isqrt
 from typing import TypeGuard, cast
 
@@ -154,6 +155,7 @@ def equivalent_display_step(
     )
 
 
+@lru_cache(maxsize=256)
 def solution_set(
     expression: EquationBackendExpression,
     variable: sp.Symbol,

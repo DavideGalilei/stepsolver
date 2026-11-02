@@ -19,12 +19,13 @@ from stepsolver.derivation.model import (
     BackendSum,
 )
 from stepsolver.results import VerificationMethod
+from stepsolver.sympy_equivalence import expressions_equivalent
 
 _POWER_ARITY = 2
 
 
 def _matches_result(candidate: sp.Basic, result: sp.Basic) -> bool:
-    return sp.simplify(candidate - result) == sp.Integer(0)
+    return expressions_equivalent(candidate, result)
 
 
 def _matches_antiderivative(
@@ -33,7 +34,7 @@ def _matches_antiderivative(
     variable: sp.Symbol,
 ) -> bool:
     """Compare antiderivatives modulo an additive constant."""
-    return sp.simplify(sp.diff(candidate - result, variable)) == sp.Integer(0)
+    return expressions_equivalent(sp.diff(candidate - result, variable), sp.Integer(0))
 
 
 def _matching_functions(

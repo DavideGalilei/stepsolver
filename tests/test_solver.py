@@ -1,5 +1,7 @@
 """End-to-end symbolic solver tests."""
 
+import time
+
 import pytest
 
 from stepsolver import (
@@ -8,6 +10,7 @@ from stepsolver import (
     ExactResult,
     MappingValue,
     NoSolutionValue,
+    QueryError,
     ScalarValue,
     SequenceValue,
     SolutionDomain,
@@ -26,6 +29,7 @@ from stepsolver.ast import OpaqueExpression
 _CONTOUR_STEP_COUNT = 3
 _CROSSED_NUMERIC_FACTOR_COUNT = 4
 _INTRODUCED_MULTIPLIER_COUNT = 2
+_HEAVY_POLYNOMIAL_TIME_LIMIT_SECONDS = 15.0
 
 
 @pytest.fixture
@@ -202,11 +206,33 @@ def test_unknown_function_calls_are_rejected_before_verification(
     query: str,
 ) -> None:
     """An unrecognized call must not be echoed back as a checked exact answer."""
-    result = solver.solve(query)
+    with pytest.raises(QueryError, match="frobnicate"):
+        solver.solve(query)
+
+
+def test_missing_target_variable_is_a_typed_query_error(solver: Solver) -> None:
+    """A solve target that never appears must not be reported as no solution."""
+    with pytest.raises(QueryError, match="Target variable 'z' does not appear in equation"):
+        solver.solve("solve(x + 1 = 0, z)")
+
+
+def test_high_degree_irreducible_polynomial_declines_promptly(solver: Solver) -> None:
+    """A degree-25 irreducible polynomial must not stall exact root isolation."""
+    started = time.perf_counter()
+    result = solver.solve("solve(x^25 - x - 1 = 0, x)")
+    elapsed = time.perf_counter() - started
     assert isinstance(result, UnsolvedResult)
-    assert "frobnicate" in result.reason
+    assert "degree 25" in result.reason
     assert result.steps == ()
-    assert solve_payload(result).status == "unsolved"
+    assert elapsed < _HEAVY_POLYNOMIAL_TIME_LIMIT_SECONDS
+
+
+def test_high_degree_repeated_factor_still_solves_exactly(solver: Solver) -> None:
+    """Factoring first keeps a high-multiplicity root exact and quick."""
+    result = solver.solve("solve((x + 1)^60 = 0, x)")
+    assert isinstance(result, ExactResult)
+    assert isinstance(result.value, SequenceValue)
+    assert "Result: [{x: -1}]" in format_ascii(result)
 
 
 def test_ln_is_a_documented_alias_for_the_natural_logarithm(solver: Solver) -> None:

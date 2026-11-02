@@ -31,13 +31,24 @@ StepSolver accepts ASCII or visual math, parses it into its own typed AST, and r
 
 StepSolver supports Python 3.12 through 3.14 and uses Poetry.
 
+The core library installs only SymPy and its numeric backend. Install the
+optional web interface with the `web` extra:
+
+```console
+pip install stepsolver            # library and CLI
+pip install 'stepsolver[web]'     # adds FastAPI, Uvicorn, and Pydantic
+```
+
+For development from a clone:
+
 ```console
 git clone https://github.com/DavideGalilei/stepsolver.git
 cd stepsolver
 poetry install
 ```
 
-Start the graphical editor:
+`poetry install` includes the development tools, including the web
+dependencies. Start the graphical editor:
 
 ```console
 poetry run stepsolver-web

@@ -32,6 +32,10 @@ _SQRTDENEST = cast(
     getattr(sp, "sqrtdenest"),  # ruff: ignore[get-attr-with-constant] - not in SymPy's public stubs
 )
 
+# Exact quintics are already slow but tractable; above this the backend may
+# spend minutes in complex-root isolation for no additional teaching value.
+_MAX_EXACT_POLYNOMIAL_DEGREE = 6
+
 
 def _denest_numeric_radical(expression: sp.Basic) -> sp.Basic | None:
     """Return a denested value for a numeric square root, when it is safe."""
@@ -63,27 +67,58 @@ def _simplify_expression(expression: sp.Basic) -> sp.Basic:
     return sp.simplify(expression)
 
 
+def _linear_argument_slope(argument: sp.Basic, variable: sp.Symbol) -> sp.Basic | None:
+    """Return the constant slope of an argument that is linear in ``variable``."""
+    if argument == variable:
+        return sp.Integer(1)
+    if not argument.has(variable):
+        return None
+    try:
+        polynomial = sp.Poly(argument, variable)
+    except (sp.PolynomialError, TypeError, ValueError):
+        return None
+    if polynomial.degree() != 1:
+        return None
+    slope = polynomial.coeff_monomial(variable)
+    if slope.has(variable) or slope == sp.Integer(0):
+        return None
+    return slope
+
+
 def _fast_basic_antiderivative(
     expression: sp.Basic,
     variable: sp.Symbol,
 ) -> sp.Basic | None:
     """Recognize a direct antiderivative without a symbolic integration search."""
-    if expression.func is sp.sin and expression.args == (variable,):
-        return -sp.cos(variable)
-    if expression.func is sp.cos and expression.args == (variable,):
-        return sp.sin(variable)
-    if expression.func is sp.exp and expression.args == (variable,):
-        return sp.exp(variable)
-    if expression.func is sp.sinh and expression.args == (variable,):
-        return sp.cosh(variable)
-    if expression.func is sp.cosh and expression.args == (variable,):
-        return sp.sinh(variable)
-    if expression.func is sp.tan and expression.args == (variable,):
-        return -sp.log(sp.cos(variable))
-    if expression.func is sp.Pow and expression.args[0] == variable:
-        exponent = expression.args[1]
-        if exponent != sp.Integer(-1) and not exponent.has(variable):
-            return variable ** (exponent + 1) / (exponent + 1)
+    if expression.func in {sp.sin, sp.cos, sp.exp, sp.sinh, sp.cosh, sp.tan}:
+        argument = expression.args[0] if len(expression.args) == 1 else None
+        if isinstance(argument, sp.Basic):
+            slope = _linear_argument_slope(argument, variable)
+            if slope is not None:
+                if expression.func is sp.sin:
+                    return -sp.cos(argument) / slope
+                if expression.func is sp.cos:
+                    return sp.sin(argument) / slope
+                if expression.func is sp.exp:
+                    return sp.exp(argument) / slope
+                if expression.func is sp.sinh:
+                    return sp.cosh(argument) / slope
+                if expression.func is sp.cosh:
+                    return sp.sinh(argument) / slope
+                if expression.func is sp.tan:
+                    return -sp.log(sp.cos(argument)) / slope
+    if expression.func is sp.Pow:
+        arguments = list(expression.args)
+        if len(arguments) == 2:
+            base = arguments[0]
+            exponent = arguments[1]
+            slope = _linear_argument_slope(base, variable)
+            if (
+                slope is not None
+                and not exponent.has(variable)
+                and exponent != sp.Integer(-1)
+            ):
+                return base ** (exponent + 1) / ((exponent + 1) * slope)
     return None
 
 
@@ -218,6 +253,60 @@ def _solution_is_real(solution: object) -> bool:
     )
 
 
+def _solve_high_degree_polynomial(
+    equation: sp.Equality,
+    variable: sp.Symbol,
+) -> list[dict[sp.Basic, sp.Basic]] | None:
+    """Solve a large polynomial by factoring, or decline it explicitly.
+
+    SymPy's exact solver builds ``ComplexRootOf`` objects for irreducible
+    factors, and forcing decimal evaluation of those objects can stall for
+    high degrees. Factoring first keeps common inputs such as ``(x + 1)^60``
+    fast, while a genuinely high-degree irreducible factor is reported as a
+    clear backend decline instead of an open-ended computation.
+    """
+    complex_variable = sp.Symbol(variable.name)
+    difference = (equation.lhs - equation.rhs).xreplace({variable: complex_variable})
+    try:
+        polynomial = sp.Poly(difference, complex_variable)
+    except (sp.PolynomialError, TypeError, ValueError):
+        return None
+    degree = polynomial.degree()
+    if degree <= _MAX_EXACT_POLYNOMIAL_DEGREE:
+        return None
+    try:
+        _, factors = sp.factor_list(difference, complex_variable)
+        factor_degrees = [
+            sp.Poly(factor, complex_variable).degree() for factor, _multiplicity in factors
+        ]
+    except (sp.PolynomialError, TypeError, ValueError) as error:
+        message = f"The polynomial could not be factored safely: {error}"
+        raise BackendError(message) from error
+    largest = max(factor_degrees, default=0)
+    if largest > _MAX_EXACT_POLYNOMIAL_DEGREE:
+        message = (
+            f"The polynomial has degree {degree} with an irreducible factor of degree "
+            f"{largest}. Exact root isolation at that degree can stall, so StepSolver "
+            "declines this input rather than returning a partial answer."
+        )
+        raise BackendError(message)
+    solutions: list[dict[sp.Basic, sp.Basic]] = []
+    seen: set[sp.Basic] = set()
+    for factor, _multiplicity in factors:
+        factor_solutions = sp.solve(sp.Eq(factor, 0), complex_variable, dict=True)
+        if not is_object_sequence(factor_solutions):
+            return None
+        for solution in factor_solutions:
+            if not is_object_mapping(solution):
+                return None
+            root = solution.get(complex_variable)
+            if not isinstance(root, sp.Basic) or root in seen:
+                continue
+            seen.add(root)
+            solutions.append({variable: root})
+    return solutions
+
+
 def _solve_equations(
     equations: sp.Basic | Sequence[sp.Basic],
     symbols: tuple[sp.Basic, ...],
@@ -226,6 +315,11 @@ def _solve_equations(
     """Solve equations, respecting the requested ambient domain."""
     polynomial_target = _single_polynomial_target(equations, symbols)
     if polynomial_target is not None:
+        factored = _solve_high_degree_polynomial(*polynomial_target)
+        if factored is not None:
+            if domain is SolutionDomain.REAL:
+                return [solution for solution in factored if _solution_is_real(solution)]
+            return factored
         solutions = _solve_polynomial_over_complex_numbers(*polynomial_target)
         if domain is SolutionDomain.REAL:
             return [solution for solution in solutions if _solution_is_real(solution)]

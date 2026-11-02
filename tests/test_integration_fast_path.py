@@ -21,6 +21,8 @@ def test_straightforward_integrals_use_direct_antiderivative_rules(
         "integrate(3*x^2,x)": "x ^ 3 + C",
         "integrate(2*x+5,x)": "x ^ 2 + 5 * x + C",
         "integrate(cos(x),x)": "sin(x) + C",
+        "integrate(sin(3*x),x)": "-cos(3 * x) / 3 + C",
+        "integrate(exp(2*x),x)": "exp(2 * x) / 2 + C",
     }
     for query, result_text in expected.items():
         result = solver.solve(query)

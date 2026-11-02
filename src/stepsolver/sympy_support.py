@@ -79,6 +79,16 @@ def is_real_expression(value: sp.Basic) -> bool:
     return sp.N(value).is_real is not False
 
 
+def has_fractional_power(expression: sp.Basic) -> bool:
+    """Return whether an expression contains a non-integer power.
+
+    SymPy stores ``sqrt(x)`` as ``x**(1/2)``, so asking for ``sp.sqrt`` as a
+    function atom never matches. Checking exponents keeps cheap structural
+    guards honest for square roots and other radicals.
+    """
+    return any(power.args[1].is_integer is not True for power in expression.atoms(sp.Pow))
+
+
 def contains_unevaluated_operation(value: object) -> bool:
     """Return whether a backend result still contains an unevaluated operation."""
     if isinstance(value, sp.Basic):
