@@ -13,7 +13,10 @@ from stepsolver.results import VerificationMethod
 
 
 def _is_exp_plus_variable(equation: sp.Equality, variable: sp.Symbol) -> bool:
-    difference = sp.simplify(equation.lhs - equation.rhs)
+    difference: sp.Basic = equation.lhs - equation.rhs
+    if not difference.has(sp.exp):
+        return False
+    difference = sp.simplify(difference)
     expected = sp.exp(variable) + variable
     return sp.simplify(difference - expected) == sp.Integer(0) or sp.simplify(
         difference + expected

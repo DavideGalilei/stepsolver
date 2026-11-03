@@ -13,6 +13,7 @@ from stepsolver.ast import (
     OpaqueExpression,
     Relation,
     SequenceExpression,
+    SolutionDomain,
     Symbol,
     UnaryExpression,
     UnaryOperator,
@@ -24,10 +25,13 @@ from stepsolver.results import (
     MappingValue,
     MathValue,
     NoSolutionValue,
+    NumericResult,
+    NumericRootsValue,
     ScalarValue,
     SequenceValue,
     SolveResult,
     UndefinedResult,
+    UniversalSolutionValue,
 )
 
 _PRECEDENCE: dict[BinaryOperator, int] = {
@@ -37,6 +41,8 @@ _PRECEDENCE: dict[BinaryOperator, int] = {
     BinaryOperator.DIVIDE: 20,
     BinaryOperator.POWER: 30,
 }
+
+_UNARY_PRECEDENCE = 25
 
 
 def _format_fraction(value: Fraction) -> str:
@@ -69,15 +75,39 @@ def _format_function_call(expression: FunctionCall, *, parent_precedence: int) -
             return f"{format_expression(operand, parent_precedence=40)}!"
         case "polygamma", (order, argument) if format_expression(order) == "0":
             return f"digamma({format_expression(argument)})"
+        case "all_real", (variable,):
+            return f"all real {format_expression(variable)}"
+        case "abs" | "Abs", (argument,):
+            return f"abs({format_expression(argument)})"
         case _:
             arguments = ", ".join(format_expression(item) for item in expression.arguments)
             return f"{expression.name}({arguments})"
 
 
+def _format_number(expression: Number, *, parent_precedence: int) -> str:
+    """Render a number, grouping a negative value when a parent requires it."""
+    rendered = _format_fraction(expression.value)
+    if expression.value < 0 and parent_precedence > _UNARY_PRECEDENCE:
+        return f"({rendered})"
+    return rendered
+
+
+def _format_unary(expression: UnaryExpression, *, parent_precedence: int) -> str:
+    """Render a unary expression with precedence-aware grouping."""
+    operand = format_expression(expression.operand, parent_precedence=40)
+    if expression.operator is UnaryOperator.FACTORIAL:
+        rendered = f"{operand}!"
+    else:
+        rendered = f"{expression.operator.value}{operand}"
+    if parent_precedence > _UNARY_PRECEDENCE:
+        return f"({rendered})"
+    return rendered
+
+
 def format_expression(expression: Expression, *, parent_precedence: int = 0) -> str:
     """Render a mathematical expression using parseable ASCII syntax."""
     if isinstance(expression, Number):
-        return _format_fraction(expression.value)
+        return _format_number(expression, parent_precedence=parent_precedence)
     if isinstance(expression, ApproximateNumber):
         return expression.text
     if isinstance(expression, Symbol):
@@ -96,10 +126,7 @@ def format_expression(expression: Expression, *, parent_precedence: int = 0) -> 
             f"{format_expression(expression.right)}"
         )
     if isinstance(expression, UnaryExpression):
-        operand = format_expression(expression.operand, parent_precedence=40)
-        if expression.operator is UnaryOperator.FACTORIAL:
-            return f"{operand}!"
-        return f"{expression.operator.value}{operand}"
+        return _format_unary(expression, parent_precedence=parent_precedence)
     if (
         expression.operator is BinaryOperator.ADD
         and isinstance(expression.left, Symbol)
@@ -111,7 +138,8 @@ def format_expression(expression: Expression, *, parent_precedence: int = 0) -> 
             right=expression.left,
         )
     precedence = _PRECEDENCE[expression.operator]
-    left = format_expression(expression.left, parent_precedence=precedence)
+    left_precedence = precedence + 1 if expression.operator is BinaryOperator.POWER else precedence
+    left = format_expression(expression.left, parent_precedence=left_precedence)
     right_precedence = precedence if expression.operator is BinaryOperator.POWER else precedence + 1
     right = format_expression(expression.right, parent_precedence=right_precedence)
     rendered = f"{left} {expression.operator.value} {right}"
@@ -136,6 +164,17 @@ def format_value(value: MathValue) -> str:
             for entry in value.entries
         )
         return f"{{{entries}}}"
+    if isinstance(value, UniversalSolutionValue):
+        domain = "real" if value.domain is SolutionDomain.REAL else "complex"
+        result = f"all {domain} numbers"
+        if value.exclusions:
+            excluded = ", ".join(format_expression(item) for item in value.exclusions)
+            return f"{result} except {excluded}"
+        return result
+    if isinstance(value, NumericRootsValue):
+        if len(value.roots) == 1:
+            return format_expression(value.roots[0])
+        return f"[{', '.join(format_expression(root) for root in value.roots)}]"
     rows = ", ".join(
         f"[{', '.join(format_expression(item) for item in row)}]" for row in value.rows
     )
@@ -162,6 +201,14 @@ def format_ascii(result: SolveResult) -> str:
         )
     if isinstance(result, ExactResult):
         lines.append(f"Result: {format_value(result.value)}")
+    elif isinstance(result, NumericResult):
+        lines.extend(
+            (
+                f"Result: {format_value(result.value)}",
+                f"Numerical method: {result.method}",
+                f"Residual tolerance: {result.value.tolerance:g}",
+            )
+        )
     elif isinstance(result, DivergentResult):
         lines.append(f"Diverges: {result.reason}")
     elif isinstance(result, UndefinedResult):

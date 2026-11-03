@@ -23,6 +23,62 @@ class SineSquareRootIntegral:
     value: sp.Basic
 
 
+@dataclass(frozen=True, slots=True, kw_only=True)
+class ReciprocalLinearIntegral:
+    """A constant over a linear denominator, integrated over the real domain."""
+
+    coefficient: sp.Basic
+    denominator: sp.Basic
+    denominator_derivative: sp.Basic
+    root: sp.Basic
+    antiderivative: sp.Basic
+    result: sp.Basic
+
+
+def match_reciprocal_linear_integral(
+    integrand: sp.Basic,
+    variable: sp.Symbol,
+) -> ReciprocalLinearIntegral | None:
+    """Match ``c / (a*x + b)`` and return its real-domain logarithmic antiderivative."""
+    numerator, denominator = sp.fraction(sp.together(integrand))
+    if (
+        numerator.free_symbols
+        or numerator.is_real is not True
+        or denominator.free_symbols != {variable}
+    ):
+        return None
+    try:
+        polynomial = sp.Poly(denominator, variable)
+    except sp.PolynomialError:
+        return None
+    if polynomial.degree() != 1:
+        return None
+    leading = polynomial.coeff_monomial(variable)
+    constant = polynomial.coeff_monomial(1)
+    if leading == sp.Integer(0) or leading.is_real is not True or constant.is_real is not True:
+        return None
+    coefficient = sp.simplify(numerator / leading)
+    denominator_derivative = sp.diff(denominator, variable)
+    if sp.simplify(denominator_derivative - leading) != sp.Integer(0):
+        return None
+    root = sp.simplify(-constant / leading)
+    logarithm = sp.log(sp.Abs(denominator))
+    antiderivative = (
+        logarithm
+        if coefficient == sp.Integer(1)
+        else sp.Mul(coefficient, logarithm, evaluate=False)
+    )
+    integration_constant = sp.Symbol("C")
+    return ReciprocalLinearIntegral(
+        coefficient=coefficient,
+        denominator=denominator,
+        denominator_derivative=denominator_derivative,
+        root=root,
+        antiderivative=antiderivative,
+        result=sp.Add(antiderivative, integration_constant, evaluate=False),
+    )
+
+
 def _pi_rational_points(
     lower: sp.Basic,
     upper: sp.Basic,

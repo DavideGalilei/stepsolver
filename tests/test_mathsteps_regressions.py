@@ -87,12 +87,12 @@ def test_adapted_simplification_cases_use_recognizable_human_rules(
         (
             "simplify(((2+x)*(3+x))/(2+x))",
             "Result: x + 3",
-            "2 + x != 0",
+            "x != -2",
         ),
         (
             "simplify((x^3*y)/x^2+5)",
             "Result: x * y + 5",
-            "x ^ 2 != 0",
+            "x != 0",
         ),
     ],
 )
@@ -176,5 +176,5 @@ def test_explicit_cancel_operation_states_the_nonzero_factor(solver: Solver) -> 
     assert tuple(
         format_expression(constraint.expression)
         for constraint in result.steps[0].introduced_constraints
-    ) == ("x - 1 != 0",)
+    ) == ("x != 1",)
     assert format_ascii(result).endswith("Result: x + 1")

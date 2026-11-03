@@ -80,11 +80,11 @@ class StepResponse(BaseModel):
 
 
 class SolveResponse(BaseModel):
-    """Typed browser response for an exact, divergent, or unsolved query."""
+    """Typed browser response for an exact, numeric, divergent, or unsolved query."""
 
     model_config = ConfigDict(extra="forbid", frozen=True)
 
-    status: Literal["exact", "divergent", "undefined", "unsolved"]
+    status: Literal["exact", "numeric", "divergent", "undefined", "unsolved"]
     source: str
     formatted_ascii: str
     result_latex: str | None

@@ -15,12 +15,14 @@ from stepsolver.derivation.model import (
     BackendMathNote,
 )
 from stepsolver.results import VerificationMethod
+from stepsolver.sympy_equivalence import expressions_equivalent
+from stepsolver.sympy_support import has_fractional_power
 
 type _Strategy = Callable[[sp.Basic, sp.Symbol, sp.Basic], tuple[BackendDerivationStep, ...]]
 
 
 def _matches(expression: sp.Basic, target: sp.Basic) -> bool:
-    return sp.simplify(expression - target) == sp.Integer(0)
+    return expressions_equivalent(expression, target)
 
 
 def _verified_final_step(
@@ -45,6 +47,8 @@ def _linear_tangent_square(
     variable: sp.Symbol,
     result: sp.Basic,
 ) -> tuple[BackendDerivationStep, ...]:
+    if not integrand.has(sp.tan):
+        return ()
     if not _matches(integrand, variable * sp.tan(variable) ** 2):
         return ()
     rewritten = variable * (sp.sec(variable) ** 2 - 1)
@@ -110,6 +114,8 @@ def _quadratic_over_square_root(
     result: sp.Basic,
 ) -> tuple[BackendDerivationStep, ...]:
     radicand = variable**2 + 25
+    if not has_fractional_power(integrand):
+        return ()
     if not _matches(integrand, variable**2 / sp.sqrt(radicand)):
         return ()
     rewritten = sp.sqrt(radicand) - 25 / sp.sqrt(radicand)
@@ -145,6 +151,8 @@ def _power_square_root_substitution(
     variable: sp.Symbol,
     result: sp.Basic,
 ) -> tuple[BackendDerivationStep, ...]:
+    if not has_fractional_power(integrand):
+        return ()
     if not _matches(integrand, variable**5 * sp.sqrt(2 - variable**3)):
         return ()
     substitution = sp.Symbol("u", real=True)
@@ -198,6 +206,8 @@ def _logarithmic_tangent_substitution(
     result: sp.Basic,
 ) -> tuple[BackendDerivationStep, ...]:
     target = sp.tan(sp.log(variable)) ** 3 / variable
+    if not integrand.has(sp.tan, sp.log):
+        return ()
     if not _matches(integrand, target):
         return ()
     substitution = sp.Symbol("u", real=True)

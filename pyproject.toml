@@ -11,14 +11,18 @@ authors = [
 requires-python = ">=3.12,<3.15"
 dependencies = [
     "sympy (>=1.14.0,<2.0.0)",
-    "pydantic (>=2.9.0,<3.0.0)",
+]
+
+[project.optional-dependencies]
+web = [
     "fastapi (>=0.141.1,<0.142.0)",
+    "pydantic (>=2.9.0,<3.0.0)",
     "uvicorn[standard] (>=0.52.3,<0.53.0)",
 ]
 
 [project.scripts]
 stepsolver = "stepsolver.cli:main"
-stepsolver-web = "stepsolver.web:main"
+stepsolver-web = "stepsolver.web_entry:main"
 stepsolver-isolated = "stepsolver.isolated_runner:main"
 
 [tool.poetry]
@@ -39,6 +43,8 @@ dev = [
     "pyright (>=1.1.411,<2.0.0)",
     "ty (>=0.0.72,<0.0.73)",
     "httpx2 (>=2.10.0,<3.0.0)",
+    "fastapi (>=0.141.1,<0.142.0)",
+    "uvicorn[standard] (>=0.52.3,<0.53.0)",
 ]
 
 [tool.ruff]
@@ -47,6 +53,8 @@ target-version = "py312"
 extend-exclude = [
     # This mirrors a third-party package boundary rather than project source.
     "typings",
+    # Benchmark notebooks are third-party fixtures, not project source.
+    "Benchmarking tests",
 ]
 
 [tool.ruff.lint]
@@ -93,9 +101,28 @@ explicit-preview-rules = false
     "raw-string-in-exception",
     "too-many-branches",
 ]
+"src/stepsolver/solver.py" = [
+    "raise-vanilla-args",
+    "raw-string-in-exception",
+    "redundant-numeric-union",
+]
 "src/stepsolver/sympy_backend.py" = [
+    "get-attr-with-constant",
+    "magic-value-comparison",
+    "raise-vanilla-args",
+    "raw-string-in-exception",
     "too-many-locals",
     "too-many-return-statements",
+]
+"src/stepsolver/sympy_numeric.py" = [
+    "complex-structure",
+    "f-string-in-exception",
+    "magic-value-comparison",
+    "raise-vanilla-args",
+    "raw-string-in-exception",
+    "too-many-arguments",
+    "too-many-branches",
+    "too-many-locals",
 ]
 "src/stepsolver/sympy_conversion.py" = [
     "complex-structure",
@@ -120,6 +147,8 @@ explicit-preview-rules = false
     "too-many-branches",
     "too-many-return-statements",
 ]
+"src/stepsolver/sympy_matrix_steps.py" = ["too-many-arguments"]
+"src/stepsolver/sympy_equation_steps.py" = ["get-attr-with-constant", "too-many-arguments"]
 "src/stepsolver/sympy_steps.py" = ["magic-value-comparison"]
 "src/stepsolver/sympy_support.py" = [
     "f-string-in-exception",
@@ -133,6 +162,40 @@ explicit-preview-rules = false
     "raw-string-in-exception",
 ]
 "src/stepsolver/derivation/*.py" = ["too-many-arguments", "too-many-locals"]
+"src/stepsolver/derivation/equations_exponential_logarithmic.py" = [
+    "complex-structure",
+    "get-attr-with-constant",
+    "magic-value-comparison",
+    "too-many-branches",
+    "too-many-positional-arguments",
+    "too-many-return-statements",
+]
+"src/stepsolver/derivation/limits_two_sided.py" = ["get-attr-with-constant"]
+"src/stepsolver/derivation/series.py" = ["get-attr-with-constant"]
+"src/stepsolver/derivation/sums_series.py" = [
+    "complex-structure",
+    "too-many-branches",
+    "too-many-return-statements",
+]
+"src/stepsolver/derivation/systems.py" = [
+    "complex-structure",
+    "get-attr-with-constant",
+    "too-many-branches",
+    "too-many-statements",
+]
+"src/stepsolver/derivation/definite_integrals_improper.py" = [
+    "complex-structure",
+    "get-attr-with-constant",
+    "too-many-return-statements",
+]
+"src/stepsolver/derivation/integrals_elementary.py" = ["get-attr-with-constant"]
+"tests/test_derivation_helper_edges.py" = [
+    "boolean-positional-value-in-call",
+    "import-private-name",
+    "magic-value-comparison",
+    "private-member-access",
+]
+"tests/test_derivation_helpers_prompt9.py" = ["private-member-access"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"

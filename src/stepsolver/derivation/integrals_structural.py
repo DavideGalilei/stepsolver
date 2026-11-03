@@ -19,12 +19,13 @@ from stepsolver.derivation.model import (
     BackendSum,
 )
 from stepsolver.results import VerificationMethod
+from stepsolver.sympy_equivalence import expressions_equivalent
 
 _POWER_ARITY = 2
 
 
 def _matches_result(candidate: sp.Basic, result: sp.Basic) -> bool:
-    return sp.simplify(candidate - result) == sp.Integer(0)
+    return expressions_equivalent(candidate, result)
 
 
 def _matches_antiderivative(
@@ -33,7 +34,7 @@ def _matches_antiderivative(
     variable: sp.Symbol,
 ) -> bool:
     """Compare antiderivatives modulo an additive constant."""
-    return sp.simplify(sp.diff(candidate - result, variable)) == sp.Integer(0)
+    return expressions_equivalent(sp.diff(candidate - result, variable), sp.Integer(0))
 
 
 def _matching_functions(
@@ -53,9 +54,12 @@ def derive_inverse_function_by_parts(
     variable: sp.Symbol,
     result: sp.Basic,
 ) -> tuple[BackendDerivationStep, ...]:
-    """Use integration by parts for logarithms and inverse tangent of affine inputs."""
+    """Use integration by parts for logarithms and inverse trigonometric functions."""
     _, inverse_function = integrand.as_independent(variable, as_Add=False)
-    if inverse_function.func not in {sp.log, sp.atan} or len(inverse_function.args) != 1:
+    if (
+        inverse_function.func not in {sp.log, sp.atan, sp.asin, sp.acos}
+        or len(inverse_function.args) != 1
+    ):
         return ()
     inner = inverse_function.args[0]
     inner_rate = sp.diff(inner, variable)
@@ -85,16 +89,23 @@ def derive_inverse_function_by_parts(
             variable=variable,
         ),
     )
+    if inverse_function.func is sp.log:
+        description = (
+            "Treat the logarithm as u and 1 dx as dv. Its affine inner expression has a "
+            "constant derivative, leaving a simpler rational integral."
+        )
+    else:
+        description = (
+            "Treat the inverse trigonometric function as u and 1 dx as dv. Its affine inner "
+            "expression has a constant derivative, so the remaining integral follows from "
+            "the matching derivative pair."
+        )
     return (
         BackendDerivationStep(
             rule="Choose integration by parts",
             before=BackendIntegral(integrand=integrand, variable=variable),
             after=reduced,
-            explanation=(
-                "Treat the logarithm or inverse tangent as u and 1 dx as dv. Its affine "
-                "inner expression has a constant derivative, leaving a simpler rational "
-                "integral."
-            ),
+            explanation=description,
             verification_method=VerificationMethod.SYMBOLIC_EQUIVALENCE,
             verification_detail="The integration-by-parts identity was applied exactly.",
             notes=(

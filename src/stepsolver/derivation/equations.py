@@ -28,6 +28,8 @@ def derive_polynomial_equation(
     variable: sp.Symbol,
     roots: tuple[sp.Basic, ...],
     domain_denominators: tuple[sp.Basic, ...] = (),
+    *,
+    real_only: bool = False,
 ) -> tuple[BackendDerivationStep, ...]:
     """Derive detailed steps for rational, linear, and quadratic equations."""
     steps: list[BackendDerivationStep] = []
@@ -114,6 +116,7 @@ def derive_polynomial_equation(
             polynomial,
             roots,
             excluded_values,
+            real_only=real_only,
         )
     else:
         detail = derive_generic_polynomial_steps(
@@ -122,6 +125,7 @@ def derive_polynomial_equation(
             polynomial,
             roots,
             excluded_values,
+            real_only=real_only,
         )
     steps.extend(detail)
     return tuple(steps)

@@ -10,6 +10,7 @@ from stepsolver.derivation.definite_integrals import (
 )
 from stepsolver.derivation.derivatives import derive_derivative
 from stepsolver.derivation.equations import derive_polynomial_equation
+from stepsolver.derivation.equations_radical import derive_radical_equation
 from stepsolver.derivation.integrals_elementary import (
     derive_basic_antiderivative,
     derive_constant_multiple_integral,
@@ -93,6 +94,7 @@ __all__ = [
     "derive_partial_fraction_integral",
     "derive_polynomial_equation",
     "derive_polynomial_sum_integral",
+    "derive_radical_equation",
     "derive_reciprocal_quadratic_integral",
     "derive_shifted_semicircle_integral",
     "derive_square_root_rational_integral",

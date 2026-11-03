@@ -137,9 +137,7 @@ def _derive_sine_square_root_integral(
         BackendSum(terms=absolute_pieces) if len(absolute_pieces) > 1 else absolute_integral
     )
     signed_piece_expression = (
-        BackendSum(terms=signed_pieces)
-        if len(signed_pieces) > 1
-        else next(iter(signed_pieces))
+        BackendSum(terms=signed_pieces) if len(signed_pieces) > 1 else next(iter(signed_pieces))
     )
     if len(absolute_pieces) > 1:
         steps.append(
@@ -150,9 +148,7 @@ def _derive_sine_square_root_integral(
                 explanation="Split the interval wherever sine can change sign.",
                 explanation_parts=(
                     "Split at each interior point where ",
-                    BackendInlineMath(
-                        expression=BackendIdentity(left=sine, right=sp.Integer(0))
-                    ),
+                    BackendInlineMath(expression=BackendIdentity(left=sine, right=sp.Integer(0))),
                     ". Between consecutive zeros, sine keeps one sign.",
                 ),
                 verification_method=VerificationMethod.SYMBOLIC_EQUIVALENCE,

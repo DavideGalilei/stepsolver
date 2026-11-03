@@ -31,13 +31,24 @@ StepSolver accepts ASCII or visual math, parses it into its own typed AST, and r
 
 StepSolver supports Python 3.12 through 3.14 and uses Poetry.
 
+The core library installs only SymPy and its numeric backend. Install the
+optional web interface with the `web` extra:
+
+```console
+pip install stepsolver            # library and CLI
+pip install 'stepsolver[web]'     # adds FastAPI, Uvicorn, and Pydantic
+```
+
+For development from a clone:
+
 ```console
 git clone https://github.com/DavideGalilei/stepsolver.git
 cd stepsolver
 poetry install
 ```
 
-Start the graphical editor:
+`poetry install` includes the development tools, including the web
+dependencies. Start the graphical editor:
 
 ```console
 poetry run stepsolver-web
@@ -101,6 +112,44 @@ for step in payload.steps:
 
 `payload.as_dict()` returns standard Python containers suitable for JSON serialization.
 
+### Numerical root finding
+
+`Solver.nsolve` is the explicit real-domain numerical root finder. Pass an equation or a residual and a variable; a starting guess is optional for polynomials, but required for a general transcendental equation.
+
+```python
+from stepsolver import NumericResult, Solver, format_expression
+
+result = Solver().nsolve("cos(x) = x", var="x", guess=0.7)
+
+assert isinstance(result, NumericResult)
+print(format_expression(result.value.roots[0]))
+print(result.value.tolerance)
+for step in result.steps:
+    print(step.rule, step.explanation)
+```
+
+The first-class query form is equivalent:
+
+```python
+result = Solver().solve("nsolve(cos(x) = x, x, 0.7)")
+```
+
+`guess` may be an integer, float, exact fraction, or numeric string. Without a guess, a polynomial residual uses real-root isolation; a general transcendental residual returns an `UnsolvedResult` that asks for a guess. The numerical path solves over the real domain only, rejects complex candidates, verifies every returned root by substitution, uses a residual tolerance of `1e-12`, and bounds Newton's method to 50 iterations. Results carry a `NumericRootsValue` with the tolerance and a `NumericResult` with the method and residuals. `Solver.solve(...)` keeps its existing symbolic behavior; use `nsolve` when a decimal answer is intended.
+
+### Choose a solution domain
+
+Exact `solve` queries accept an optional `domain` keyword. Omitting it preserves the existing behavior; pass `"real"` or `"complex"` to make the ambient number domain explicit. A parsed query can carry the same choice through `Query.domain`.
+
+```python
+from stepsolver import SolutionDomain, Solver
+
+solver = Solver()
+real_result = solver.solve("solve(x^2 + 4 = 0, x)", domain="real")  # No solution
+complex_result = solver.solve("solve(x^2 + 4 = 0, x)", domain=SolutionDomain.COMPLEX)
+```
+
+Without a domain, isolated polynomial equations keep the documented complex-root default.
+
 ### Parse first, solve later
 
 The parser produces StepSolver's own immutable AST. A parsed `Query` can be inspected, stored, or passed to a solver.
@@ -137,11 +186,17 @@ The main abstractions are:
 | Orchestration | `Solver` | Accept source text or a parsed query and invoke an engine |
 | Engine boundary | `SymbolicBackend`, `SympyBackend` | Isolate symbolic computation behind a typed protocol |
 | Domain result | `SolveResult`, `SolutionStep`, `StepNote` | Return answers, derivations, explanations, and verification |
+| Numerical result | `NumericResult`, `NumericRootsValue` | Carry approximate real roots, residuals, and tolerance |
 | Presentation | `solve_payload`, `SolvePayload`, `StepPayload` | Render the same result as frontend-ready ASCII and LaTeX |
 
 ## Syntax
 
 ASCII input uses explicit operators. Write `2*x`, not `2x`. Constants include `pi`, `e`, `i`, and `oo`.
+Supported functions include `sin`, `cos`, `tan`, `asin`, `acos`, `atan`, `sinh`, `asinh`,
+`cosh`, `tanh`, `exp`, `sqrt`, `abs`, `factorial`, `gamma`, `log`, and `root`. `ln(x)` is
+accepted as an alias for the natural logarithm `log(x)`. Unknown function names are
+rejected instead of being echoed back as a result. Calculus operations may use
+single-letter abstract functions such as `f(x)`.
 
 | Area | Operations |
 | --- | --- |
@@ -152,7 +207,7 @@ ASCII input uses explicit operators. Write `2*x`, not `2x`. Constants include `p
 | Transforms | `laplace`, `inverse_laplace`, `fourier`, `inverse_fourier` |
 | Differential equations and recurrences | `dsolve`, `rsolve` |
 | Number theory | `gcd`, `lcm`, `is_prime`, `prime_factors`, `binomial` |
-| Numerical work | `numeric` |
+| Numerical work | `numeric`, `nsolve` |
 
 Contour integrals use an explicit parameterized path:
 

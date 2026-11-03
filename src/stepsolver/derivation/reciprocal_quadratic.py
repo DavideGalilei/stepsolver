@@ -302,6 +302,8 @@ def derive_reciprocal_quadratic_integral(
     numerator, denominator = sp.fraction(sp.together(integrand))
     if numerator.has(variable):
         return ()
+    if not denominator.is_polynomial(variable):
+        return ()
     polynomial = sp.Poly(denominator, variable)
     if polynomial.degree() != _QUADRATIC_DEGREE:
         return ()

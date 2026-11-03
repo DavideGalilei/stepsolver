@@ -582,6 +582,16 @@ def _derive_function_chain(
                     ),
                 ),
             )
+        constraints = (
+            (
+                BackendStepConstraint(
+                    explanation="The real logarithm requires a positive argument.",
+                    expression=sp.Gt(argument, sp.Integer(0), evaluate=False),
+                ),
+            )
+            if function is sp.log
+            else ()
+        )
         return _verified_derivative_steps(
             rule=direct_rule if is_direct else "Apply the chain rule",
             expression=expression,
@@ -594,6 +604,7 @@ def _derive_function_chain(
                 else "Differentiate the outer function, then multiply by the inner derivative."
             ),
             notes=notes,
+            introduced_constraints=constraints,
         )
     return ()
 

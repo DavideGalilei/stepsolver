@@ -6,6 +6,8 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import TYPE_CHECKING
 
+from stepsolver.ast import SolutionDomain as SolutionDomain  # ruff: ignore[useless-import-alias]
+
 if TYPE_CHECKING:
     from stepsolver.ast import Expression, Query
 
@@ -122,8 +124,31 @@ class NoSolutionValue:
     """The empty solution set for an equation or system."""
 
 
+@dataclass(frozen=True, slots=True, kw_only=True)
+class UniversalSolutionValue:
+    """Every value in a domain, except explicit domain exclusions."""
+
+    domain: SolutionDomain = SolutionDomain.REAL
+    exclusions: tuple[Expression, ...] = ()
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class NumericRootsValue:
+    """Approximate real roots with the tolerance used to verify them."""
+
+    roots: tuple[Expression, ...]
+    tolerance: float
+
+
 type MathValue = (
-    ScalarValue | SequenceValue | MappingValue | MatrixValue | BooleanValue | NoSolutionValue
+    ScalarValue
+    | SequenceValue
+    | MappingValue
+    | MatrixValue
+    | BooleanValue
+    | NoSolutionValue
+    | UniversalSolutionValue
+    | NumericRootsValue
 )
 
 
@@ -134,6 +159,17 @@ class ExactResult:
     query: Query
     value: MathValue
     steps: tuple[SolutionStep, ...]
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class NumericResult:
+    """A verified numerical root result."""
+
+    query: Query
+    value: NumericRootsValue
+    steps: tuple[SolutionStep, ...]
+    method: str
+    residuals: tuple[float, ...]
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -164,4 +200,4 @@ class UndefinedResult:
     steps: tuple[SolutionStep, ...]
 
 
-type SolveResult = ExactResult | DivergentResult | UndefinedResult | UnsolvedResult
+type SolveResult = ExactResult | NumericResult | DivergentResult | UndefinedResult | UnsolvedResult

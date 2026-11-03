@@ -67,6 +67,12 @@ def test_invalid_or_non_ascii_input_is_rejected(source: str) -> None:
         parse(source)
 
 
+def test_ln_is_normalized_to_the_supported_natural_logarithm() -> None:
+    """The visual editor's ln notation should map onto the documented natural log."""
+    assert format_expression(parse_expression("ln(x)")) == "log(x)"
+    assert format_expression(parse_expression("ln(x + 1)")) == "log(x + 1)"
+
+
 def test_web_parser_accepts_visual_editor_implicit_multiplication() -> None:
     """The opt-in web mode should normalize MathLive-style adjacent factors."""
     expression = parse_expression("2 x + 3(x+1)", allow_implicit_multiplication=True)

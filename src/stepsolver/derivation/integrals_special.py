@@ -17,6 +17,8 @@ from stepsolver.derivation.model import (
     BackendSum,
 )
 from stepsolver.results import VerificationMethod
+from stepsolver.sympy_equivalence import expressions_equivalent
+from stepsolver.sympy_support import has_fractional_power
 
 _QUADRATIC_DEGREE = 2
 _MINIMUM_PRODUCT_FACTORS = 2
@@ -160,12 +162,148 @@ def derive_integration_by_parts(
     )
 
 
+def derive_polynomial_inverse_by_parts(
+    integrand: sp.Basic,
+    variable: sp.Symbol,
+    result: sp.Basic,
+) -> tuple[BackendDerivationStep, ...]:
+    """Integrate a polynomial times a logarithm or inverse trigonometric function."""
+    inverse_factors = tuple(
+        factor
+        for factor in integrand.as_ordered_factors()
+        if factor.func in {sp.log, sp.atan, sp.asin, sp.acos} and len(factor.args) == 1
+    )
+    if len(inverse_factors) != 1:
+        return ()
+    chosen_u = inverse_factors[0]
+    chosen_dv = sp.simplify(integrand / chosen_u)
+    if not chosen_dv.is_polynomial(variable):
+        return ()
+    polynomial = sp.Poly(chosen_dv, variable)
+    if polynomial.degree() < 1:
+        return ()
+    chosen_v = sp.integrate(chosen_dv, variable)
+    if chosen_v.has(sp.Integral):
+        return ()
+    chosen_du = sp.diff(chosen_u, variable)
+    remaining_integrand = sp.simplify(chosen_v * chosen_du)
+    remaining_antiderivative = sp.integrate(remaining_integrand, variable)
+    expected = sp.Add(
+        chosen_u * chosen_v,
+        -remaining_antiderivative,
+        sp.Symbol("C"),
+        evaluate=False,
+    )
+    if remaining_antiderivative.has(sp.Integral) or sp.simplify(expected - result) != sp.Integer(0):
+        return ()
+    product_term = sp.simplify(chosen_u * chosen_v)
+    if remaining_integrand.could_extract_minus_sign():
+        by_parts_expression: BackendExpression = BackendSum(
+            terms=(
+                product_term,
+                BackendIntegral(
+                    integrand=-remaining_integrand,
+                    variable=variable,
+                ),
+            )
+        )
+    else:
+        by_parts_expression = BackendDifference(
+            left=product_term,
+            right=BackendIntegral(
+                integrand=remaining_integrand,
+                variable=variable,
+            ),
+        )
+    return (
+        BackendDerivationStep(
+            rule="Choose integration by parts",
+            before=BackendIntegral(integrand=integrand, variable=variable),
+            after=by_parts_expression,
+            explanation=(
+                "Choose the logarithm or inverse trigonometric factor as u so differentiating "
+                "it removes the transcendental function, and integrate the polynomial factor "
+                "as dv."
+            ),
+            verification_method=VerificationMethod.SYMBOLIC_EQUIVALENCE,
+            verification_detail=(
+                "Expanding the integration-by-parts formula recovers the original integral."
+            ),
+            notes=(
+                BackendMathNote(
+                    label="Integration by parts",
+                    expression=BackendIntegrationByPartsRule(),
+                ),
+                BackendMathNote(
+                    label="Choose the inverse function",
+                    expression=BackendIdentity(
+                        left=sp.Symbol("u"),
+                        right=chosen_u,
+                    ),
+                ),
+                BackendMathNote(
+                    label="Choose the polynomial differential",
+                    expression=BackendIdentity(
+                        left=sp.Symbol("dv"),
+                        right=BackendDifferential(
+                            variable=variable,
+                            coefficient=chosen_dv,
+                        ),
+                    ),
+                ),
+                BackendMathNote(
+                    label="Differentiate u",
+                    expression=BackendIdentity(
+                        left=sp.Symbol("du"),
+                        right=BackendDifferential(
+                            variable=variable,
+                            coefficient=chosen_du,
+                        ),
+                    ),
+                ),
+                BackendMathNote(
+                    label="Antidifferentiate dv",
+                    expression=BackendIdentity(
+                        left=sp.Symbol("v"),
+                        right=chosen_v,
+                    ),
+                ),
+            ),
+        ),
+        BackendDerivationStep(
+            rule="Evaluate the remaining integral",
+            before=by_parts_expression,
+            after=result,
+            explanation=(
+                "Integrate the simpler remaining term, combine the terms, and add the "
+                "integration constant."
+            ),
+            verification_method=VerificationMethod.DIFFERENTIATION,
+            verification_detail="Differentiating the final expression recovers the integrand.",
+            notes=(
+                BackendMathNote(
+                    label="Remaining antiderivative",
+                    expression=BackendIdentity(
+                        left=BackendIntegral(
+                            integrand=remaining_integrand,
+                            variable=variable,
+                        ),
+                        right=remaining_antiderivative,
+                    ),
+                ),
+            ),
+        ),
+    )
+
+
 def derive_trigonometric_power_integral(
     integrand: sp.Basic,
     variable: sp.Symbol,
     result: sp.Basic,
 ) -> tuple[BackendDerivationStep, ...]:
     """Reduce an even square of sine or cosine before integrating."""
+    if not integrand.has(sp.sin, sp.cos):
+        return ()
     candidates = (
         (
             sp.sin(variable) ** 2,
@@ -179,11 +317,11 @@ def derive_trigonometric_power_integral(
         ),
     )
     for candidate, reduced, name in candidates:
-        if sp.simplify(integrand - candidate) != sp.Integer(0):
+        if not expressions_equivalent(integrand, candidate, variable=variable):
             continue
         integration_constant = sp.Symbol("C")
         antiderivative = sp.Add(sp.integrate(reduced, variable), integration_constant)
-        if sp.simplify(antiderivative - result) != sp.Integer(0):
+        if not expressions_equivalent(antiderivative, result, variable=variable):
             return ()
         return (
             BackendDerivationStep(
@@ -221,11 +359,13 @@ def derive_gaussian_antiderivative(
 ) -> tuple[BackendDerivationStep, ...]:
     """Explain the standard special-function antiderivative of the Gaussian."""
     gaussian = sp.exp(-(variable**2))
-    if sp.simplify(integrand - gaussian) != sp.Integer(0):
+    if not integrand.has(sp.exp):
+        return ()
+    if not expressions_equivalent(integrand, gaussian, variable=variable):
         return ()
     integration_constant = sp.Symbol("C")
     formula = sp.sqrt(sp.pi) * sp.erf(variable) / 2 + integration_constant
-    if sp.simplify(formula - result) != sp.Integer(0):
+    if not expressions_equivalent(formula, result, variable=variable):
         return ()
     generic_variable = sp.Symbol("t", real=True)
     definition_variable = sp.Symbol("z", real=True)
@@ -271,8 +411,10 @@ def derive_square_root_rational_integral(
     result: sp.Basic,
 ) -> tuple[BackendDerivationStep, ...]:
     """Expose the hidden arctangent substitution in 1/(sqrt(x)(x+1))."""
+    if not has_fractional_power(integrand):
+        return ()
     expected_integrand = 1 / (sp.sqrt(variable) * (variable + 1))
-    if sp.simplify(integrand - expected_integrand) != sp.Integer(0):
+    if not expressions_equivalent(integrand, expected_integrand, variable=variable):
         return ()
     substitution_variable = sp.Symbol("u", positive=True)
     transformed_integrand = 2 / (substitution_variable**2 + 1)
@@ -283,7 +425,7 @@ def derive_square_root_rational_integral(
     integration_constant = sp.Symbol("C")
     transformed_result = 2 * sp.atan(substitution_variable) + integration_constant
     final_result = 2 * sp.atan(sp.sqrt(variable)) + integration_constant
-    if sp.simplify(final_result - result) != sp.Integer(0):
+    if not expressions_equivalent(final_result, result, variable=variable):
         return ()
     return (
         BackendDerivationStep(
@@ -360,9 +502,11 @@ def derive_shifted_semicircle_integral(
     result: sp.Basic,
 ) -> tuple[BackendDerivationStep, ...]:
     """Complete the square and use the standard semicircle antiderivative."""
-    original_radicand = sp.simplify(integrand**2)
+    if not has_fractional_power(integrand):
+        return ()
+    original_radicand = sp.expand(integrand**2)
     expected_radicand = 2 * variable - variable**2
-    if sp.simplify(original_radicand - expected_radicand) != sp.Integer(0):
+    if not expressions_equivalent(original_radicand, expected_radicand, variable=variable):
         return ()
     shifted = variable - 1
     completed_radicand = 1 - shifted**2
@@ -376,7 +520,7 @@ def derive_shifted_semicircle_integral(
         + integration_constant
     )
     final_formula = shifted * completed_integrand / 2 + sp.asin(shifted) / 2 + integration_constant
-    if sp.simplify(final_formula - result) != sp.Integer(0):
+    if not expressions_equivalent(final_formula, result, variable=variable):
         return ()
     return (
         BackendDerivationStep(
@@ -466,6 +610,8 @@ def derive_inverse_hyperbolic_integral(
     result: sp.Basic,
 ) -> tuple[BackendDerivationStep, ...]:
     """Normalize 1/sqrt(a*x^2+b) to the inverse-hyperbolic-sine rule."""
+    if not has_fractional_power(integrand):
+        return ()
     radicand = sp.simplify(integrand**-2)
     try:
         polynomial = sp.Poly(radicand, variable)
@@ -480,7 +626,7 @@ def derive_inverse_hyperbolic_integral(
         coefficient_b != sp.Integer(0)
         or coefficient_a.is_positive is not True
         or coefficient_c.is_positive is not True
-        or sp.simplify(integrand - 1 / sp.sqrt(radicand)) != sp.Integer(0)
+        or not expressions_equivalent(integrand, 1 / sp.sqrt(radicand), variable=variable)
     ):
         return ()
     substitution_variable = sp.Symbol("u", real=True)
@@ -495,7 +641,7 @@ def derive_inverse_hyperbolic_integral(
     integration_constant = sp.Symbol("C")
     transformed_formula = coefficient * sp.asinh(substitution_variable) + integration_constant
     final_formula = coefficient * sp.asinh(scale * variable) + integration_constant
-    if sp.simplify(final_formula - result) != sp.Integer(0):
+    if not expressions_equivalent(final_formula, result, variable=variable):
         return ()
     return (
         BackendDerivationStep(

@@ -12,6 +12,7 @@ from stepsolver.results import (
     ExactResult,
     MappingValue,
     MathValue,
+    NumericResult,
     SequenceValue,
     SolveResult,
     UndefinedResult,
@@ -66,7 +67,7 @@ class StepPayload:
 class SolvePayload:
     """Runtime-neutral representation of a completed solver request."""
 
-    status: Literal["exact", "divergent", "undefined", "unsolved"]
+    status: Literal["exact", "numeric", "divergent", "undefined", "unsolved"]
     source: str
     formatted_ascii: str
     result_latex: str | None
@@ -126,6 +127,21 @@ def _exact_result_latex(result: ExactResult) -> str:
     if result.query.operation is Operation.SUM and result.steps:
         return format_latex_expression(result.steps[-1].after)
     return format_latex_value(result.value)
+
+
+_MINIMUM_NSOLVE_ARGUMENTS = 2
+
+
+def _numeric_result_latex(result: NumericResult) -> str:
+    if len(result.query.arguments) < _MINIMUM_NSOLVE_ARGUMENTS:
+        return format_latex_value(result.value)
+    variable = format_latex_expression(result.query.arguments[1])
+    approximations = tuple(
+        rf"{variable} \approx {format_latex_expression(root)}" for root in result.value.roots
+    )
+    if not approximations:
+        return format_latex_value(result.value)
+    return r"\quad\text{or}\quad ".join(approximations)
 
 
 def _step_payloads(result: SolveResult) -> tuple[StepPayload, ...]:
@@ -191,6 +207,15 @@ def solve_payload(result: SolveResult) -> SolvePayload:
             source=result.query.source,
             formatted_ascii=format_ascii(result),
             result_latex=_exact_result_latex(result),
+            reason=None,
+            steps=steps,
+        )
+    if isinstance(result, NumericResult):
+        return SolvePayload(
+            status="numeric",
+            source=result.query.source,
+            formatted_ascii=format_ascii(result),
+            result_latex=_numeric_result_latex(result),
             reason=None,
             steps=steps,
         )

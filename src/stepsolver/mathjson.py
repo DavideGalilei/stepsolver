@@ -313,6 +313,18 @@ def _limit_query(node: list[JsonValue]) -> Query:
     raise _error("limit notation must include an expression, variable, and point")
 
 
+def _nsolve_query(node: list[JsonValue]) -> Query:
+    if len(node) not in {3, 4}:
+        raise _error("nsolve notation requires a residual, a variable, and an optional guess")
+    arguments: tuple[Expression, ...] = (
+        expression_from_mathjson(node[1]),
+        expression_from_mathjson(node[2]),
+    )
+    if len(node) == 4:
+        arguments = (*arguments, expression_from_mathjson(node[3]))
+    return _query(Operation.NSOLVE, arguments)
+
+
 def _bounded_query(node: list[JsonValue], operation: Operation) -> Query:
     if len(node) != 3:
         raise _error(f"{operation.value} notation requires an expression and limits")
@@ -338,6 +350,8 @@ def query_from_mathjson(value: JsonValue) -> Query:
         head = _head(node)
         if head == "Integrate":
             return _integral_query(node)
+        if head.lower() == "nsolve":
+            return _nsolve_query(node)
         if head in {"D", "Derivative"}:
             return _derivative_query(node)
         if head == "Limit":

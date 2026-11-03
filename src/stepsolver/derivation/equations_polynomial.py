@@ -9,6 +9,7 @@ import sympy as sp
 from stepsolver.derivation.equations_support import (
     append_if_changed,
     equivalent_step,
+    evaluate_polynomial_at_rational,
     newton_values,
     rational_root_candidates,
     relations,
@@ -25,6 +26,7 @@ from stepsolver.derivation.model import (
     EquationBackendExpression,
 )
 from stepsolver.results import VerificationMethod
+from stepsolver.sympy_support import is_real_expression
 
 _DISPLAY_DIGITS = 7
 _MAX_RATIONAL_ROOT_CANDIDATES = 12
@@ -40,6 +42,8 @@ def derive_quadratic_steps(
     """Solve a quadratic with factoring or the quadratic formula."""
     steps: list[BackendDerivationStep] = []
     expression = polynomial.as_expr()
+    if any(sp.simplify(expression.subs(variable, root)) != sp.Integer(0) for root in roots):
+        return ()
     factored = sp.factor(expression)
     current: EquationBackendExpression = equation
     if str(factored) != str(expression) and (factored.is_Mul or factored.is_Pow):
@@ -159,8 +163,13 @@ def derive_quadratic_steps(
             ),
         )
     denominator = 2 * coefficient_a
-    negative_numerator = sp.Add(-coefficient_b, -sp.sqrt(discriminant), evaluate=False)
-    positive_numerator = sp.Add(-coefficient_b, sp.sqrt(discriminant), evaluate=False)
+    root_discriminant = sp.sqrt(discriminant)
+    if coefficient_b == sp.Integer(0):
+        negative_numerator = -root_discriminant
+        positive_numerator = root_discriminant
+    else:
+        negative_numerator = sp.Add(-coefficient_b, -root_discriminant, evaluate=False)
+        positive_numerator = sp.Add(-coefficient_b, root_discriminant, evaluate=False)
     generic_a = sp.Symbol("a", nonzero=True)
     generic_b = sp.Symbol("b")
     generic_c = sp.Symbol("c")
@@ -180,7 +189,10 @@ def derive_quadratic_steps(
                 "quadratic formula."
             ),
             verification_method=VerificationMethod.SOLUTION_SET_EQUIVALENCE,
-            verification_detail="The displayed quadratic-formula roots match the exact roots.",
+            verification_detail=(
+                "The displayed quadratic-formula roots were substituted into the equation and "
+                "each gave zero."
+            ),
             notes=(
                 BackendMathNote(
                     label="Quadratic formula",
@@ -230,6 +242,8 @@ def _factored_polynomial_steps(
     polynomial: sp.Poly,
     roots: tuple[sp.Basic, ...],
     excluded_values: tuple[sp.Basic, ...],
+    *,
+    real_only: bool = False,
 ) -> tuple[BackendDerivationStep, ...]:
     expression = polynomial.as_expr()
     factored = sp.factor(expression)
@@ -263,18 +277,53 @@ def _factored_polynomial_steps(
         variable=variable,
         excluded_values=excluded_values,
     )
-    append_if_changed(
-        steps,
-        rule="Keep the real solutions",
-        before=current,
-        after=relations(variable, roots),
-        explanation=(
-            "Solve the lower-degree equations and keep the real values allowed by the "
-            "original domain."
-        ),
-        variable=variable,
-        excluded_values=excluded_values,
-    )
+    all_real = all(is_real_expression(root) for root in roots)
+    omitted_factor = None
+    if real_only:
+        for factor in factor_bases:
+            try:
+                factor_has_real_roots = bool(sp.real_roots(factor))
+            except (NotImplementedError, sp.PolynomialError, TypeError, ValueError):
+                factor_has_real_roots = True
+            if not factor_has_real_roots:
+                omitted_factor = factor
+                break
+    if omitted_factor is not None:
+        steps.append(
+            BackendDerivationStep(
+                rule="Keep the real solutions",
+                before=current,
+                after=relations(variable, roots),
+                explanation=(
+                    "The remaining factor has no real zeros, so it contributes no real "
+                    "solutions; only the real roots are kept."
+                ),
+                verification_method=VerificationMethod.EXACT_ARITHMETIC,
+                verification_detail="The omitted factor was checked to have no real roots.",
+                notes=(
+                    BackendMathNote(
+                        label="No real zeros",
+                        expression=BackendIdentity(
+                            left=omitted_factor,
+                            right=sp.Integer(0),
+                        ),
+                    ),
+                ),
+            )
+        )
+    else:
+        append_if_changed(
+            steps,
+            rule="Keep the real solutions" if all_real else "List all solutions",
+            before=current,
+            after=relations(variable, roots),
+            explanation=(
+                "Solve the lower-degree equations and keep the values allowed by the original "
+                "domain, including non-real roots when they arise."
+            ),
+            variable=variable,
+            excluded_values=excluded_values,
+        )
     return tuple(steps)
 
 
@@ -284,15 +333,34 @@ def derive_cubic_steps(
     polynomial: sp.Poly,
     roots: tuple[sp.Basic, ...],
     excluded_values: tuple[sp.Basic, ...],
+    *,
+    real_only: bool = False,
 ) -> tuple[BackendDerivationStep, ...]:
     """Solve a cubic with rational roots, Cardano, or Newton iteration."""
-    factored = _factored_polynomial_steps(
-        equation,
-        variable,
-        polynomial,
-        roots,
-        excluded_values,
+    candidates = rational_root_candidates(polynomial, variable)
+    candidate_evaluations = tuple(
+        evaluate_polynomial_at_rational(polynomial, candidate) for candidate in candidates
     )
+    exact_candidate_checks = (
+        bool(candidates)
+        and all(isinstance(coefficient, sp.Integer) for coefficient in polynomial.all_coeffs())
+        and all(evaluation is not None for evaluation in candidate_evaluations)
+    )
+    if exact_candidate_checks and not any(
+        evaluation == sp.Integer(0) for evaluation in candidate_evaluations
+    ):
+        # A cubic with no rational root is irreducible over the rationals, so
+        # factoring cannot expose a linear factor.  Skip that expensive search.
+        factored: tuple[BackendDerivationStep, ...] = ()
+    else:
+        factored = _factored_polynomial_steps(
+            equation,
+            variable,
+            polynomial,
+            roots,
+            excluded_values,
+            real_only=real_only,
+        )
     if factored:
         return factored
     expression = polynomial.as_expr()
@@ -323,15 +391,20 @@ def derive_cubic_steps(
         first_radicand=first_radicand,
         second_radicand=second_radicand,
     )
-    candidates = rational_root_candidates(polynomial, variable)
     function = sp.Function("f")
     candidate_checks = tuple(
         sp.Eq(
             function(candidate),
-            sp.simplify(expression.subs(variable, candidate)),
+            evaluation
+            if evaluation is not None
+            else sp.simplify(expression.subs(variable, candidate)),
             evaluate=False,
         )
-        for candidate in candidates
+        for candidate, evaluation in zip(
+            candidates,
+            candidate_evaluations,
+            strict=True,
+        )
     )
     numerical_root = sp.N(roots[0], _DISPLAY_DIGITS)
     numerical_root_float = float(str(numerical_root))
@@ -340,10 +413,11 @@ def derive_cubic_steps(
     bracket_checks = tuple(
         sp.Eq(
             function(point),
-            sp.simplify(expression.subs(variable, point)),
+            evaluation if evaluation is not None else sp.simplify(expression.subs(variable, point)),
             evaluate=False,
         )
         for point in (lower, upper)
+        for evaluation in (evaluate_polynomial_at_rational(polynomial, point),)
     )
     derivative = sp.diff(expression, variable)
     initial = lower if derivative.subs(variable, lower) != sp.Integer(0) else upper
@@ -398,6 +472,8 @@ def derive_generic_polynomial_steps(
     polynomial: sp.Poly,
     roots: tuple[sp.Basic, ...],
     excluded_values: tuple[sp.Basic, ...],
+    *,
+    real_only: bool = False,
 ) -> tuple[BackendDerivationStep, ...]:
     """Solve higher-degree polynomials through verified factoring when possible."""
     factored = _factored_polynomial_steps(
@@ -406,10 +482,25 @@ def derive_generic_polynomial_steps(
         polynomial,
         roots,
         excluded_values,
+        real_only=real_only,
     )
     if factored:
         return factored
     if not roots:
+        if real_only:
+            return (
+                BackendDerivationStep(
+                    rule="Conclude there are no real solutions",
+                    before=equation,
+                    after=(),
+                    explanation=(
+                        "The polynomial does not cross zero on the real number line, so it "
+                        "has no real solutions."
+                    ),
+                    verification_method=VerificationMethod.EXACT_ARITHMETIC,
+                    verification_detail=("The polynomial was checked to have no real zeros."),
+                ),
+            )
         return (
             equivalent_step(
                 rule="Check for real roots",
@@ -423,21 +514,30 @@ def derive_generic_polynomial_steps(
                 excluded_values=excluded_values,
             ),
         )
-    approximations = tuple(sp.N(root, 7) for root in roots)
+    approximations = tuple(sp.N(root, _DISPLAY_DIGITS) for root in roots)
+    all_real = all(is_real_expression(root) for root in roots)
     return (
         BackendDerivationStep(
-            rule="Approximate the real roots",
+            rule="Approximate the real roots" if all_real else "Approximate all complex roots",
             before=equation,
             after=BackendApproximateSolutions(variable=variable, roots=approximations),
             explanation=(
                 "The polynomial has no simpler exact factorization. Bracket each real root, "
                 "then refine it with Newton's method."
+                if all_real
+                else "The polynomial has non-real roots and no simpler exact factorization. "
+                "The displayed values approximate every root in the complex plane; the exact "
+                "algebraic roots remain in the result."
             ),
             verification_method=VerificationMethod.BACKEND_IDENTITY,
             verification_detail=(
                 "Substitution gives a residual consistent with the displayed precision; "
                 "the exact algebraic roots remain in the result."
             ),
-            notes=(BackendMathNote(label="Newton iteration", expression=BackendNewtonRule()),),
+            notes=(
+                (BackendMathNote(label="Newton iteration", expression=BackendNewtonRule()),)
+                if all_real
+                else (BackendMathNote(label="Root count", expression=sp.Integer(len(roots))),)
+            ),
         ),
     )

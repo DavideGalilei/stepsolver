@@ -15,6 +15,7 @@ from stepsolver.ast import (
     Relation,
     RelationOperator,
     SequenceExpression,
+    SolutionDomain,
     Symbol,
 )
 from stepsolver.derivation.algebra import (
@@ -29,6 +30,11 @@ from stepsolver.derivation.definite_integrals import (
 )
 from stepsolver.derivation.derivatives import derive_derivative
 from stepsolver.derivation.equations import derive_polynomial_equation
+from stepsolver.derivation.equations_absolute import derive_absolute_value_equation
+from stepsolver.derivation.equations_exponential_logarithmic import (
+    derive_exponential_logarithmic_equation,
+)
+from stepsolver.derivation.equations_radical import derive_radical_equation
 from stepsolver.derivation.integrals_benchmark import derive_advanced_substitution_integral
 from stepsolver.derivation.integrals_elementary import (
     derive_basic_antiderivative,
@@ -37,11 +43,13 @@ from stepsolver.derivation.integrals_elementary import (
     derive_log_derivative_integral,
     derive_polynomial_sum_integral,
 )
+from stepsolver.derivation.integrals_reciprocal import derive_reciprocal_linear_integral
 from stepsolver.derivation.integrals_special import (
     derive_gaussian_antiderivative,
     derive_integration_by_parts,
     derive_inverse_hyperbolic_integral,
     derive_partial_fraction_integral,
+    derive_polynomial_inverse_by_parts,
     derive_shifted_semicircle_integral,
     derive_square_root_rational_integral,
     derive_trigonometric_power_integral,
@@ -54,9 +62,14 @@ from stepsolver.derivation.integrals_structural import (
 )
 from stepsolver.derivation.limits import derive_limit
 from stepsolver.derivation.model import BackendDerivationStep
+from stepsolver.derivation.radicals import derive_radical_denesting
 from stepsolver.derivation.reciprocal_quadratic import derive_reciprocal_quadratic_integral
+from stepsolver.derivation.series import derive_series
 from stepsolver.derivation.sums import derive_sum
-from stepsolver.derivation.systems import derive_linear_system
+from stepsolver.derivation.systems import (
+    derive_linear_system,
+    derive_nonlinear_two_by_two_system,
+)
 from stepsolver.derivation.transcendental_equations import derive_transcendental_equation
 from stepsolver.results import (
     SolutionStep,
@@ -65,6 +78,9 @@ from stepsolver.results import (
     VerificationMethod,
 )
 from stepsolver.sympy_conversion import SympyConverter
+from stepsolver.sympy_equation_steps import SympyEquationStepBuilder
+from stepsolver.sympy_equivalence import expressions_equivalent
+from stepsolver.sympy_matrix_steps import SympyMatrixStepBuilder
 from stepsolver.sympy_rendering import SympyDerivationRenderer
 from stepsolver.sympy_support import is_object_mapping, is_object_sequence
 
@@ -89,8 +105,13 @@ def _derive_indefinite_integral(
     variable: sp.Symbol,
     result: sp.Basic,
 ) -> tuple[BackendDerivationStep, ...]:
+    if integrand.is_polynomial(variable) and len(integrand.as_ordered_terms()) > 1:
+        polynomial_sum = derive_polynomial_sum_integral(integrand, variable, result)
+        if polynomial_sum:
+            return polynomial_sum
     strategies = (
         derive_basic_antiderivative,
+        derive_reciprocal_linear_integral,
         derive_log_derivative_integral,
         derive_polynomial_sum_integral,
         derive_constant_multiple_integral,
@@ -103,6 +124,7 @@ def _derive_indefinite_integral(
         derive_trigonometric_power_integral,
         derive_inverse_function_by_parts,
         derive_cyclic_exponential_trig_integral,
+        derive_polynomial_inverse_by_parts,
         derive_integration_by_parts,
         derive_advanced_substitution_integral,
         derive_gaussian_antiderivative,
@@ -116,10 +138,10 @@ def _derive_indefinite_integral(
     return ()
 
 
-def _domain_denominators(expression: Expression) -> tuple[Expression, ...]:
+def domain_denominators(expression: Expression) -> tuple[Expression, ...]:
     """Collect denominator expressions whose zeros are outside the input domain."""
     if isinstance(expression, BinaryExpression):
-        nested = _domain_denominators(expression.left) + _domain_denominators(expression.right)
+        nested = domain_denominators(expression.left) + domain_denominators(expression.right)
         if expression.operator is BinaryOperator.DIVIDE:
             return (expression.right, *nested)
         if (
@@ -130,10 +152,10 @@ def _domain_denominators(expression: Expression) -> tuple[Expression, ...]:
             return (expression.left, *nested)
         return nested
     if isinstance(expression, Relation):
-        return _domain_denominators(expression.left) + _domain_denominators(expression.right)
+        return domain_denominators(expression.left) + domain_denominators(expression.right)
     if isinstance(expression, SequenceExpression):
         return tuple(
-            denominator for item in expression.items for denominator in _domain_denominators(item)
+            denominator for item in expression.items for denominator in domain_denominators(item)
         )
     return ()
 
@@ -167,6 +189,8 @@ class SympyStepBuilder:
         """Use shared conversion and rendering collaborators."""
         self._converter = converter
         self._renderer = renderer
+        self._matrix_steps = SympyMatrixStepBuilder(converter)
+        self._equation_steps = SympyEquationStepBuilder(converter)
 
     def detailed_steps(
         self,
@@ -191,8 +215,21 @@ class SympyStepBuilder:
                 steps = self.detailed_integral_steps(query, backend_value)
             case Operation.LIMIT:
                 steps = self.detailed_limit_steps(query, backend_value)
+            case Operation.SERIES:
+                steps = self.detailed_series_steps(query, backend_value)
             case Operation.SUM:
                 steps = self.detailed_sum_steps(query, backend_value)
+            case (
+                Operation.MATRIX
+                | Operation.DETERMINANT
+                | Operation.INVERSE
+                | Operation.RANK
+                | Operation.RREF
+                | Operation.EIGENVALUES
+            ):
+                steps = self._matrix_steps.steps(query, backend_value)
+            case Operation.DSOLVE | Operation.RSOLVE | Operation.SOLVE_INEQUALITY:
+                steps = self._equation_steps.steps(query, backend_value)
             case _:
                 steps = ()
         return steps
@@ -209,27 +246,22 @@ class SympyStepBuilder:
         if not is_algebra_scalar(original):
             return ()
         backend_expression = self._converter.to_sympy(original)
-        if sp.simplify(backend_expression - backend_value) != sp.Integer(0):
+        if not expressions_equivalent(backend_expression, backend_value):
             return ()
+        if query.operation is Operation.SIMPLIFY:
+            denesting = derive_radical_denesting(backend_expression, backend_value)
+            if denesting:
+                return tuple(self._renderer.solution_step(item) for item in denesting)
         description = describe_algebra_step(
             query.operation,
             original,
             backend_expression,
             backend_value,
         )
-        denominators = (
-            symbolic_denominators(original) if description.rule == "Cancel common factors" else ()
-        )
-        constraints = tuple(
-            StepConstraint(
-                explanation="An original denominator cannot equal zero.",
-                expression=Relation(
-                    operator=RelationOperator.NOT_EQUAL,
-                    left=denominator,
-                    right=Number(value=Fraction(0)),
-                ),
-            )
-            for denominator in denominators
+        constraints = (
+            self._original_domain_constraints(original)
+            if description.rule in {"Cancel common factors", "Decompose into partial fractions"}
+            else ()
         )
         return (
             SolutionStep(
@@ -246,6 +278,65 @@ class SympyStepBuilder:
                     ),
                 ),
                 introduced_constraints=constraints,
+            ),
+        )
+
+    def integration_domain_constraints(
+        self,
+        integrand: Expression,
+    ) -> tuple[StepConstraint, ...]:
+        """Report real exclusions that keep the integrand's original denominators nonzero."""
+        if not is_algebra_scalar(integrand):
+            return ()
+        return self._original_domain_constraints(integrand)
+
+    def _original_domain_constraints(
+        self,
+        expression: Expression,
+    ) -> tuple[StepConstraint, ...]:
+        """Report real exclusions derived from the original denominators."""
+        restrictions: list[Expression] = []
+        for denominator in symbolic_denominators(expression):
+            for restriction in self._denominator_restrictions(denominator):
+                if restriction not in restrictions:
+                    restrictions.append(restriction)
+        return tuple(
+            StepConstraint(
+                explanation="An original denominator cannot equal zero.",
+                expression=restriction,
+            )
+            for restriction in restrictions
+        )
+
+    def _denominator_restrictions(self, denominator: Expression) -> tuple[Expression, ...]:
+        """Return real-valued exclusions for one denominator factor."""
+        backend = self._converter.to_sympy(denominator)
+        symbols = tuple(backend.free_symbols)
+        if len(symbols) == 1:
+            variable = symbols[0]
+            if backend.is_polynomial(variable):
+                try:
+                    roots = sp.real_roots(backend)
+                except (NotImplementedError, sp.PolynomialError, TypeError, ValueError):
+                    roots = None
+                if roots is not None:
+                    real_roots = sorted(set(roots), key=str)
+                    if not real_roots:
+                        return ()
+                    variable_expression = self._converter.from_sympy(variable)
+                    return tuple(
+                        Relation(
+                            operator=RelationOperator.NOT_EQUAL,
+                            left=variable_expression,
+                            right=self._converter.from_sympy(root),
+                        )
+                        for root in real_roots
+                    )
+        return (
+            Relation(
+                operator=RelationOperator.NOT_EQUAL,
+                left=denominator,
+                right=Number(value=Fraction(0)),
             ),
         )
 
@@ -303,6 +394,29 @@ class SympyStepBuilder:
             return ()
         return tuple(self._renderer.solution_step(item) for item in derivation)
 
+    def detailed_series_steps(
+        self,
+        query: Query,
+        backend_value: object,
+    ) -> tuple[SolutionStep, ...]:
+        """Build Taylor or Maclaurin steps from derivative values at the center."""
+        if len(query.arguments) != 4 or not isinstance(backend_value, sp.Basic):
+            return ()
+        expression_node, variable_node, point_node, order_node = query.arguments
+        if not isinstance(variable_node, Symbol):
+            return ()
+        expression = self._converter.to_sympy(expression_node)
+        variable = self._converter.to_sympy(variable_node)
+        point = self._converter.to_sympy(point_node)
+        order = self._converter.to_sympy(order_node)
+        if not isinstance(variable, sp.Symbol) or not isinstance(order, sp.Integer):
+            return ()
+        try:
+            derivation = derive_series(expression, variable, point, int(order), backend_value)
+        except (sp.PolynomialError, TypeError, ValueError):
+            return ()
+        return tuple(self._renderer.solution_step(item) for item in derivation)
+
     def detailed_equation_steps(
         self,
         query: Query,
@@ -331,25 +445,49 @@ class SympyStepBuilder:
             return ()
         roots = self.solution_roots(backend_value, variable)
         try:
-            derivation = derive_transcendental_equation(
+            derivation = self._equation_derivation(
                 equation,
                 variable,
                 roots,
+                equation_expression,
+                real_only=query.domain is SolutionDomain.REAL,
             )
-            if not derivation:
-                domain_denominators = tuple(
-                    self._converter.to_sympy(item)
-                    for item in _domain_denominators(equation_expression)
-                )
-                derivation = derive_polynomial_equation(
-                    equation,
-                    variable,
-                    roots,
-                    domain_denominators,
-                )
         except (sp.PolynomialError, TypeError, ValueError):
             return ()
         return tuple(self._renderer.solution_step(item) for item in derivation)
+
+    def _equation_derivation(
+        self,
+        equation: sp.Equality,
+        variable: sp.Symbol,
+        roots: tuple[sp.Basic, ...],
+        equation_expression: Relation,
+        *,
+        real_only: bool = False,
+    ) -> tuple[BackendDerivationStep, ...]:
+        """Choose the most specific equation derivation before the polynomial fallback."""
+        derivation = derive_transcendental_equation(equation, variable, roots)
+        if derivation:
+            return derivation
+        derivation = derive_radical_equation(equation, variable, roots)
+        if derivation:
+            return derivation
+        derivation = derive_absolute_value_equation(equation, variable, roots)
+        if derivation:
+            return derivation
+        derivation = derive_exponential_logarithmic_equation(equation, variable, roots)
+        if derivation:
+            return derivation
+        denominators = tuple(
+            self._converter.to_sympy(item) for item in domain_denominators(equation_expression)
+        )
+        return derive_polynomial_equation(
+            equation,
+            variable,
+            roots,
+            denominators,
+            real_only=real_only,
+        )
 
     def detailed_system_steps(
         self,
@@ -375,6 +513,12 @@ class SympyStepBuilder:
             cast("tuple[sp.Symbol, ...]", system_variables),
             backend_value,
         )
+        if not derivation and len(system_equations) == 2 and len(system_variables) == 2:
+            derivation = derive_nonlinear_two_by_two_system(
+                cast("tuple[sp.Equality, sp.Equality]", system_equations),
+                cast("tuple[sp.Symbol, sp.Symbol]", system_variables),
+                backend_value,
+            )
         return tuple(self._renderer.solution_step(item) for item in derivation)
 
     def detailed_derivative_steps(
@@ -405,7 +549,7 @@ class SympyStepBuilder:
                 current = differentiated
         except (sp.PolynomialError, TypeError, ValueError):
             return ()
-        if sp.simplify(current - backend_value) != sp.Integer(0):
+        if not expressions_equivalent(current, backend_value, variable=variable):
             return ()
         return tuple(self._renderer.solution_step(item) for item in derivation)
 

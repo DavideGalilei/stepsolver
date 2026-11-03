@@ -274,17 +274,34 @@ def _simplification_description(
 
 
 def symbolic_denominators(expression: Expression) -> tuple[Expression, ...]:
-    """Return distinct input denominators that contain variables."""
+    """Return distinct input denominator factors that contain variables."""
     denominators: list[Expression] = []
     for item in _walk(expression):
         if (
             isinstance(item, BinaryExpression)
             and item.operator is BinaryOperator.DIVIDE
             and _contains_symbol(item.right)
-            and item.right not in denominators
         ):
-            denominators.append(item.right)
+            for factor in _denominator_factors(item.right):
+                if _contains_symbol(factor) and factor not in denominators:
+                    denominators.append(factor)
     return tuple(denominators)
+
+
+def _denominator_factors(expression: Expression) -> tuple[Expression, ...]:
+    """Split a product or positive integer power into its nonzero-factor conditions."""
+    if isinstance(expression, BinaryExpression):
+        if expression.operator is BinaryOperator.MULTIPLY:
+            return (*_denominator_factors(expression.left), *_denominator_factors(expression.right))
+        if expression.operator is BinaryOperator.POWER:
+            exponent = expression.right
+            if (
+                isinstance(exponent, Number)
+                and exponent.value.denominator == 1
+                and exponent.value.numerator > 0
+            ):
+                return _denominator_factors(expression.left)
+    return (expression,)
 
 
 def is_algebra_scalar(expression: object) -> bool:

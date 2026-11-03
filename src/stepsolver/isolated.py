@@ -5,9 +5,7 @@ from __future__ import annotations
 import json
 from dataclasses import asdict, dataclass
 from enum import Enum
-from typing import Literal
-
-from pydantic import BaseModel, ConfigDict, ValidationError, field_validator
+from typing import Literal, cast
 
 from stepsolver.ast import (
     ApproximateNumber,
@@ -35,7 +33,7 @@ from stepsolver.presentation import (
     StepPayload,
     solve_payload,
 )
-from stepsolver.results import ExactResult, SolveResult
+from stepsolver.results import ExactResult, NumericResult, SolveResult
 from stepsolver.solver import Solver
 
 
@@ -66,18 +64,30 @@ class IsolatedLimits:
 DEFAULT_ISOLATED_LIMITS = IsolatedLimits()
 
 
-class _SolveRequestPayload(BaseModel):
-    model_config = ConfigDict(extra="forbid", strict=True)
+def _request_expression(document: bytes) -> str:
+    """Validate the exact one-field JSON request with the standard library.
 
-    expression: str
-
-    @field_validator("expression")
-    @classmethod
-    def require_ascii_expression(cls, value: str) -> str:
-        if not value.isascii():
-            message = "expression must contain only ASCII characters"
-            raise ValueError(message)
-        return value
+    The worker contract is deliberately smaller than the web API: one object
+    with a single ASCII ``expression`` string and no extra keys. Validating it
+    here keeps the core install free of a schema dependency.
+    """
+    try:
+        payload: object = cast("object", json.loads(document.decode("utf-8")))
+    except (UnicodeDecodeError, json.JSONDecodeError) as error:
+        message = "request must contain one ASCII expression"
+        raise ParseError(message, position=0) from error
+    if not isinstance(payload, dict):
+        message = "request must contain one ASCII expression"
+        raise ParseError(message, position=0)
+    request = cast("dict[str, object]", payload)
+    if set(request) != {"expression"}:
+        message = "request must contain one ASCII expression"
+        raise ParseError(message, position=0)
+    expression = request["expression"]
+    if not isinstance(expression, str) or not expression.isascii():
+        message = "request must contain one ASCII expression"
+        raise ParseError(message, position=0)
+    return expression
 
 
 class IsolatedErrorCode(Enum):
@@ -135,7 +145,7 @@ class IsolatedSolution:
     """Bounded solver output returned to an agent."""
 
     normalized_expression: str
-    status: Literal["exact", "divergent", "undefined", "unsolved"]
+    status: Literal["exact", "numeric", "divergent", "undefined", "unsolved"]
     result: str | None
     latex: str | None
     reason: str | None
@@ -303,12 +313,8 @@ def parse_isolated_request(
     """Parse the exact JSON request shape and validate its mathematical payload."""
     if len(document) > limits.request_bytes:
         raise LimitError(LimitViolation.REQUEST_BYTES)
-    try:
-        request = _SolveRequestPayload.model_validate_json(document)
-    except ValidationError as error:
-        message = "request must contain one ASCII expression"
-        raise ParseError(message, position=0) from error
-    return validate_solve_request(request.expression, limits)
+    expression = _request_expression(document)
+    return validate_solve_request(expression, limits)
 
 
 def _normalized_expression(query: Query) -> str:
@@ -380,7 +386,7 @@ def bounded_solution(
         status=payload.status,
         result=(
             _bounded_text(format_value(result.value), limits)
-            if isinstance(result, ExactResult)
+            if isinstance(result, ExactResult | NumericResult)
             else None
         ),
         latex=_bounded_optional_text(payload.result_latex, limits),

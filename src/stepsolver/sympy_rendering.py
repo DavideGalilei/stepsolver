@@ -3,6 +3,7 @@
 import sympy as sp
 
 from stepsolver.ast import (
+    ApproximateNumber,
     BinaryExpression,
     BinaryOperator,
     Expression,
@@ -40,6 +41,7 @@ from stepsolver.derivation.model import (
     BackendProduct,
     BackendQuadraticSolutions,
     BackendQuotient,
+    BackendRelation,
     BackendRowOperation,
     BackendSigma,
     BackendSum,
@@ -174,21 +176,9 @@ class SympyDerivationRenderer:
         if isinstance(value, BackendNewtonRule):
             return FunctionCall(name=Identifier("newton_rule"), arguments=())
         if isinstance(value, BackendNewtonIterations):
-            return FunctionCall(
-                name=Identifier("newton_iterations"),
-                arguments=(
-                    self._converter.from_sympy(value.variable),
-                    *(self._converter.from_sympy(item) for item in value.values),
-                ),
-            )
+            return self._newton_iterations_expression(value)
         if isinstance(value, BackendApproximateSolutions):
-            return FunctionCall(
-                name=Identifier("approximate_solutions"),
-                arguments=(
-                    self._converter.from_sympy(value.variable),
-                    *(self._converter.from_sympy(root) for root in value.roots),
-                ),
-            )
+            return self._approximate_solutions_expression(value)
         if isinstance(value, BackendSigma):
             return FunctionCall(
                 name=Identifier(Operation.SUM.value),
@@ -216,6 +206,18 @@ class SympyDerivationRenderer:
                 left=self.derivation_expression(value.left),
                 right=self.derivation_expression(value.right),
             )
+        if isinstance(value, BackendRelation):
+            operators = {
+                "<": RelationOperator.LESS,
+                "<=": RelationOperator.LESS_EQUAL,
+                ">": RelationOperator.GREATER,
+                ">=": RelationOperator.GREATER_EQUAL,
+            }
+            return Relation(
+                operator=operators[value.operator],
+                left=self.derivation_expression(value.left),
+                right=self.derivation_expression(value.right),
+            )
         if isinstance(value, BackendSystem):
             return FunctionCall(
                 name=Identifier("system"),
@@ -231,27 +233,15 @@ class SympyDerivationRenderer:
                 ),
             )
         if isinstance(value, BackendSum):
-            expressions = tuple(self.derivation_expression(term) for term in value.terms)
-            first, *remaining = expressions
-            result = first
-            for expression in remaining:
-                result = BinaryExpression(
-                    operator=BinaryOperator.ADD,
-                    left=result,
-                    right=expression,
-                )
-            return result
+            return self._fold_expression(
+                tuple(self.derivation_expression(term) for term in value.terms),
+                BinaryOperator.ADD,
+            )
         if isinstance(value, BackendProduct):
-            expressions = tuple(self.derivation_expression(factor) for factor in value.factors)
-            first, *remaining = expressions
-            result = first
-            for expression in remaining:
-                result = BinaryExpression(
-                    operator=BinaryOperator.MULTIPLY,
-                    left=result,
-                    right=expression,
-                )
-            return result
+            return self._fold_expression(
+                tuple(self.derivation_expression(factor) for factor in value.factors),
+                BinaryOperator.MULTIPLY,
+            )
         if isinstance(value, BackendQuotient):
             return BinaryExpression(
                 operator=BinaryOperator.DIVIDE,
@@ -331,6 +321,51 @@ class SympyDerivationRenderer:
             )
         if isinstance(value, tuple):
             return SequenceExpression(
-                items=tuple(self._converter.from_sympy(item) for item in value)
+                items=tuple(self.derivation_expression(item) for item in value)
             )
+        return self._converter.from_sympy(value)
+
+    @staticmethod
+    def _fold_expression(
+        expressions: tuple[Expression, ...],
+        operator: BinaryOperator,
+    ) -> Expression:
+        """Combine a sequence of expressions with one left-associative operator."""
+        first, *remaining = expressions
+        result = first
+        for expression in remaining:
+            result = BinaryExpression(operator=operator, left=result, right=expression)
+        return result
+
+    def _newton_iterations_expression(self, value: BackendNewtonIterations) -> Expression:
+        """Render the iterates produced by Newton's method."""
+        return FunctionCall(
+            name=Identifier("newton_iterations"),
+            arguments=(
+                self._converter.from_sympy(value.variable),
+                *(self._approximate_expression(item, value.digits) for item in value.values),
+            ),
+        )
+
+    def _approximate_solutions_expression(self, value: BackendApproximateSolutions) -> Expression:
+        """Render the approximate roots found for an equation."""
+        return FunctionCall(
+            name=Identifier("approximate_solutions"),
+            arguments=(
+                self._converter.from_sympy(value.variable),
+                *(self._approximate_expression(root, value.digits) for root in value.roots),
+            ),
+        )
+
+    def _approximate_expression(
+        self,
+        value: sp.Basic,
+        digits: int | None,
+    ) -> Expression:
+        """Render numerical iterates without backend precision padding."""
+        if digits is not None and isinstance(value, sp.Float):
+            text = str(sp.N(value, digits))
+            if "e" not in text.lower() and "." in text:
+                text = text.rstrip("0").rstrip(".")
+            return ApproximateNumber(text="0" if text in {"", "-0"} else text)
         return self._converter.from_sympy(value)

@@ -76,6 +76,7 @@ class BackendNewtonIterations:
 
     variable: sp.Symbol
     values: tuple[sp.Basic, ...]
+    digits: int | None = None
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -84,6 +85,7 @@ class BackendApproximateSolutions:
 
     variable: sp.Symbol
     roots: tuple[sp.Basic, ...]
+    digits: int | None = None
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -186,6 +188,15 @@ class BackendNotEqual:
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
+class BackendRelation:
+    """A displayed inequality between two backend expressions."""
+
+    operator: Literal["<", "<=", ">", ">="]
+    left: BackendExpression
+    right: BackendExpression
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
 class BackendSum:
     """A displayed sum containing backend and derivation expressions."""
 
@@ -262,6 +273,7 @@ type BackendExpression = (
     | BackendUndefined
     | BackendLimit
     | BackendNotEqual
+    | BackendRelation
     | BackendSystem
     | BackendRowOperation
     | BackendSum
@@ -269,6 +281,7 @@ type BackendExpression = (
     | BackendQuotient
     | BackendDifference
     | BackendIdentity
+    | tuple[BackendExpression, ...]
 )
 
 

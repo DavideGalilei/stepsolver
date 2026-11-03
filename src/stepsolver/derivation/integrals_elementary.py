@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 import sympy as sp
 
@@ -19,6 +19,7 @@ from stepsolver.derivation.model import (
     BackendSum,
 )
 from stepsolver.results import VerificationMethod
+from stepsolver.sympy_equivalence import expressions_equivalent
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -42,7 +43,11 @@ def _derive_power_log_integral(
     polynomial = sp.Poly(polynomial_part, variable)
     degree = polynomial.degree()
     coefficient = polynomial.coeff_monomial(variable**degree)
-    if sp.simplify(polynomial_part - coefficient * variable**degree) != sp.Integer(0):
+    if not expressions_equivalent(
+        polynomial_part,
+        coefficient * variable**degree,
+        variable=variable,
+    ):
         return ()
     next_degree = degree + 1
     integrated_polynomial = coefficient * variable**next_degree / next_degree
@@ -54,7 +59,7 @@ def _derive_power_log_integral(
         integration_constant,
         evaluate=False,
     )
-    if sp.simplify(formula - result) != sp.Integer(0):
+    if not expressions_equivalent(formula, result, variable=variable):
         return ()
     parts_expression = BackendDifference(
         left=BackendProduct(factors=(integrated_polynomial, logarithm)),
@@ -151,10 +156,10 @@ def derive_log_derivative_integral(
         evaluate=False,
     )
     formula = sp.Add(formula_term, integration_constant, evaluate=False)
-    if str(sp.simplify(sp.diff(formula, variable) - integrand)) != "0":
+    if not expressions_equivalent(sp.diff(formula, variable), integrand, variable=variable):
         message = "the logarithmic substitution failed differentiation verification"
         raise ValueError(message)
-    if str(sp.simplify(formula - result)) != "0":
+    if not expressions_equivalent(formula, result, variable=variable):
         message = "the logarithmic antiderivative differs from the exact result"
         raise ValueError(message)
     transformed_integral = BackendIntegral(
@@ -276,7 +281,7 @@ def _derive_reverse_chain_antiderivative(
             return ()
         antiderivative = outer_antiderivative(argument) / inner_derivative
         formula = sp.Add(antiderivative, integration_constant, evaluate=False)
-        if str(sp.simplify(formula - result)) != "0":
+        if not expressions_equivalent(formula, result, variable=variable):
             return ()
         inner_variable = sp.Symbol("u", real=True)
         return (
@@ -321,6 +326,22 @@ def _derive_reverse_chain_antiderivative(
     return ()
 
 
+def _polynomial_term_antiderivative(
+    term: sp.Basic,
+    variable: sp.Symbol,
+) -> sp.Basic | None:
+    """Integrate a polynomial term directly with the power rule."""
+    if not term.is_polynomial(variable):
+        return None
+    polynomial = sp.Poly(term, variable)
+    terms = polynomial.terms()
+    if len(terms) != 1:
+        return None
+    monomial, coefficient = terms[0]
+    exponent = monomial[0]
+    return coefficient * variable ** (exponent + 1) / (exponent + 1)
+
+
 def _derive_power_antiderivative(
     integrand: sp.Basic,
     variable: sp.Symbol,
@@ -332,12 +353,16 @@ def _derive_power_antiderivative(
     polynomial = sp.Poly(integrand, variable)
     degree = polynomial.degree()
     coefficient = polynomial.coeff_monomial(variable**degree)
-    if str(sp.simplify(integrand - coefficient * variable**degree)) != "0":
+    if not expressions_equivalent(
+        integrand,
+        coefficient * variable**degree,
+        variable=variable,
+    ):
         return ()
     next_degree = degree + 1
     antiderivative = coefficient * variable**next_degree / next_degree
     formula = sp.Add(antiderivative, integration_constant, evaluate=False)
-    if str(sp.simplify(formula - result)) != "0":
+    if not expressions_equivalent(formula, result, variable=variable):
         return ()
     pattern_variable = sp.Symbol("t", real=True)
     pattern_exponent = sp.Symbol("n", real=True)
@@ -387,16 +412,10 @@ def _derive_power_antiderivative(
     )
 
 
-def derive_basic_antiderivative(
+def _match_basic_antiderivative(
     integrand: sp.Basic,
     variable: sp.Symbol,
-    result: sp.Basic,
-) -> tuple[BackendDerivationStep, ...]:
-    """Derive direct elementary antiderivatives from differentiation rules."""
-    power_log = _derive_power_log_integral(integrand, variable, result)
-    if power_log:
-        return power_log
-    integration_constant = sp.Symbol("C")
+) -> tuple[sp.Basic, sp.Basic, str] | None:
     candidates = (
         (sp.sin(variable), -sp.cos(variable), "Use the sine antiderivative"),
         (sp.cos(variable), sp.sin(variable), "Use the cosine antiderivative"),
@@ -424,11 +443,107 @@ def derive_basic_antiderivative(
             "Use the reverse chain rule for the square root",
         ),
     )
-    for candidate_integrand, antiderivative, rule in candidates:
-        if str(sp.simplify(integrand - candidate_integrand)) != "0":
-            continue
+    for candidate in candidates:
+        if integrand == candidate[0]:
+            return candidate
+        if (
+            integrand.has(sp.Pow)
+            and candidate[0].has(sp.Pow)
+            and sp.powsimp(integrand - candidate[0]) == sp.Integer(0)
+        ):
+            return candidate
+    return None
+
+
+def _derive_scaled_inverse_sine(
+    integrand: sp.Basic,
+    variable: sp.Symbol,
+    result: sp.Basic,
+) -> tuple[BackendDerivationStep, ...]:
+    """Recognize ``c/sqrt(a**2 - (b*x)**2)`` as a scaled inverse-sine antiderivative."""
+    coefficient, rest = integrand.as_independent(variable, as_Add=False)
+    rest = cast("sp.Basic", getattr(sp, "powsimp")(rest, force=True))
+    if rest.func is not sp.Pow:
+        return ()
+    if getattr(rest, "exp", None) != sp.Rational(-1, 2):
+        return ()
+    wild_a = sp.Wild("a", exclude=[variable])
+    wild_b = sp.Wild("b", exclude=[variable])
+    pattern = sp.Pow(wild_a**2 - (wild_b * variable) ** 2, sp.Rational(-1, 2))
+    match = rest.match(pattern)
+    if match is None:
+        return ()
+    scale = match[wild_a]
+    rate = match[wild_b]
+    scale_is_valid = not scale.has(variable) and scale.is_positive is True
+    rate_is_valid = not rate.has(variable) and rate.is_positive is True
+    if not (scale_is_valid and rate_is_valid):
+        return ()
+    antiderivative = sp.Mul(
+        coefficient,
+        sp.asin(sp.Mul(rate, variable, evaluate=False) / scale),
+        sp.Pow(rate, -1, evaluate=False),
+        evaluate=False,
+    )
+    integration_constant = sp.Symbol("C")
+    formula = sp.Add(antiderivative, integration_constant, evaluate=False)
+    if not expressions_equivalent(formula, result, variable=variable):
+        return ()
+    return (
+        BackendDerivationStep(
+            rule="Use the scaled inverse-sine antiderivative",
+            before=BackendIntegral(integrand=integrand, variable=variable),
+            after=formula,
+            explanation=(
+                "Write the integrand as a constant multiple of 1/sqrt(a^2 - u^2) with u a "
+                "constant multiple of the variable, then apply the inverse-sine pattern."
+            ),
+            verification_method=VerificationMethod.DIFFERENTIATION,
+            verification_detail=(
+                "Differentiating the displayed antiderivative recovers the integrand."
+            ),
+            notes=(
+                BackendMathNote(
+                    label="Derivative pair",
+                    expression=BackendIdentity(
+                        left=BackendDerivative(
+                            expression=antiderivative,
+                            variable=variable,
+                        ),
+                        right=integrand,
+                    ),
+                ),
+            ),
+        ),
+    )
+
+
+def derive_basic_antiderivative(
+    integrand: sp.Basic,
+    variable: sp.Symbol,
+    result: sp.Basic,
+) -> tuple[BackendDerivationStep, ...]:
+    """Derive direct elementary antiderivatives from differentiation rules."""
+    power_log = _derive_power_log_integral(integrand, variable, result)
+    if power_log:
+        return power_log
+    integration_constant = sp.Symbol("C")
+    if integrand.is_polynomial(variable):
+        polynomial = sp.Poly(integrand, variable)
+        if len(polynomial.terms()) == 1:
+            power = _derive_power_antiderivative(
+                integrand,
+                variable,
+                result,
+                integration_constant,
+            )
+            if power:
+                return power
+    matched = _match_basic_antiderivative(integrand, variable)
+    if matched is not None:
+        candidate_integrand, antiderivative, rule = matched
         formula = sp.Add(antiderivative, integration_constant, evaluate=False)
-        if str(sp.simplify(formula - result)) != "0":
+        if not expressions_equivalent(formula, result, variable=variable):
             return ()
         return (
             BackendDerivationStep(
@@ -456,6 +571,24 @@ def derive_basic_antiderivative(
                 ),
             ),
         )
+    return _derive_remaining_antiderivative(
+        integrand,
+        variable,
+        result,
+        integration_constant,
+    )
+
+
+def _derive_remaining_antiderivative(
+    integrand: sp.Basic,
+    variable: sp.Symbol,
+    result: sp.Basic,
+    integration_constant: sp.Symbol,
+) -> tuple[BackendDerivationStep, ...]:
+    """Try the scaled inverse-sine, reverse-chain, and power rules."""
+    scaled_inverse_sine = _derive_scaled_inverse_sine(integrand, variable, result)
+    if scaled_inverse_sine:
+        return scaled_inverse_sine
     reverse_chain = _derive_reverse_chain_antiderivative(
         integrand,
         variable,
@@ -483,10 +616,17 @@ def derive_polynomial_sum_integral(
     terms = tuple(integrand.as_ordered_terms())
     if len(terms) < _MINIMUM_PRODUCT_FACTORS:
         return ()
-    antiderivatives = tuple(sp.integrate(term, variable) for term in terms)
+    direct_antiderivatives = tuple(
+        _polynomial_term_antiderivative(term, variable) for term in terms
+    )
+    if any(antiderivative is None for antiderivative in direct_antiderivatives):
+        return ()
+    antiderivatives = tuple(
+        antiderivative for antiderivative in direct_antiderivatives if antiderivative is not None
+    )
     integration_constant = sp.Symbol("C")
     formula = sp.Add(*antiderivatives, integration_constant, evaluate=False)
-    if str(sp.simplify(formula - result)) != "0":
+    if not expressions_equivalent(formula, result, variable=variable):
         return ()
     split_integral = BackendSum(
         terms=tuple(BackendIntegral(integrand=term, variable=variable) for term in terms)
@@ -565,7 +705,7 @@ def derive_constant_multiple_integral(
         (sp.exp(variable), sp.exp(variable), "exponential"),
     )
     for candidate, antiderivative, name in candidates:
-        if str(sp.simplify(variable_part - candidate)) != "0":
+        if not expressions_equivalent(variable_part, candidate, variable=variable):
             continue
         integration_constant = sp.Symbol("C")
         formula = sp.Add(
@@ -573,7 +713,7 @@ def derive_constant_multiple_integral(
             integration_constant,
             evaluate=False,
         )
-        if str(sp.simplify(formula - result)) != "0":
+        if not expressions_equivalent(formula, result, variable=variable):
             return ()
         reduced_integral = BackendIntegral(
             integrand=variable_part,
@@ -660,7 +800,7 @@ def derive_function_substitution_integral(
                 evaluate=False,
             )
             formula = sp.Add(formula_term, integration_constant, evaluate=False)
-            if str(sp.simplify(formula - result)) != "0":
+            if not expressions_equivalent(formula, result, variable=variable):
                 return ()
             return (
                 BackendDerivationStep(

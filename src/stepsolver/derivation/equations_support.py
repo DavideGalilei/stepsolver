@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 from dataclasses import dataclass
+from fractions import Fraction
+from functools import lru_cache
 from math import isqrt
 from typing import TypeGuard, cast
 
@@ -22,7 +24,7 @@ from stepsolver.derivation.model import (
     EquationBackendExpression,
 )
 from stepsolver.results import VerificationMethod
-from stepsolver.sympy_support import is_real_expression
+from stepsolver.sympy_equivalence import expressions_equivalent
 
 _ROOT_VERIFICATION_DIGITS = 12
 _DISPLAY_DIGITS = 7
@@ -55,6 +57,31 @@ def _is_basic_sequence(value: object) -> TypeGuard[Sequence[sp.Basic]]:
     return all(isinstance(item, sp.Basic) for item in items)
 
 
+def _equations_are_structurally_equivalent(
+    before: EquationBackendExpression,
+    after: EquationBackendExpression,
+    variable: sp.Symbol,
+) -> bool:
+    """Recognize transformations that cannot introduce or remove candidates."""
+    if before == after:
+        return True
+    if not isinstance(before, sp.Equality) or not isinstance(after, sp.Equality):
+        return False
+    before_difference = before.lhs - before.rhs
+    after_difference = after.lhs - after.rhs
+    if not before_difference.is_polynomial(variable) or not after_difference.is_polynomial(
+        variable
+    ):
+        # Clearing or cancelling denominators can remove a domain hole, so keep
+        # the full solution-set check and its exclusions for those steps.
+        return False
+    return expressions_equivalent(
+        before_difference,
+        after_difference,
+        variable=variable,
+    )
+
+
 def equivalent_step(
     *,
     rule: str,
@@ -66,8 +93,14 @@ def equivalent_step(
     introduced_constraints: tuple[BackendStepConstraint, ...] = (),
 ) -> BackendDerivationStep:
     """Build an equation step after verifying solution-set equivalence."""
-    if solution_set(before, variable, excluded_values) != solution_set(
-        after, variable, excluded_values
+    if not _equations_are_structurally_equivalent(
+        before,
+        after,
+        variable,
+    ) and solution_set(before, variable, excluded_values) != solution_set(
+        after,
+        variable,
+        excluded_values,
     ):
         message = "a proposed derivation step changed the equation's solution set"
         raise ValueError(message)
@@ -100,8 +133,14 @@ def equivalent_display_step(
     verification_detail: str = "Both displayed forms preserve the same solution set.",
 ) -> BackendDerivationStep:
     """Build a step with separate semantic and unsimplified displays."""
-    if solution_set(semantic_before, variable, excluded_values) != solution_set(
-        semantic_after, variable, excluded_values
+    if not _equations_are_structurally_equivalent(
+        semantic_before,
+        semantic_after,
+        variable,
+    ) and solution_set(semantic_before, variable, excluded_values) != solution_set(
+        semantic_after,
+        variable,
+        excluded_values,
     ):
         message = "a proposed display step changed the equation's solution set"
         raise ValueError(message)
@@ -116,16 +155,21 @@ def equivalent_display_step(
     )
 
 
+@lru_cache(maxsize=256)
 def solution_set(
     expression: EquationBackendExpression,
     variable: sp.Symbol,
     excluded_values: tuple[sp.Basic, ...] = (),
 ) -> frozenset[str]:
-    """Return a deterministic solution set after original exclusions."""
+    """Return a deterministic complex solution set after original exclusions."""
     equations = expression if isinstance(expression, tuple) else (expression,)
+    # Solving with a real-assumption symbol silently drops non-real roots.  Verify
+    # equation transformations over the same complex domain used by the solver.
+    complex_variable = sp.Symbol(variable.name)
     roots: set[str] = set()
     for equation in equations:
-        solved = sp.solve(equation, variable)
+        complex_equation = equation.xreplace({variable: complex_variable})
+        solved = sp.solve(complex_equation, complex_variable)
         if not _is_basic_sequence(solved):
             message = "equation verification did not produce a root sequence"
             raise TypeError(message)
@@ -136,7 +180,6 @@ def solution_set(
                 else str(sp.N(root, _ROOT_VERIFICATION_DIGITS))
             )
             for root in solved
-            if is_real_expression(root)
             if not any(
                 sp.simplify(root - excluded) == sp.Integer(0) for excluded in excluded_values
             )
@@ -146,7 +189,9 @@ def solution_set(
 
 def relations(variable: sp.Symbol, roots: tuple[sp.Basic, ...]) -> tuple[sp.Basic, ...]:
     """Represent roots as explicit equations for display."""
-    return tuple(sp.Eq(variable, root) for root in roots)
+    # A real-assumption display symbol makes Eq(x, complex_root) evaluate to False.
+    # Keep the relation structural so non-real roots can be shown and verified.
+    return tuple(sp.Eq(variable, root, evaluate=False) for root in roots)
 
 
 def _positive_divisors(value: int) -> tuple[int, ...]:
@@ -188,6 +233,22 @@ def rational_root_candidates(
         for sign in (-1, 1)
     }
     return tuple(sorted(candidates, key=_rational_sort_key))
+
+
+def evaluate_polynomial_at_rational(
+    polynomial: sp.Poly,
+    value: sp.Rational,
+) -> sp.Rational | None:
+    """Evaluate a rational-coefficient polynomial with exact Horner arithmetic."""
+    coefficients = polynomial.all_coeffs()
+    if not all(isinstance(coefficient, sp.Rational) for coefficient in coefficients):
+        return None
+    point = Fraction(value.p, value.q)
+    total = Fraction(0)
+    for coefficient in coefficients:
+        exact_coefficient = cast("sp.Rational", coefficient)
+        total = total * point + Fraction(exact_coefficient.p, exact_coefficient.q)
+    return sp.Rational(total.numerator, total.denominator)
 
 
 def newton_values(
@@ -257,6 +318,14 @@ def _domain_restrictions(
         excluded_values=excluded_values,
         displayed=denominator_constraints + exclusion_constraints,
     )
+
+
+def original_denominator_restrictions(
+    denominators: tuple[sp.Basic, ...],
+    variable: sp.Symbol,
+) -> DomainRestrictions:
+    """Return restrictions contributed by the original equation's denominators."""
+    return _domain_restrictions(sp.Integer(1), denominators, variable)
 
 
 def _common_denominator(

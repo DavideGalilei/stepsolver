@@ -252,15 +252,34 @@ def _derive_geometric_series(
     upper: sp.Basic,
     result: sp.Basic,
 ) -> tuple[BackendDerivationStep, ...]:
+    if lower.is_integer is not True:
+        return ()
+    variable_factors = [
+        factor for factor in expression.as_ordered_factors() if factor.has(variable)
+    ]
+    if len(variable_factors) != 1:
+        return ()
+    power = variable_factors[0]
+    if power.is_Pow and not power.args[1].has(variable):
+        power = sp.powsimp(power)
+    amplitude = sp.simplify(expression / power)
     if (
-        lower.is_integer is not True
-        or not expression.is_Pow
-        or len(expression.args) != _GEOMETRIC_POWER_ARITY
+        amplitude.has(variable)
+        or not power.is_Pow
+        or len(power.args) != _GEOMETRIC_POWER_ARITY
+        or not power.args[1].has(variable)
     ):
         return ()
-    ratio, exponent = expression.args
-    if exponent != variable:
+    ratio, exponent = power.args
+    slope = sp.diff(exponent, variable)
+    if (
+        slope.has(variable)
+        or slope == sp.Integer(0)
+        or sp.simplify(exponent - slope * variable) != sp.Integer(0)
+    ):
         return ()
+    if slope != sp.Integer(1):
+        ratio = sp.simplify(sp.Pow(ratio, slope))
     generic_ratio = sp.Symbol("r", real=True)
     generic_lower = sp.Symbol("m", integer=True, nonnegative=True)
     identity_lower = sp.Integer(0) if lower == sp.Integer(0) else generic_lower
@@ -279,6 +298,9 @@ def _derive_geometric_series(
         ratio_magnitude = sp.Abs(ratio)
         converges = sp.simplify(sp.Lt(ratio_magnitude, sp.Integer(1)))
         if converges is sp.true:
+            expected = sp.simplify(amplitude * ratio**lower / (1 - ratio))
+            if sp.simplify(expected - result) != sp.Integer(0):
+                return ()
             explanation = "The common ratio satisfies |r| < 1, so the series converges."
             rule = "Apply the infinite geometric-series identity"
             after: BackendExpression = result
@@ -292,6 +314,9 @@ def _derive_geometric_series(
             after = sp.Ge(ratio_magnitude, sp.Integer(1), evaluate=False)
             verification_detail = "The convergence criterion was applied to the common ratio."
     elif upper.is_integer is True:
+        expected = sp.simplify(amplitude * (ratio**lower - ratio ** (upper + 1)) / (1 - ratio))
+        if sp.simplify(expected - result) != sp.Integer(0):
+            return ()
         identity = BackendIdentity(
             left=BackendSigma(
                 expression=generic_ratio**variable,
@@ -309,6 +334,31 @@ def _derive_geometric_series(
         verification_detail = "The geometric-series formula gives the exact result."
     else:
         return ()
+    notes = [
+        BackendMathNote(label="Identity", expression=identity),
+        BackendMathNote(label="Required condition", expression=condition),
+        BackendMathNote(
+            label="Common ratio",
+            expression=BackendIdentity(left=generic_ratio, right=ratio),
+        ),
+    ]
+    if amplitude != sp.Integer(1):
+        notes.append(
+            BackendMathNote(
+                label="Outside factor",
+                expression=BackendIdentity(
+                    left=sp.Symbol("c", real=True),
+                    right=amplitude,
+                ),
+            )
+        )
+    if lower != sp.Integer(0):
+        notes.append(
+            BackendMathNote(
+                label="Starting index",
+                expression=BackendIdentity(left=generic_lower, right=lower),
+            )
+        )
     return (
         BackendDerivationStep(
             rule=rule,
@@ -322,24 +372,7 @@ def _derive_geometric_series(
             explanation=explanation,
             verification_method=VerificationMethod.BACKEND_IDENTITY,
             verification_detail=verification_detail,
-            notes=(
-                BackendMathNote(label="Identity", expression=identity),
-                BackendMathNote(label="Required condition", expression=condition),
-                BackendMathNote(
-                    label="Common ratio",
-                    expression=BackendIdentity(left=generic_ratio, right=ratio),
-                ),
-                *(
-                    (
-                        BackendMathNote(
-                            label="Starting index",
-                            expression=BackendIdentity(left=generic_lower, right=lower),
-                        ),
-                    )
-                    if lower != sp.Integer(0)
-                    else ()
-                ),
-            ),
+            notes=tuple(notes),
         ),
     )
 
