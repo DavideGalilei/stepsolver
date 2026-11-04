@@ -145,7 +145,7 @@ class IsolatedSolution:
     """Bounded solver output returned to an agent."""
 
     normalized_expression: str
-    status: Literal["exact", "numeric", "divergent", "undefined", "unsolved"]
+    status: Literal["exact", "numeric", "divergent", "undefined", "singular", "unsolved"]
     result: str | None
     latex: str | None
     reason: str | None

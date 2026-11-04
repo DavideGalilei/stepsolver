@@ -14,10 +14,8 @@ from stepsolver.results import (
 from stepsolver.sympy_conversion import SympyConverter
 from stepsolver.sympy_equivalence import expressions_equivalent
 from stepsolver.sympy_support import (
+    differentiates_on_real_intervals,
     expect_integer,
-    negative_condition,
-    positive_condition,
-    refine_expression,
 )
 
 
@@ -72,13 +70,11 @@ class SympyVerifier:
             variable = self._converter.to_sympy(query.arguments[1])
             integrand = self._converter.to_sympy(query.arguments[0])
             derivative = sp.diff(backend_value, variable)
-            difference = derivative - integrand
             if not expressions_equivalent(derivative, integrand):
                 if not (
                     isinstance(variable, sp.Symbol)
                     and variable.is_real is True
                     and self._differentiates_away_from_real_poles(
-                        difference,
                         integrand,
                         backend_value,
                         variable,
@@ -88,8 +84,8 @@ class SympyVerifier:
                 return Verification(
                     method=VerificationMethod.DIFFERENTIATION,
                     detail=(
-                        "Differentiating the result recovers the integrand on both real "
-                        "intervals separated by the excluded value."
+                        "Differentiating the result recovers the integrand on every real "
+                        "interval separated by the excluded values."
                     ),
                 )
             return Verification(
@@ -116,22 +112,11 @@ class SympyVerifier:
 
     @staticmethod
     def _differentiates_away_from_real_poles(
-        difference: sp.Basic,
         integrand: sp.Basic,
         backend_value: sp.Basic,
         variable: sp.Symbol,
     ) -> bool:
-        """Check an absolute-value antiderivative on both sides of its real poles."""
+        """Check an absolute-value antiderivative on every real pole-separated interval."""
         if not backend_value.has(sp.Abs):
             return False
-        _numerator, denominator = sp.fraction(sp.together(integrand))
-        conditions: list[object] = []
-        if denominator.has(variable):
-            conditions.extend((positive_condition(denominator), negative_condition(denominator)))
-        for absolute in backend_value.atoms(sp.Abs):
-            if absolute.has(variable):
-                conditions.extend((positive_condition(absolute), negative_condition(absolute)))
-        return bool(conditions) and all(
-            sp.simplify(refine_expression(difference, condition)) == sp.Integer(0)
-            for condition in conditions
-        )
+        return differentiates_on_real_intervals(backend_value, integrand, variable)

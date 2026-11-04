@@ -121,13 +121,20 @@ def test_rational_log_antiderivative_is_kept_with_real_poles(solver: Solver) -> 
     result = solver.solve("integrate(1/(x^2 - 1), x)")
     assert isinstance(result, ExactResult)
     assert result.steps
-    constraints = result.steps[0].introduced_constraints
-    assert tuple(format_expression(item.expression) for item in constraints) == (
-        "x != -1",
-        "x != 1",
+    constraints = tuple(
+        format_expression(item.expression)
+        for step in result.steps
+        for item in step.introduced_constraints
     )
-    assert result.steps[0].rule == "Verify the antiderivative by differentiation"
-    assert _OPAQUE_RULE not in format_ascii(result)
+    assert constraints == ("x != -1", "x != 1")
+    assert tuple(step.rule for step in result.steps) == (
+        "Decompose into partial fractions",
+        "Integrate each partial fraction",
+    )
+    rendered = format_ascii(result)
+    assert "log(abs(x - 1))" in rendered
+    assert "log(abs(x + 1))" in rendered
+    assert _OPAQUE_RULE not in rendered
 
 
 def test_integral_without_a_template_keeps_a_verified_answer(solver: Solver) -> None:

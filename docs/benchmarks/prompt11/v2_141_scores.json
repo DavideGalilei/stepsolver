@@ -1,0 +1,926 @@
+{
+ "applicable_cases": 141,
+ "weights": {
+  "correctness": 0.3,
+  "derivations": 0.3,
+  "coverage": 0.2,
+  "reliability": 0.1,
+  "integration": 0.05,
+  "performance": 0.05
+ },
+ "solvers": {
+  "sympy-direct": {
+   "version": "1.14.0",
+   "commit": null,
+   "status_counts": {
+    "valid": 137,
+    "invalid_answer": 4
+   },
+   "defined": 141,
+   "executed": 141,
+   "skipped": 0,
+   "passed(strict_correct)": 128,
+   "failed(invalid+error)": 4,
+   "unsupported": 0,
+   "unsupported_no_api": 0,
+   "unsolved_by_solver": 0,
+   "value_only_correct": 137,
+   "covered": 139,
+   "attempted": 141,
+   "crashes_timeouts": 0,
+   "reliability_metrics": {
+    "R1_repeatability": 1.0,
+    "R2_engineering_probes": 0.5,
+    "R3_stability": 1.0,
+    "R4_domain_edge_cases": 0.723404255319149,
+    "R5_untrusted_input_safety": 0.0
+   },
+   "domain_sensitive_cases": 47,
+   "domain_sensitive_strict_correct": 34,
+   "derivation": {
+    "available": 13,
+    "available_pct_of_applicable": 9.21985815602837,
+    "scored": 13,
+    "mean_automated": 4.384615384615385,
+    "mean_final": 4.384615384615385,
+    "mean_final_domain_sensitive": 2,
+    "criterion_means": {
+     "correctness": 1.6923076923076923,
+     "completeness": 0.8461538461538461,
+     "explanation": 1,
+     "consistency": 0,
+     "domain": 0.8461538461538461,
+     "presentation": 0
+    },
+    "manual_reviewed": 2,
+    "distribution": {
+     "5": 9,
+     "2": 2,
+     "4": 2
+    }
+   },
+   "performance": {
+    "cold_start_ready_ms_median": 7322.851100005209,
+    "cold_first_solve_ms_median": 435.8396999887191,
+    "warm_median_common_ms": 16.398799984017387,
+    "warm_p95_common_ms": 118.36303499585475,
+    "warm_median_own_ms": 13.692700013052672,
+    "warm_p95_own_ms": 124.15335994446643,
+    "common_cases": 82,
+    "timeouts": 0,
+    "crashes": 0,
+    "peak_rss_mb": 0.0,
+    "per_operation_median_ms": {
+     "diff": 13.034300034632906,
+     "gradient": 18.489999987650663,
+     "integrate": 20.194699987769127,
+     "limit": 64.81910002185032,
+     "nsolve": 4.762199969263747,
+     "partial_derivative": 9.672200016211718,
+     "partial_fractions": 27.650599979097024,
+     "rref": 0.2720999764278531,
+     "solve": 32.34649999649264,
+     "solve_system": 12.79069995507598
+    }
+   },
+   "integration": {
+    "points": 12,
+    "max": 14,
+    "criteria": {
+     "env_compat": {
+      "score": 2,
+      "evidence": "1 third-party packages installed besides the engine (2 if <=4, 1 if <=30, else 0); requires-python >=3.9"
+     },
+     "install": {
+      "score": 2,
+      "evidence": "single install command succeeded"
+     },
+     "adaptation": {
+      "score": 2,
+      "evidence": "0.0% of cases needed per-case adapter handling (2 if <=2%, 1 if <=10%, else 0)"
+     },
+     "testability_extensibility": {
+      "score": 0,
+      "evidence": "FIXED ASSUMPTION: bare engine has no derivation/step framework to test or extend"
+     },
+     "licence": {
+      "score": 2,
+      "evidence": "licence BSD (permissive)"
+     },
+     "maintenance": {
+      "score": 2,
+      "evidence": "FIXED ASSUMPTION: mature, widely maintained project (not measurable from a PyPI install)"
+     },
+     "ui_independent": {
+      "score": 1,
+      "evidence": "FIXED ASSUMPTION: used headless as a library in this benchmark"
+     },
+     "no_rewrite": {
+      "score": 1,
+      "evidence": "FIXED ASSUMPTION: plain library call; adapter-sized integration"
+     }
+    }
+   },
+   "components": {
+    "correctness": 90.78014184397163,
+    "derivations": 43.846153846153854,
+    "coverage": 98.58156028368795,
+    "reliability": 64.46808510638297,
+    "integration": 85.71428571428571,
+    "performance": 77.60953722809583
+   },
+   "overall": 74.71720042153261,
+   "sensitivity": {
+    "primary (spec formula)": 74.71720042153261,
+    "value-only correctness (no domain-reporting requirement)": 76.63209403855389,
+    "value correctness ignoring form rules too": 76.63209403855389,
+    "availability-penalised derivations (unavailable=0 over all benchmark cases)": 62.77612022513327,
+    "automated-only derivation scores (no manual overlay)": 74.71720042153261,
+    "latency on each solver's own supported cases": 74.7672480877317
+   },
+   "by_category": {
+    "A": {
+     "n": 13,
+     "strict_correct": 13,
+     "covered": 13,
+     "unsupported": 0,
+     "invalid": 0,
+     "errors": 0
+    },
+    "B": {
+     "n": 13,
+     "strict_correct": 8,
+     "covered": 13,
+     "unsupported": 0,
+     "invalid": 0,
+     "errors": 0
+    },
+    "C": {
+     "n": 16,
+     "strict_correct": 16,
+     "covered": 16,
+     "unsupported": 0,
+     "invalid": 0,
+     "errors": 0
+    },
+    "D": {
+     "n": 11,
+     "strict_correct": 11,
+     "covered": 11,
+     "unsupported": 0,
+     "invalid": 0,
+     "errors": 0
+    },
+    "E": {
+     "n": 13,
+     "strict_correct": 12,
+     "covered": 13,
+     "unsupported": 0,
+     "invalid": 0,
+     "errors": 0
+    },
+    "F": {
+     "n": 12,
+     "strict_correct": 12,
+     "covered": 12,
+     "unsupported": 0,
+     "invalid": 0,
+     "errors": 0
+    },
+    "G": {
+     "n": 13,
+     "strict_correct": 11,
+     "covered": 13,
+     "unsupported": 0,
+     "invalid": 2,
+     "errors": 0
+    },
+    "H": {
+     "n": 9,
+     "strict_correct": 9,
+     "covered": 9,
+     "unsupported": 0,
+     "invalid": 0,
+     "errors": 0
+    },
+    "I": {
+     "n": 9,
+     "strict_correct": 9,
+     "covered": 9,
+     "unsupported": 0,
+     "invalid": 0,
+     "errors": 0
+    },
+    "J": {
+     "n": 8,
+     "strict_correct": 8,
+     "covered": 8,
+     "unsupported": 0,
+     "invalid": 0,
+     "errors": 0
+    },
+    "K": {
+     "n": 12,
+     "strict_correct": 11,
+     "covered": 12,
+     "unsupported": 0,
+     "invalid": 0,
+     "errors": 0
+    },
+    "L": {
+     "n": 12,
+     "strict_correct": 8,
+     "covered": 10,
+     "unsupported": 0,
+     "invalid": 2,
+     "errors": 0
+    }
+   }
+  },
+  "smartsolver": {
+   "version": "0.4.1",
+   "commit": "f0d46a1089366f8e14f73de9ba811d8e4c1471b0",
+   "status_counts": {
+    "unsupported": 56,
+    "valid": 74,
+    "runtime_error": 3,
+    "invalid_answer": 8
+   },
+   "defined": 141,
+   "executed": 141,
+   "skipped": 0,
+   "passed(strict_correct)": 73,
+   "failed(invalid+error)": 11,
+   "unsupported": 56,
+   "unsupported_no_api": 56,
+   "unsolved_by_solver": 0,
+   "value_only_correct": 74,
+   "covered": 79,
+   "attempted": 85,
+   "crashes_timeouts": 3,
+   "reliability_metrics": {
+    "R1_repeatability": 1.0,
+    "R2_engineering_probes": 0.5,
+    "R3_stability": 0.9647058823529412,
+    "R4_domain_edge_cases": 0.3829787234042553,
+    "R5_untrusted_input_safety": 0.0
+   },
+   "domain_sensitive_cases": 47,
+   "domain_sensitive_strict_correct": 18,
+   "derivation": {
+    "available": 82,
+    "available_pct_of_applicable": 58.156028368794324,
+    "scored": 82,
+    "mean_automated": 6.658536585365853,
+    "mean_final": 6.646341463414634,
+    "mean_final_domain_sensitive": 4.6,
+    "criterion_means": {
+     "correctness": 2.5121951219512195,
+     "completeness": 1.146341463414634,
+     "explanation": 0.8170731707317073,
+     "consistency": 0.6951219512195121,
+     "domain": 0.7317073170731707,
+     "presentation": 0.7439024390243902
+    },
+    "manual_reviewed": 16,
+    "distribution": {
+     "8": 21,
+     "9": 29,
+     "2": 8,
+     "10": 2,
+     "7": 5,
+     "3": 13,
+     "4": 1,
+     "1": 2,
+     "0": 1
+    }
+   },
+   "performance": {
+    "cold_start_ready_ms_median": 7867.403300013393,
+    "cold_first_solve_ms_median": 436.5220000036061,
+    "warm_median_common_ms": 107.93800000101328,
+    "warm_p95_common_ms": 830.489235030834,
+    "warm_median_own_ms": 107.93800000101328,
+    "warm_p95_own_ms": 830.489235030834,
+    "common_cases": 82,
+    "timeouts": 0,
+    "crashes": 0,
+    "peak_rss_mb": 0.0,
+    "per_operation_median_ms": {
+     "diff": 124.12774996482767,
+     "gradient": 134.227899950929,
+     "integrate": 164.10009999526665,
+     "limit": 65.68960001459345,
+     "nsolve": 2178.2401999807917,
+     "partial_derivative": 145.7877999637276,
+     "partial_fractions": 203.81014997838065,
+     "rref": 14.154900040011853,
+     "solve": 73.8495999830775,
+     "solve_system": 160.95150000182912
+    }
+   },
+   "integration": {
+    "points": 12,
+    "max": 14,
+    "criteria": {
+     "env_compat": {
+      "score": 2,
+      "evidence": "2 third-party packages installed besides the engine (2 if <=4, 1 if <=30, else 0); requires-python >=3.10"
+     },
+     "install": {
+      "score": 2,
+      "evidence": "single install command succeeded"
+     },
+     "adaptation": {
+      "score": 2,
+      "evidence": "0.0% of cases needed per-case adapter handling (2 if <=2%, 1 if <=10%, else 0)"
+     },
+     "testability_extensibility": {
+      "score": 1,
+      "evidence": "28 test functions found statically (2 if >=100, 1 if >=1)"
+     },
+     "licence": {
+      "score": 2,
+      "evidence": "licence MIT (permissive)"
+     },
+     "maintenance": {
+      "score": 1,
+      "evidence": "history: 10 commits, 2 authors, age 104 days, last commit 64 days ago, 1 tags (2 if >=2y and >=5 authors; 1 if >=5 commits and active within 1y)"
+     },
+     "ui_independent": {
+      "score": 1,
+      "evidence": "FIXED ASSUMPTION: used headless as a library in this benchmark"
+     },
+     "no_rewrite": {
+      "score": 1,
+      "evidence": "FIXED ASSUMPTION: plain library call; adapter-sized integration"
+     }
+    }
+   },
+   "components": {
+    "correctness": 51.773049645390074,
+    "derivations": 66.46341463414635,
+    "coverage": 56.02836879432624,
+    "reliability": 56.95369211514393,
+    "integration": 85.71428571428571,
+    "performance": 48.675012847767135
+   },
+   "overall": 59.09144718234321,
+   "sensitivity": {
+    "primary (spec formula)": 59.09144718234321,
+    "value-only correctness (no domain-reporting requirement)": 59.30421313979002,
+    "value correctness ignoring form rules too": 59.51697909723683,
+    "availability-penalised derivations (unavailable=0 over all benchmark cases)": 50.74816747295037,
+    "automated-only derivation scores (no manual overlay)": 59.12803254819686,
+    "latency on each solver's own supported cases": 59.09144718234321
+   },
+   "by_category": {
+    "A": {
+     "n": 13,
+     "strict_correct": 0,
+     "covered": 0,
+     "unsupported": 13,
+     "invalid": 0,
+     "errors": 0
+    },
+    "B": {
+     "n": 13,
+     "strict_correct": 0,
+     "covered": 0,
+     "unsupported": 13,
+     "invalid": 0,
+     "errors": 0
+    },
+    "C": {
+     "n": 16,
+     "strict_correct": 13,
+     "covered": 14,
+     "unsupported": 0,
+     "invalid": 1,
+     "errors": 2
+    },
+    "D": {
+     "n": 11,
+     "strict_correct": 5,
+     "covered": 5,
+     "unsupported": 6,
+     "invalid": 0,
+     "errors": 0
+    },
+    "E": {
+     "n": 13,
+     "strict_correct": 0,
+     "covered": 0,
+     "unsupported": 13,
+     "invalid": 0,
+     "errors": 0
+    },
+    "F": {
+     "n": 12,
+     "strict_correct": 12,
+     "covered": 12,
+     "unsupported": 0,
+     "invalid": 0,
+     "errors": 0
+    },
+    "G": {
+     "n": 13,
+     "strict_correct": 11,
+     "covered": 13,
+     "unsupported": 0,
+     "invalid": 2,
+     "errors": 0
+    },
+    "H": {
+     "n": 9,
+     "strict_correct": 9,
+     "covered": 9,
+     "unsupported": 0,
+     "invalid": 0,
+     "errors": 0
+    },
+    "I": {
+     "n": 9,
+     "strict_correct": 5,
+     "covered": 5,
+     "unsupported": 4,
+     "invalid": 0,
+     "errors": 0
+    },
+    "J": {
+     "n": 8,
+     "strict_correct": 4,
+     "covered": 4,
+     "unsupported": 4,
+     "invalid": 0,
+     "errors": 0
+    },
+    "K": {
+     "n": 12,
+     "strict_correct": 8,
+     "covered": 11,
+     "unsupported": 0,
+     "invalid": 3,
+     "errors": 0
+    },
+    "L": {
+     "n": 12,
+     "strict_correct": 6,
+     "covered": 6,
+     "unsupported": 3,
+     "invalid": 2,
+     "errors": 1
+    }
+   }
+  },
+  "stepsolver": {
+   "version": "0.1.0",
+   "commit": "89b16c643b034e716002622068570a47f04d2a91",
+   "status_counts": {
+    "valid": 141
+   },
+   "defined": 141,
+   "executed": 141,
+   "skipped": 0,
+   "passed(strict_correct)": 141,
+   "failed(invalid+error)": 0,
+   "unsupported": 0,
+   "unsupported_no_api": 0,
+   "unsolved_by_solver": 0,
+   "value_only_correct": 141,
+   "covered": 141,
+   "attempted": 141,
+   "crashes_timeouts": 0,
+   "reliability_metrics": {
+    "R1_repeatability": 1.0,
+    "R2_engineering_probes": 1.0,
+    "R3_stability": 1.0,
+    "R4_domain_edge_cases": 1.0,
+    "R5_untrusted_input_safety": 1.0
+   },
+   "domain_sensitive_cases": 47,
+   "domain_sensitive_strict_correct": 47,
+   "derivation": {
+    "available": 141,
+    "available_pct_of_applicable": 100.0,
+    "scored": 141,
+    "mean_automated": 9.312056737588652,
+    "mean_final": 9.326241134751774,
+    "mean_final_domain_sensitive": 9.106382978723405,
+    "criterion_means": {
+     "correctness": 3,
+     "completeness": 1.6099290780141844,
+     "explanation": 1.801418439716312,
+     "consistency": 1,
+     "domain": 0.9148936170212766,
+     "presentation": 1
+    },
+    "manual_reviewed": 14,
+    "distribution": {
+     "10": 73,
+     "9": 48,
+     "8": 16,
+     "6": 3,
+     "7": 1
+    }
+   },
+   "performance": {
+    "cold_start_ready_ms_median": 2950.866499915719,
+    "cold_first_solve_ms_median": 167.90650004986674,
+    "warm_median_common_ms": 61.977250035852194,
+    "warm_p95_common_ms": 275.5161900247908,
+    "warm_median_own_ms": 40.87889997754246,
+    "warm_p95_own_ms": 405.370799964293,
+    "common_cases": 82,
+    "timeouts": 0,
+    "crashes": 0,
+    "peak_rss_mb": 0.0,
+    "per_operation_median_ms": {
+     "diff": 59.61880000540987,
+     "gradient": 98.86449994519353,
+     "integrate": 46.660899999551475,
+     "limit": 171.6038000304252,
+     "nsolve": 45.92614999273792,
+     "partial_derivative": 40.87889997754246,
+     "partial_fractions": 72.2745000384748,
+     "rref": 7.253200048580766,
+     "solve": 104.19670003466308,
+     "solve_system": 32.65349997673184
+    }
+   },
+   "integration": {
+    "points": 12,
+    "max": 14,
+    "criteria": {
+     "env_compat": {
+      "score": 1,
+      "evidence": "7 third-party packages installed besides the engine (2 if <=4, 1 if <=30, else 0); requires-python >=3.12,<3.15"
+     },
+     "install": {
+      "score": 2,
+      "evidence": "single install command succeeded"
+     },
+     "adaptation": {
+      "score": 2,
+      "evidence": "0.0% of cases needed per-case adapter handling (2 if <=2%, 1 if <=10%, else 0)"
+     },
+     "testability_extensibility": {
+      "score": 2,
+      "evidence": "261 test functions found statically (2 if >=100, 1 if >=1)"
+     },
+     "licence": {
+      "score": 2,
+      "evidence": "licence MIT (permissive)"
+     },
+     "maintenance": {
+      "score": 1,
+      "evidence": "history: 56 commits, 2 authors, age 70 days, last commit 0 days ago, 0 tags (2 if >=2y and >=5 authors; 1 if >=5 commits and active within 1y)"
+     },
+     "ui_independent": {
+      "score": 1,
+      "evidence": "FIXED ASSUMPTION: used headless as a library in this benchmark"
+     },
+     "no_rewrite": {
+      "score": 1,
+      "evidence": "FIXED ASSUMPTION: plain library call; adapter-sized integration"
+     }
+    }
+   },
+   "components": {
+    "correctness": 100.0,
+    "derivations": 93.26241134751774,
+    "coverage": 100.0,
+    "reliability": 100.0,
+    "integration": 85.71428571428571,
+    "performance": 61.193388511569665
+   },
+   "overall": 95.32410711554809,
+   "sensitivity": {
+    "primary (spec formula)": 95.32410711554809,
+    "value-only correctness (no domain-reporting requirement)": 95.32410711554809,
+    "value correctness ignoring form rules too": 95.32410711554809,
+    "availability-penalised derivations (unavailable=0 over all benchmark cases)": 95.32410711554809,
+    "automated-only derivation scores (no manual overlay)": 95.28155392405873,
+    "latency on each solver's own supported cases": 95.33543053500162
+   },
+   "by_category": {
+    "A": {
+     "n": 13,
+     "strict_correct": 13,
+     "covered": 13,
+     "unsupported": 0,
+     "invalid": 0,
+     "errors": 0
+    },
+    "B": {
+     "n": 13,
+     "strict_correct": 13,
+     "covered": 13,
+     "unsupported": 0,
+     "invalid": 0,
+     "errors": 0
+    },
+    "C": {
+     "n": 16,
+     "strict_correct": 16,
+     "covered": 16,
+     "unsupported": 0,
+     "invalid": 0,
+     "errors": 0
+    },
+    "D": {
+     "n": 11,
+     "strict_correct": 11,
+     "covered": 11,
+     "unsupported": 0,
+     "invalid": 0,
+     "errors": 0
+    },
+    "E": {
+     "n": 13,
+     "strict_correct": 13,
+     "covered": 13,
+     "unsupported": 0,
+     "invalid": 0,
+     "errors": 0
+    },
+    "F": {
+     "n": 12,
+     "strict_correct": 12,
+     "covered": 12,
+     "unsupported": 0,
+     "invalid": 0,
+     "errors": 0
+    },
+    "G": {
+     "n": 13,
+     "strict_correct": 13,
+     "covered": 13,
+     "unsupported": 0,
+     "invalid": 0,
+     "errors": 0
+    },
+    "H": {
+     "n": 9,
+     "strict_correct": 9,
+     "covered": 9,
+     "unsupported": 0,
+     "invalid": 0,
+     "errors": 0
+    },
+    "I": {
+     "n": 9,
+     "strict_correct": 9,
+     "covered": 9,
+     "unsupported": 0,
+     "invalid": 0,
+     "errors": 0
+    },
+    "J": {
+     "n": 8,
+     "strict_correct": 8,
+     "covered": 8,
+     "unsupported": 0,
+     "invalid": 0,
+     "errors": 0
+    },
+    "K": {
+     "n": 12,
+     "strict_correct": 12,
+     "covered": 12,
+     "unsupported": 0,
+     "invalid": 0,
+     "errors": 0
+    },
+    "L": {
+     "n": 12,
+     "strict_correct": 12,
+     "covered": 12,
+     "unsupported": 0,
+     "invalid": 0,
+     "errors": 0
+    }
+   }
+  }
+ },
+ "solver_order": [
+  "sympy-direct",
+  "smartsolver",
+  "stepsolver"
+ ],
+ "hard_gates": {
+  "sympy-direct": {
+   "G1_critical_correctness": {
+    "status": "PASS",
+    "critical_cases": [],
+    "major_defects(not gating)": [
+     [
+      "G04",
+      "domain_error"
+     ],
+     [
+      "L04",
+      "partial: empty solution set, expression not flagged undefined; no fabr"
+     ],
+     [
+      "G08",
+      "domain_error"
+     ],
+     [
+      "L10",
+      "partial: empty solution set, expression not flagged undefined; no fabr"
+     ]
+    ]
+   },
+   "G2_fabricated_or_invalid_derivations": {
+    "status": "PASS",
+    "cases": [],
+    "evidence": []
+   },
+   "G3_unsafe_execution": {
+    "status": "CONDITIONAL",
+    "canary_score": 0.0,
+    "note": "INPUT EVALUATED AS PYTHON (math.factorial(4)=24 reached the solver): \"24\""
+   },
+   "G4_licence": {
+    "status": "PASS",
+    "licence": "BSD"
+   },
+   "eligible_for_production_recommendation": "CONDITIONAL"
+  },
+  "smartsolver": {
+   "G1_critical_correctness": {
+    "status": "FAIL",
+    "critical_cases": [
+     [
+      "K03",
+      "claims no solution but a real root exists"
+     ],
+     [
+      "C15",
+      "returned solutions where empty expected"
+     ]
+    ],
+    "major_defects(not gating)": [
+     [
+      "G04",
+      "domain_error"
+     ],
+     [
+      "K01",
+      ""
+     ],
+     [
+      "L04",
+      "partial: empty solution set, expression not flagged undefined; no fabr"
+     ],
+     [
+      "G08",
+      "domain_error"
+     ],
+     [
+      "K09",
+      "no root within tolerance"
+     ],
+     [
+      "L10",
+      "partial: empty solution set, expression not flagged undefined; no fabr"
+     ]
+    ]
+   },
+   "G2_fabricated_or_invalid_derivations": {
+    "status": "FAIL",
+    "cases": [
+     "G04",
+     "K01"
+    ],
+    "evidence": [
+     [
+      "G04",
+      "steps_mode=direct_evaluation: worked steps replaced by direct solve"
+     ],
+     [
+      "K01",
+      "manual: final step shows the unchanged input"
+     ]
+    ]
+   },
+   "G3_unsafe_execution": {
+    "status": "FAIL",
+    "canary_score": 0.0,
+    "note": "INPUT EVALUATED AS PYTHON (math.factorial(4)=24 reached the solver): {\"solutions\": \"[24]\", \"solution_latex\": \"24\", \"steps_verified\": \"True\", \"steps_m"
+   },
+   "G4_licence": {
+    "status": "PASS",
+    "licence": "MIT"
+   },
+   "eligible_for_production_recommendation": "NO (as-is)"
+  },
+  "stepsolver": {
+   "G1_critical_correctness": {
+    "status": "PASS",
+    "critical_cases": [],
+    "major_defects(not gating)": []
+   },
+   "G2_fabricated_or_invalid_derivations": {
+    "status": "PASS",
+    "cases": [],
+    "evidence": []
+   },
+   "G3_unsafe_execution": {
+    "status": "PASS",
+    "canary_score": 1.0,
+    "note": "payload rejected: ParseError"
+   },
+   "G4_licence": {
+    "status": "PASS",
+    "licence": "MIT"
+   },
+   "eligible_for_production_recommendation": "YES"
+  }
+ },
+ "common_latency_cases": [
+  "C01",
+  "C02",
+  "C03",
+  "C04",
+  "C05",
+  "C06",
+  "C07",
+  "C08",
+  "C09",
+  "C11",
+  "C12",
+  "C13",
+  "C15",
+  "C16",
+  "D01",
+  "D02",
+  "D03",
+  "D07",
+  "D08",
+  "F01",
+  "F02",
+  "F03",
+  "F04",
+  "F05",
+  "F06",
+  "F07",
+  "F08",
+  "F09",
+  "F10",
+  "F11",
+  "F12",
+  "G01",
+  "G02",
+  "G03",
+  "G04",
+  "G05",
+  "G06",
+  "G07",
+  "G08",
+  "G09",
+  "G10",
+  "G11",
+  "G12",
+  "G13",
+  "H01",
+  "H02",
+  "H03",
+  "H04",
+  "H05",
+  "H06",
+  "H07",
+  "H08",
+  "H09",
+  "I01",
+  "I04",
+  "I07",
+  "I08",
+  "I09",
+  "J03",
+  "J04",
+  "J07",
+  "J08",
+  "K01",
+  "K02",
+  "K03",
+  "K04",
+  "K05",
+  "K06",
+  "K07",
+  "K08",
+  "K09",
+  "K10",
+  "K11",
+  "K12",
+  "L01",
+  "L02",
+  "L04",
+  "L06",
+  "L07",
+  "L09",
+  "L10",
+  "L12"
+ ]
+}

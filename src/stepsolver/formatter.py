@@ -29,6 +29,7 @@ from stepsolver.results import (
     NumericRootsValue,
     ScalarValue,
     SequenceValue,
+    SingularMatrixResult,
     SolveResult,
     UndefinedResult,
     UniversalSolutionValue,
@@ -213,6 +214,8 @@ def format_ascii(result: SolveResult) -> str:
         lines.append(f"Diverges: {result.reason}")
     elif isinstance(result, UndefinedResult):
         lines.append(f"Undefined: {result.reason}")
+    elif isinstance(result, SingularMatrixResult):
+        lines.append(f"Singular matrix: {result.reason}")
     else:
         lines.append(f"Unsolved: {result.reason}")
     return "\n".join(lines)

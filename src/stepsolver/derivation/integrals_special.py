@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import cast
+
 import sympy as sp
 
 from stepsolver.derivation.model import (
@@ -13,15 +15,17 @@ from stepsolver.derivation.model import (
     BackendIntegral,
     BackendIntegrationByPartsRule,
     BackendMathNote,
+    BackendNotEqual,
     BackendProduct,
+    BackendStepConstraint,
     BackendSum,
 )
 from stepsolver.results import VerificationMethod
 from stepsolver.sympy_equivalence import expressions_equivalent
+from stepsolver.sympy_integrals import match_partial_fraction_antiderivative
 from stepsolver.sympy_support import has_fractional_power
 
 _QUADRATIC_DEGREE = 2
-_MINIMUM_PRODUCT_FACTORS = 2
 
 
 def derive_integration_by_parts(
@@ -707,26 +711,48 @@ def derive_inverse_hyperbolic_integral(
     )
 
 
+def _partial_fraction_constraints(
+    integrand: sp.Basic,
+    variable: sp.Symbol,
+) -> tuple[BackendStepConstraint, ...]:
+    """Report the real zeros of the original denominator as explicit exclusions."""
+    _numerator, denominator = sp.fraction(sp.together(integrand))
+    try:
+        roots = cast("list[object]", sp.solve(sp.Eq(denominator, 0), variable))
+    except (sp.PolynomialError, NotImplementedError, TypeError, ValueError):
+        return ()
+    constraints: list[BackendStepConstraint] = []
+    seen: set[str] = set()
+    for root in roots:
+        if not isinstance(root, sp.Basic) or root.free_symbols or root.is_real is False:
+            continue
+        key = str(root)
+        if key in seen:
+            continue
+        seen.add(key)
+        constraints.append(
+            BackendStepConstraint(
+                explanation="The original denominator cannot equal zero.",
+                expression=BackendNotEqual(left=variable, right=root),
+            )
+        )
+    return tuple(constraints)
+
+
 def derive_partial_fraction_integral(
     integrand: sp.Basic,
     variable: sp.Symbol,
     result: sp.Basic,
 ) -> tuple[BackendDerivationStep, ...]:
-    """Integrate rational functions whose partial fractions avoid logarithmic domains."""
-    if not integrand.is_rational_function(variable) or result.has(sp.log):
-        return ()
-    decomposition = sp.apart(integrand, variable)
-    terms = tuple(decomposition.as_ordered_terms())
-    if str(decomposition) == str(integrand) or len(terms) < _MINIMUM_PRODUCT_FACTORS:
-        return ()
-    antiderivatives = tuple(sp.integrate(term, variable) for term in terms)
-    if any(item.has(sp.Integral) for item in antiderivatives):
+    """Integrate a rational function term by term after an explicit decomposition."""
+    matched = match_partial_fraction_antiderivative(integrand, variable)
+    if matched is None or not expressions_equivalent(matched.result, result):
         return ()
     return (
         BackendDerivationStep(
             rule="Decompose into partial fractions",
             before=BackendIntegral(integrand=integrand, variable=variable),
-            after=BackendIntegral(integrand=decomposition, variable=variable),
+            after=BackendIntegral(integrand=matched.decomposition, variable=variable),
             explanation=(
                 "Rewrite the rational function as a sum of simpler fractions that can be "
                 "integrated separately."
@@ -736,17 +762,24 @@ def derive_partial_fraction_integral(
             notes=(
                 BackendMathNote(
                     label="Partial-fraction identity",
-                    expression=BackendIdentity(left=integrand, right=decomposition),
+                    expression=BackendIdentity(left=integrand, right=matched.decomposition),
                 ),
             ),
         ),
         BackendDerivationStep(
             rule="Integrate each partial fraction",
-            before=BackendIntegral(integrand=decomposition, variable=variable),
+            before=BackendIntegral(integrand=matched.decomposition, variable=variable),
             after=result,
-            explanation="Integrate the separated power and arctangent terms, then combine them.",
+            explanation=(
+                "Integrate the separated terms. Each linear denominator contributes a "
+                "logarithm of an absolute value, while the remaining power and quadratic "
+                "terms use their elementary rules."
+            ),
             verification_method=VerificationMethod.DIFFERENTIATION,
-            verification_detail="Differentiating the final result recovers the rational function.",
+            verification_detail=(
+                "Differentiating the final result recovers the rational function on every "
+                "interval where the original denominator is nonzero."
+            ),
             notes=tuple(
                 BackendMathNote(
                     label=f"Term {index}",
@@ -756,9 +789,14 @@ def derive_partial_fraction_integral(
                     ),
                 )
                 for index, (term, antiderivative) in enumerate(
-                    zip(terms, antiderivatives, strict=True),
+                    zip(
+                        matched.terms,
+                        matched.term_antiderivatives,
+                        strict=True,
+                    ),
                     start=1,
                 )
             ),
+            introduced_constraints=_partial_fraction_constraints(integrand, variable),
         ),
     )

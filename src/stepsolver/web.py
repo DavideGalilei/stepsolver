@@ -84,7 +84,7 @@ class SolveResponse(BaseModel):
 
     model_config = ConfigDict(extra="forbid", frozen=True)
 
-    status: Literal["exact", "numeric", "divergent", "undefined", "unsolved"]
+    status: Literal["exact", "numeric", "divergent", "undefined", "singular", "unsolved"]
     source: str
     formatted_ascii: str
     result_latex: str | None

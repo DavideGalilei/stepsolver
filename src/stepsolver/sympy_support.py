@@ -1,6 +1,7 @@
 """Shared validation and structural helpers for the SymPy adapter."""
 
 from collections.abc import Callable, Mapping, Sequence
+from itertools import pairwise
 from typing import Protocol, TypeGuard, cast
 
 import sympy as sp
@@ -43,6 +44,7 @@ class _AssumptionPredicates(Protocol):
 
 _Q = cast("_AssumptionPredicates", vars(sp)["Q"])
 _REFINE = cast("Callable[[sp.Basic, object], sp.Basic]", vars(sp)["refine"])
+_AND = cast("Callable[[sp.Basic, sp.Basic], sp.Basic]", vars(sp)["And"])
 
 
 def positive_condition(expression: sp.Basic) -> object:
@@ -58,6 +60,84 @@ def negative_condition(expression: sp.Basic) -> object:
 def refine_expression(expression: sp.Basic, condition: object) -> sp.Basic:
     """Apply SymPy's untyped assumption refinement at a typed boundary."""
     return _REFINE(expression, condition)
+
+
+_MAX_REAL_BOUNDARIES = 24
+
+
+def _real_zero_boundaries(
+    expressions: Sequence[sp.Basic],
+    variable: sp.Symbol,
+) -> tuple[sp.Basic, ...] | None:
+    """Return the sorted real zeros contributed by the supplied expressions."""
+    zeros: list[sp.Basic] = []
+    for expression in expressions:
+        if not expression.has(variable):
+            continue
+        try:
+            solutions = cast("list[object]", sp.solve(sp.Eq(expression, 0), variable))
+        except (sp.PolynomialError, NotImplementedError, TypeError, ValueError):
+            return None
+        for solution in solutions:
+            if not isinstance(solution, sp.Basic) or solution.free_symbols:
+                return None
+            if solution.is_real is False:
+                continue
+            if solution not in zeros:
+                zeros.append(solution)
+    if len(zeros) > _MAX_REAL_BOUNDARIES:
+        return None
+    try:
+        return tuple(sorted(zeros, key=lambda item: float(cast("sp.Float", sp.N(item)))))
+    except (TypeError, ValueError):
+        return None
+
+
+def _interval_condition(
+    variable: sp.Symbol,
+    lower: sp.Basic,
+    upper: sp.Basic,
+) -> object:
+    """Describe one open real interval as a SymPy assumption."""
+    if lower == -sp.oo:
+        return sp.Lt(variable, upper)
+    if upper == sp.oo:
+        return sp.Gt(variable, lower)
+    return _AND(sp.Gt(variable, lower), sp.Lt(variable, upper))
+
+
+def differentiates_on_real_intervals(
+    antiderivative: sp.Basic,
+    integrand: sp.Basic,
+    variable: sp.Symbol,
+) -> bool:
+    """Check the derivative on every real interval separated by the integrand's poles.
+
+    Antiderivatives that use ``log(abs(u))`` agree with the integrand only on
+    intervals where ``u`` keeps a fixed sign.  Testing the difference on each
+    interval formed by all real zeros of the denominator and of the absolute
+    values exercises every sign combination without guessing one branch.
+    """
+    if variable.is_real is not True:
+        return False
+    difference = sp.diff(antiderivative, variable) - integrand
+    candidates = [sp.fraction(sp.together(integrand))[1]]
+    candidates.extend(
+        absolute.args[0] for absolute in antiderivative.atoms(sp.Abs) if absolute.has(variable)
+    )
+    boundaries = _real_zero_boundaries(candidates, variable)
+    if boundaries is None:
+        return False
+    edges = (-sp.oo, *boundaries, sp.oo)
+    for lower, upper in pairwise(edges):
+        condition = _interval_condition(variable, lower, upper)
+        try:
+            refined = refine_expression(difference, condition)
+            if sp.simplify(refined) != sp.Integer(0):
+                return False
+        except (sp.PolynomialError, NotImplementedError, TypeError, ValueError):
+            return False
+    return True
 
 
 def is_object_mapping(value: object) -> TypeGuard[Mapping[object, object]]:

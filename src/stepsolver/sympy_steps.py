@@ -281,6 +281,10 @@ class SympyStepBuilder:
             ),
         )
 
+    def singular_inverse_steps(self, query: Query) -> tuple[SolutionStep, ...]:
+        """Return explanatory steps for a square matrix with zero determinant."""
+        return self._matrix_steps.singular_inverse_steps(query)
+
     def integration_domain_constraints(
         self,
         integrand: Expression,
