@@ -3,7 +3,8 @@
 **Repository:** `C:\Users\Olabode Nathaniel\Code\Step Solver\stepsolver`
 **Branch:** `prompt11-stabilisation`
 **Baseline commit:** `7d17871299c9e1a8393c503033c7b3a063616a25` (`main`, "Merge improve-coverage-performance into main")
-**Final commit:** recorded at the end of this document and in `Prompt_11_Failure_Resolution_Matrix.md`
+**Implementation commit:** `459181c47b5ea5a3e07f4961ae7e6af62aa3dd0c`
+**Documentation finalisation:** docs-only follow-up commit on the same branch (see `git log -1`)
 
 ---
 
@@ -564,7 +565,8 @@ $bench = "C:\Users\Olabode Nathaniel\AppData\Local\Temp\opencode\math_solver_ben
 
 - Branch: `prompt11-stabilisation`
 - Baseline: `7d17871299c9e1a8393c503033c7b3a063616a25`
-- Final: recorded after commit; see the commit message
-  `Prompt 11: stabilise real-log integrals, singular matrices, and native ODE dispatch`.
+- Implementation commit: `459181c47b5ea5a3e07f4961ae7e6af62aa3dd0c`
+- Documentation finalisation: docs-only follow-up commit; the branch HEAD at delivery is
+  reported in the Prompt 11 delivery message.
 
 **Not pushed.** No remote push was performed.

@@ -5,7 +5,9 @@ evidence, and regression tests.
 
 **Baseline:** `7d17871299c9e1a8393c503033c7b3a063616a25`
 **Branch:** `prompt11-stabilisation`
-**Final commit:** recorded in § 6 and in `Prompt_11_Implementation_Report.md`
+**Implementation commit:** `459181c47b5ea5a3e07f4961ae7e6af62aa3dd0c`
+**Documentation finalisation:** docs-only follow-up commit (branch HEAD at delivery is reported
+in the Prompt 11 delivery message)
 
 Legend: ✅ fixed/verified · ➖ already correct, regression-locked · ⛔ blocked (fixture absent)
 
@@ -127,7 +129,9 @@ Search evidence for the absent fixture is summarised in
 
 - Branch: `prompt11-stabilisation`
 - Baseline: `7d17871299c9e1a8393c503033c7b3a063616a25`
-- Final: recorded after commit in the commit message and the implementation report.
+- Implementation commit: `459181c47b5ea5a3e07f4961ae7e6af62aa3dd0c`
+- Documentation finalisation: docs-only follow-up commit; branch HEAD at delivery is
+  reported in the Prompt 11 delivery message.
 - Not pushed.
 
 ---
