@@ -11,6 +11,7 @@ import sympy as sp
 
 _MAX_SINE_PIECES = 8
 _POWER_ARITY = 2
+_MINIMUM_PARTIAL_FRACTION_TERMS = 2
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -76,6 +77,78 @@ def match_reciprocal_linear_integral(
         root=root,
         antiderivative=antiderivative,
         result=sp.Add(antiderivative, integration_constant, evaluate=False),
+    )
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class PartialFractionAntiderivative:
+    """A rational integrand split into terms and integrated in the real domain."""
+
+    integrand: sp.Basic
+    decomposition: sp.Basic
+    terms: tuple[sp.Basic, ...]
+    term_antiderivatives: tuple[sp.Basic, ...]
+    result: sp.Basic
+
+
+def _integrate_partial_fraction_term(
+    term: sp.Basic,
+    variable: sp.Symbol,
+) -> sp.Basic | None:
+    """Integrate one partial-fraction term, using a real logarithm where it applies."""
+    numerator, denominator = sp.fraction(sp.together(term))
+    if denominator.has(variable):
+        try:
+            polynomial = sp.Poly(denominator, variable)
+        except sp.PolynomialError:
+            return None
+        if polynomial.degree() == 1 and not numerator.has(variable):
+            leading = polynomial.all_coeffs()[0]
+            if leading.is_real is not True:
+                return None
+            coefficient = sp.simplify(numerator / leading)
+            normalized = sp.expand(denominator / leading)
+            logarithm = sp.log(sp.Abs(normalized))
+            return (
+                logarithm
+                if coefficient == sp.Integer(1)
+                else sp.Mul(coefficient, logarithm, evaluate=False)
+            )
+    antiderivative = sp.integrate(term, variable)
+    if antiderivative.has(sp.Integral):
+        return None
+    return antiderivative
+
+
+def match_partial_fraction_antiderivative(
+    integrand: sp.Basic,
+    variable: sp.Symbol,
+) -> PartialFractionAntiderivative | None:
+    """Split a rational integrand and integrate each term without complex logarithms."""
+    if not integrand.is_rational_function(variable):
+        return None
+    try:
+        decomposition = sp.apart(integrand, variable)
+    except (sp.PolynomialError, NotImplementedError, TypeError, ValueError):
+        return None
+    if str(decomposition) == str(integrand):
+        return None
+    terms = tuple(decomposition.as_ordered_terms())
+    if len(terms) < _MINIMUM_PARTIAL_FRACTION_TERMS:
+        return None
+    antiderivatives: list[sp.Basic] = []
+    for term in terms:
+        antiderivative = _integrate_partial_fraction_term(term, variable)
+        if antiderivative is None:
+            return None
+        antiderivatives.append(antiderivative)
+    integration_constant = sp.Symbol("C")
+    return PartialFractionAntiderivative(
+        integrand=integrand,
+        decomposition=decomposition,
+        terms=terms,
+        term_antiderivatives=tuple(antiderivatives),
+        result=sp.Add(*antiderivatives, integration_constant, evaluate=False),
     )
 
 

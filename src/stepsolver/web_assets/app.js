@@ -563,9 +563,11 @@ async function solve() {
     const completed =
       payload.status === "exact" ||
       payload.status === "divergent" ||
-      payload.status === "undefined";
+      payload.status === "undefined" ||
+      payload.status === "singular";
     if (payload.status === "divergent") statusText.textContent = "Diverges";
     else if (payload.status === "undefined") statusText.textContent = "Undefined";
+    else if (payload.status === "singular") statusText.textContent = "Singular matrix";
     else if (payload.status === "exact") {
       statusText.textContent = payload.result_latex?.includes("\\approx")
         ? "Numerical answer"

@@ -14,6 +14,7 @@ from stepsolver.results import (
     MathValue,
     NumericResult,
     SequenceValue,
+    SingularMatrixResult,
     SolveResult,
     UndefinedResult,
 )
@@ -67,7 +68,7 @@ class StepPayload:
 class SolvePayload:
     """Runtime-neutral representation of a completed solver request."""
 
-    status: Literal["exact", "numeric", "divergent", "undefined", "unsolved"]
+    status: Literal["exact", "numeric", "divergent", "undefined", "singular", "unsolved"]
     source: str
     formatted_ascii: str
     result_latex: str | None
@@ -239,6 +240,15 @@ def solve_payload(result: SolveResult) -> SolvePayload:
             source=result.query.source,
             formatted_ascii=format_ascii(result),
             result_latex=r"\text{Undefined}",
+            reason=result.reason,
+            steps=steps,
+        )
+    if isinstance(result, SingularMatrixResult):
+        return SolvePayload(
+            status="singular",
+            source=result.query.source,
+            formatted_ascii=format_ascii(result),
+            result_latex=r"\text{No inverse: singular matrix}",
             reason=result.reason,
             steps=steps,
         )

@@ -373,11 +373,13 @@ def test_general_rational_logarithmic_integrals_keep_verified_result_with_poles(
     result = solver.solve("integrate(1/(x^2-1),x)")
     assert isinstance(result, ExactResult)
     assert result.steps
-    constraints = result.steps[0].introduced_constraints
-    assert tuple(format_expression(item.expression) for item in constraints) == (
-        "x != -1",
-        "x != 1",
+    constraints = tuple(
+        format_expression(item.expression)
+        for step in result.steps
+        for item in step.introduced_constraints
     )
+    assert constraints == ("x != -1", "x != 1")
+    assert "log(abs(x - 1))" in format_ascii(result)
     assert all(step.rule != "Compute exact result" for step in result.steps)
 
 

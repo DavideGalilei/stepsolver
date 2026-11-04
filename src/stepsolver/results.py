@@ -200,4 +200,20 @@ class UndefinedResult:
     steps: tuple[SolutionStep, ...]
 
 
-type SolveResult = ExactResult | NumericResult | DivergentResult | UndefinedResult | UnsolvedResult
+@dataclass(frozen=True, slots=True, kw_only=True)
+class SingularMatrixResult:
+    """A square matrix whose inverse does not exist because its determinant is zero."""
+
+    query: Query
+    reason: str
+    steps: tuple[SolutionStep, ...]
+
+
+type SolveResult = (
+    ExactResult
+    | NumericResult
+    | DivergentResult
+    | UndefinedResult
+    | SingularMatrixResult
+    | UnsolvedResult
+)

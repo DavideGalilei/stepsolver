@@ -35,6 +35,7 @@ from stepsolver.results import (
     NoSolutionValue,
     NumericResult,
     NumericRootsValue,
+    SingularMatrixResult,
     SolutionStep,
     SolveResult,
     StepConstraint,
@@ -357,6 +358,9 @@ class SympyBackend:
         undefined_division = self._undefined_division_result(query)
         if undefined_division is not None:
             return undefined_division
+        singular_inverse = self._singular_inverse_result(query)
+        if singular_inverse is not None:
+            return singular_inverse
         identity_result = self._identity_equation_result(query)
         if identity_result is not None:
             return identity_result
@@ -387,6 +391,25 @@ class SympyBackend:
                     f"Unsupported function: {name}. StepSolver only evaluates documented functions."
                 )
         return None
+
+    def _singular_inverse_result(self, query: Query) -> SingularMatrixResult | None:
+        """Return the typed singular-matrix outcome before the inverse is attempted."""
+        if query.operation is not Operation.INVERSE or len(query.arguments) != 1:
+            return None
+        try:
+            matrix = self._converter.matrix_from_expression(query.arguments[0])
+        except (QueryError, TypeError, ValueError):
+            return None
+        if not matrix.is_square or matrix.det().is_zero is not True:
+            return None
+        return SingularMatrixResult(
+            query=query,
+            reason=(
+                "The matrix is singular because its determinant is zero, so its inverse "
+                "does not exist."
+            ),
+            steps=self._steps.singular_inverse_steps(query),
+        )
 
     def _undefined_division_result(self, query: Query) -> UndefinedResult | None:
         """Return the typed undefined result for an identically zero denominator."""

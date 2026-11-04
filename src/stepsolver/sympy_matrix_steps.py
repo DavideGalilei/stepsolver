@@ -20,6 +20,7 @@ from stepsolver.ast import (
     FunctionCall,
     Identifier,
     Number,
+    OpaqueExpression,
     Operation,
     Query,
     Relation,
@@ -303,6 +304,61 @@ class SympyMatrixStepBuilder:
             operator = BinaryOperator.ADD if column % 2 == 0 else BinaryOperator.SUBTRACT
             expression = self._binary(operator, expression, term)
         return expression
+
+    def singular_inverse_steps(self, query: Query) -> tuple[SolutionStep, ...]:
+        """Explain why a singular square matrix has no inverse."""
+        if len(query.arguments) != 1:
+            return ()
+        matrix = cast("sp.Matrix", self._converter.matrix_from_expression(query.arguments[0]))
+        determinant = matrix.det()
+        if not matrix.is_square or determinant.is_zero is not True:
+            return ()
+        rank = matrix.rank()
+        displayed_matrix = self._matrix(matrix)
+        return (
+            self._step(
+                rule="Compute the determinant",
+                before=displayed_matrix,
+                after=self._scalar(determinant),
+                explanation=(
+                    "A square matrix has an inverse exactly when its determinant is nonzero, "
+                    "so evaluate the determinant first."
+                ),
+                method=VerificationMethod.EXACT_ARITHMETIC,
+                detail="The determinant was evaluated exactly from the matrix entries.",
+            ),
+            self._step(
+                rule="Conclude the matrix is singular",
+                before=Relation(
+                    left=FunctionCall(
+                        name=Identifier(Operation.DETERMINANT.value),
+                        arguments=(displayed_matrix,),
+                    ),
+                    operator=RelationOperator.EQUAL,
+                    right=self._integer(0),
+                ),
+                after=OpaqueExpression(text="inverse does not exist"),
+                explanation=(
+                    "The determinant is zero, so the matrix is singular and no inverse matrix "
+                    "exists. This is a property of the matrix itself, not an empty solution set."
+                ),
+                method=VerificationMethod.EXACT_ARITHMETIC,
+                detail=(
+                    "A square matrix is invertible exactly when its determinant is nonzero; "
+                    "the computed determinant is zero."
+                ),
+                notes=(
+                    StepNote(
+                        label="Rank",
+                        expression=Relation(
+                            left=self._integer(rank),
+                            operator=RelationOperator.LESS,
+                            right=self._integer(matrix.rows),
+                        ),
+                    ),
+                ),
+            ),
+        )
 
     def _inverse_steps(
         self,

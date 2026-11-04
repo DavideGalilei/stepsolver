@@ -14,11 +14,13 @@ from stepsolver.ast import (
 from stepsolver.errors import BackendError, QueryError
 from stepsolver.sympy_conversion import SympyConverter
 from stepsolver.sympy_integrals import (
+    match_partial_fraction_antiderivative,
     match_reciprocal_linear_integral,
     match_sine_square_root_integral,
 )
 from stepsolver.sympy_series import match_alternating_p_series, match_harmonic_sine_series
 from stepsolver.sympy_support import (
+    differentiates_on_real_intervals,
     expect_arity,
     expect_integer,
     expect_symbol,
@@ -113,11 +115,7 @@ def _fast_basic_antiderivative(
             base = arguments[0]
             exponent = arguments[1]
             slope = _linear_argument_slope(base, variable)
-            if (
-                slope is not None
-                and not exponent.has(variable)
-                and exponent != sp.Integer(-1)
-            ):
+            if slope is not None and not exponent.has(variable) and exponent != sp.Integer(-1):
                 return base ** (exponent + 1) / ((exponent + 1) * slope)
     return None
 
@@ -194,6 +192,14 @@ def _evaluate_indefinite_integral(
                 integration_constant,
                 evaluate=False,
             )
+        if integrand.is_rational_function(variable) and antiderivative.has(sp.log):
+            partial_fraction = match_partial_fraction_antiderivative(integrand, variable)
+            if partial_fraction is not None and differentiates_on_real_intervals(
+                partial_fraction.result,
+                integrand,
+                variable,
+            ):
+                return partial_fraction.result
         if integrand.is_rational_function(variable) and not antiderivative.has(sp.log):
             decomposition = sp.apart(integrand, variable)
             terms = tuple(decomposition.as_ordered_terms())
