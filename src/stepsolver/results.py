@@ -207,6 +207,9 @@ class SingularMatrixResult:
     query: Query
     reason: str
     steps: tuple[SolutionStep, ...]
+    determinant: Expression | None = None
+    rank: int | None = None
+    size: int | None = None
 
 
 type SolveResult = (

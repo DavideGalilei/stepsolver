@@ -402,6 +402,7 @@ class SympyBackend:
             return None
         if not matrix.is_square or matrix.det().is_zero is not True:
             return None
+        determinant = matrix.det()
         return SingularMatrixResult(
             query=query,
             reason=(
@@ -409,6 +410,9 @@ class SympyBackend:
                 "does not exist."
             ),
             steps=self._steps.singular_inverse_steps(query),
+            determinant=self._converter.from_sympy(determinant),
+            rank=int(matrix.rank()),
+            size=int(matrix.rows),
         )
 
     def _undefined_division_result(self, query: Query) -> UndefinedResult | None:
