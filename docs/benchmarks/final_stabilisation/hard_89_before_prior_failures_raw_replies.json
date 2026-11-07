@@ -1,0 +1,863 @@
+{
+ "solver": "stepsolver",
+ "cold_start": [
+  {
+   "spawn_to_ready_ms": 1856.56999994535,
+   "first_solve_wall_ms": 572.0238999929279,
+   "first_solve_inner_ms": 570.1950000366196,
+   "status": "ok"
+  },
+  {
+   "spawn_to_ready_ms": 1913.7617000378668,
+   "first_solve_wall_ms": 550.9126000106335,
+   "first_solve_inner_ms": 548.7824999727309,
+   "status": "ok"
+  },
+  {
+   "spawn_to_ready_ms": 1873.2941000489518,
+   "first_solve_wall_ms": 579.0101001039147,
+   "first_solve_inner_ms": 576.4654000522569,
+   "status": "ok"
+  },
+  {
+   "spawn_to_ready_ms": 2201.3974000001326,
+   "first_solve_wall_ms": 939.473700011149,
+   "first_solve_inner_ms": 935.9890000196174,
+   "status": "ok"
+  },
+  {
+   "spawn_to_ready_ms": 1665.0143000297248,
+   "first_solve_wall_ms": 545.5212999368086,
+   "first_solve_inner_ms": 543.3813000563532,
+   "status": "ok"
+  }
+ ],
+ "rows": {
+  "R06": {
+   "case_id": "R06",
+   "wall_ms": 3297.656700015068,
+   "transport": "ok",
+   "reply": {
+    "solver": "stepsolver",
+    "domain_assumption_passed": false,
+    "input_overrides_used": false,
+    "api_call": "Solver().solve('integrate(1/(x^2 - 1), x)')",
+    "input_sent": [
+     "integrate(1/(x^2 - 1), x)"
+    ],
+    "time_ms": 3295.477500068955,
+    "steps": [
+     {
+      "rule": "Decompose into partial fractions",
+      "description": "Rewrite the rational function as a sum of simpler fractions that can be integrated separately.",
+      "before": "integrate(1 / (x ^ 2 - 1), x)",
+      "after": "integrate(-1 / (2 * (x + 1)) + 1 / (2 * (x - 1)), x)",
+      "notes": [
+       [
+        "Partial-fraction identity",
+        "1 / (x ^ 2 - 1) = -1 / (2 * (x + 1)) + 1 / (2 * (x - 1))"
+       ]
+      ],
+      "verification": "symbolic equivalence: Combining the partial fractions recovers the original fraction.",
+      "constraints": []
+     },
+     {
+      "rule": "Integrate each partial fraction",
+      "description": "Integrate the separated terms. Each linear denominator contributes a logarithm of an absolute value, while the remaining power and quadratic terms use their elementary rules.",
+      "before": "integrate(-1 / (2 * (x + 1)) + 1 / (2 * (x - 1)), x)",
+      "after": "-log(abs(x + 1)) / 2 + log(abs(x - 1)) / 2 + C",
+      "notes": [
+       [
+        "Term 1",
+        "integrate(-1 / (2 * (x + 1)), x) = -log(abs(x + 1)) / 2"
+       ],
+       [
+        "Term 2",
+        "integrate(1 / (2 * (x - 1)), x) = log(abs(x - 1)) / 2"
+       ]
+      ],
+      "verification": "differentiation: Differentiating the final result recovers the rational function on every interval where the original denominator is nonzero.",
+      "constraints": [
+       [
+        "The original denominator cannot equal zero.",
+        "x != -1"
+       ],
+       [
+        "The original denominator cannot equal zero.",
+        "x != 1"
+       ]
+      ]
+     }
+    ],
+    "restrictions_reported": [
+     "The original denominator cannot equal zero. | x != -1",
+     "The original denominator cannot equal zero. | x != 1"
+    ],
+    "native_flags": {
+     "result_types": [
+      "ExactResult"
+     ],
+     "composed_from": null,
+     "opaque_steps": 0
+    },
+    "raw_output": "Input: integrate(1/(x^2 - 1), x)\nStep 1 (Decompose into partial fractions): Rewrite the rational function as a sum of simpler fractions that can be integrated separately.\n  integrate(1 / (x ^ 2 - 1), x)\n  -> integrate(-1 / (2 * (x + 1)) + 1 / (2 * (x - 1)), x)\n  Verified by symbolic equivalence: Combining the partial fractions recovers the original fraction.\n  Partial-fraction identity: 1 / (x ^ 2 - 1) = -1 / (2 * (x + 1)) + 1 / (2 * (x - 1))\nStep 2 (Integrate each partial fraction): Integrate the separated terms. Each linear denominator contributes a logarithm of an absolute value, while the remaining power and quadratic terms use their elementary rules.\n  integrate(-1 / (2 * (x + 1)) + 1 / (2 * (x - 1)), x)\n  -> -log(abs(x + 1)) / 2 + log(abs(x - 1)) / 2 + C\n  Verified by differentiation: Differentiating the final result recovers the rational function on every interval where the original denominator is nonzero.\n  Term 1: integrate(-1 / (2 * (x + 1)), x) = -log(abs(x + 1)) / 2\n  Term 2: integrate(1 / (2 * (x - 1)), x) = log(abs(x - 1)) / 2\n  Domain constraint: x != -1 (The original denominator cannot equal zero.)\n  Domain constraint: x != 1 (The original denominator cannot equal zero.)\nResult: -log(abs(x + 1)) / 2 + log(abs(x - 1)) / 2 + C",
+    "outcome": "answer",
+    "native_status": "ExactResult",
+    "answer": {
+     "kind": "expr",
+     "text": "-log(abs(x + 1)) / 2 + log(abs(x - 1)) / 2 + C"
+    },
+    "req_id": "R06",
+    "maxrss_kb": 0
+   },
+   "hash": "f1ced3293cd9e325",
+   "warm_times_ms": [
+    2142.2528999391943
+   ],
+   "repeat_hashes": [
+    "f1ced3293cd9e325"
+   ],
+   "repeatable": true
+  },
+  "T06": {
+   "case_id": "T06",
+   "wall_ms": 2.1786000579595566,
+   "transport": "ok",
+   "reply": {
+    "solver": "stepsolver",
+    "domain_assumption_passed": false,
+    "input_overrides_used": false,
+    "api_call": "Solver().solve('inverse(matrix([[1, 2], [2, 4]]))')",
+    "input_sent": [
+     "inverse(matrix([[1, 2], [2, 4]]))"
+    ],
+    "time_ms": 1.1736999731510878,
+    "steps": [
+     {
+      "rule": "Compute the determinant",
+      "description": "A square matrix has an inverse exactly when its determinant is nonzero, so evaluate the determinant first.",
+      "before": "matrix([[1, 2], [2, 4]])",
+      "after": "0",
+      "notes": [],
+      "verification": "exact arithmetic: The determinant was evaluated exactly from the matrix entries.",
+      "constraints": []
+     },
+     {
+      "rule": "Conclude the matrix is singular",
+      "description": "The determinant is zero, so the matrix is singular and no inverse matrix exists. This is a property of the matrix itself, not an empty solution set.",
+      "before": "det(matrix([[1, 2], [2, 4]])) = 0",
+      "after": "inverse does not exist",
+      "notes": [
+       [
+        "Rank",
+        "1 < 2"
+       ]
+      ],
+      "verification": "exact arithmetic: A square matrix is invertible exactly when its determinant is nonzero; the computed determinant is zero.",
+      "constraints": []
+     }
+    ],
+    "restrictions_reported": [],
+    "native_flags": {
+     "result_types": [
+      "SingularMatrixResult"
+     ],
+     "composed_from": null,
+     "opaque_steps": 0
+    },
+    "raw_output": "Input: inverse(matrix([[1, 2], [2, 4]]))\nStep 1 (Compute the determinant): A square matrix has an inverse exactly when its determinant is nonzero, so evaluate the determinant first.\n  matrix([[1, 2], [2, 4]])\n  -> 0\n  Verified by exact arithmetic: The determinant was evaluated exactly from the matrix entries.\nStep 2 (Conclude the matrix is singular): The determinant is zero, so the matrix is singular and no inverse matrix exists. This is a property of the matrix itself, not an empty solution set.\n  det(matrix([[1, 2], [2, 4]])) = 0\n  -> inverse does not exist\n  Verified by exact arithmetic: A square matrix is invertible exactly when its determinant is nonzero; the computed determinant is zero.\n  Rank: 1 < 2\nSingular matrix: The matrix is singular because its determinant is zero, so its inverse does not exist.",
+    "outcome": "error",
+    "error": {
+     "type": "UnexpectedResultType",
+     "message": "SingularMatrixResult"
+    },
+    "req_id": "T06",
+    "maxrss_kb": 0
+   },
+   "hash": "0895592cc5d37a58"
+  },
+  "U01": {
+   "case_id": "U01",
+   "wall_ms": 1410.1242000469938,
+   "transport": "ok",
+   "reply": {
+    "solver": "stepsolver",
+    "domain_assumption_passed": false,
+    "input_overrides_used": true,
+    "api_call": "Solver().solve('dsolve(diff(y(x), x) + y(x) = x, y(x))')",
+    "input_sent": [
+     "dsolve(diff(y(x), x) + y(x) = x, y(x))"
+    ],
+    "time_ms": 1398.1431999709457,
+    "steps": [
+     {
+      "rule": "Identify the differential equation",
+      "description": "The equation is an ordinary differential equation of order 1 for the unknown function.",
+      "before": "dsolve(diff(y(x), x) + y(x) = x, y(x))",
+      "after": "diff(y(x), x) + y(x) = x",
+      "notes": [
+       [
+        "Order",
+        "1"
+       ],
+       [
+        "Unknown function",
+        "y(x)"
+       ]
+      ],
+      "verification": "exact arithmetic: The highest derivative order was read from the equation.",
+      "constraints": []
+     },
+     {
+      "rule": "Apply the classified solution method",
+      "description": "The equation is classified as '1st_exact', and that method gives a solution family with 1 arbitrary constant(s). The individual integration steps of that method are not expanded here; the next step checks the family independently.",
+      "before": "diff(y(x), x) + y(x) = x",
+      "after": "Eq(y(x), C1 * exp(-x) + x - 1)",
+      "notes": [
+       [
+        "Arbitrary constants",
+        "[C1]"
+       ]
+      ],
+      "verification": "backend identity: The symbolic ODE solver returned this family for the classified method.",
+      "constraints": []
+     },
+     {
+      "rule": "Check the solution by substitution",
+      "description": "Substitute the solution into the differential equation; the difference between both sides must simplify to zero for every constant.",
+      "before": "Eq(y(x), C1 * exp(-x) + x - 1)",
+      "after": "0 = 0",
+      "notes": [
+       [
+        "Arbitrary constants",
+        "[C1]"
+       ]
+      ],
+      "verification": "substitution: Substituting the solution leaves a residual of exactly zero.",
+      "constraints": []
+     }
+    ],
+    "restrictions_reported": [],
+    "native_flags": {
+     "result_types": [
+      "ExactResult"
+     ],
+     "composed_from": null,
+     "opaque_steps": 0
+    },
+    "raw_output": "Input: dsolve(diff(y(x), x) + y(x) = x, y(x))\nStep 1 (Identify the differential equation): The equation is an ordinary differential equation of order 1 for the unknown function.\n  dsolve(diff(y(x), x) + y(x) = x, y(x))\n  -> diff(y(x), x) + y(x) = x\n  Verified by exact arithmetic: The highest derivative order was read from the equation.\n  Order: 1\n  Unknown function: y(x)\nStep 2 (Apply the classified solution method): The equation is classified as '1st_exact', and that method gives a solution family with 1 arbitrary constant(s). The individual integration steps of that method are not expanded here; the next step checks the family independently.\n  diff(y(x), x) + y(x) = x\n  -> Eq(y(x), C1 * exp(-x) + x - 1)\n  Verified by backend identity: The symbolic ODE solver returned this family for the classified method.\n  Arbitrary constants: [C1]\nStep 3 (Check the solution by substitution): Substitute the solution into the differential equation; the difference between both sides must simplify to zero for every constant.\n  Eq(y(x), C1 * exp(-x) + x - 1)\n  -> 0 = 0\n  Verified by substitution: Substituting the solution leaves a residual of exactly zero.\n  Arbitrary constants: [C1]\nResult: Eq(y(x), C1 * exp(-x) + x - 1)",
+    "outcome": "answer",
+    "native_status": "ExactResult",
+    "answer": {
+     "kind": "equation",
+     "text": "Eq(y(x), C1 * exp(-x) + x - 1)"
+    },
+    "req_id": "U01",
+    "maxrss_kb": 0
+   },
+   "hash": "c882c24a35c5e7d1",
+   "warm_times_ms": [
+    1040.982700069435
+   ],
+   "repeat_hashes": [
+    "c882c24a35c5e7d1"
+   ],
+   "repeatable": true
+  },
+  "U02": {
+   "case_id": "U02",
+   "wall_ms": 1449.6392000000924,
+   "transport": "ok",
+   "reply": {
+    "solver": "stepsolver",
+    "domain_assumption_passed": false,
+    "input_overrides_used": true,
+    "api_call": "Solver().solve('dsolve(diff(y(x), x, 2) - 3*diff(y(x), x) + 2*y(x) = 0, y(x))')",
+    "input_sent": [
+     "dsolve(diff(y(x), x, 2) - 3*diff(y(x), x) + 2*y(x) = 0, y(x))"
+    ],
+    "time_ms": 1446.5853999136016,
+    "steps": [
+     {
+      "rule": "Identify the differential equation",
+      "description": "The equation is an ordinary differential equation of order 2 for the unknown function.",
+      "before": "dsolve(diff(y(x), x, 2) - 3 * diff(y(x), x) + 2 * y(x) = 0, y(x))",
+      "after": "diff(y(x), x, 2) - 3 * diff(y(x), x) + 2 * y(x) = 0",
+      "notes": [
+       [
+        "Order",
+        "2"
+       ],
+       [
+        "Unknown function",
+        "y(x)"
+       ]
+      ],
+      "verification": "exact arithmetic: The highest derivative order was read from the equation.",
+      "constraints": []
+     },
+     {
+      "rule": "Apply the classified solution method",
+      "description": "The equation is classified as 'factorable', and that method gives a solution family with 2 arbitrary constant(s). The individual integration steps of that method are not expanded here; the next step checks the family independently.",
+      "before": "diff(y(x), x, 2) - 3 * diff(y(x), x) + 2 * y(x) = 0",
+      "after": "Eq(y(x), (C1 + C2 * exp(x)) * exp(x))",
+      "notes": [
+       [
+        "Arbitrary constants",
+        "[C1, C2]"
+       ]
+      ],
+      "verification": "backend identity: The symbolic ODE solver returned this family for the classified method.",
+      "constraints": []
+     },
+     {
+      "rule": "Check the solution by substitution",
+      "description": "Substitute the solution into the differential equation; the difference between both sides must simplify to zero for every constant.",
+      "before": "Eq(y(x), (C1 + C2 * exp(x)) * exp(x))",
+      "after": "0 = 0",
+      "notes": [
+       [
+        "Arbitrary constants",
+        "[C1, C2]"
+       ]
+      ],
+      "verification": "substitution: Substituting the solution leaves a residual of exactly zero.",
+      "constraints": []
+     }
+    ],
+    "restrictions_reported": [],
+    "native_flags": {
+     "result_types": [
+      "ExactResult"
+     ],
+     "composed_from": null,
+     "opaque_steps": 0
+    },
+    "raw_output": "Input: dsolve(diff(y(x), x, 2) - 3*diff(y(x), x) + 2*y(x) = 0, y(x))\nStep 1 (Identify the differential equation): The equation is an ordinary differential equation of order 2 for the unknown function.\n  dsolve(diff(y(x), x, 2) - 3 * diff(y(x), x) + 2 * y(x) = 0, y(x))\n  -> diff(y(x), x, 2) - 3 * diff(y(x), x) + 2 * y(x) = 0\n  Verified by exact arithmetic: The highest derivative order was read from the equation.\n  Order: 2\n  Unknown function: y(x)\nStep 2 (Apply the classified solution method): The equation is classified as 'factorable', and that method gives a solution family with 2 arbitrary constant(s). The individual integration steps of that method are not expanded here; the next step checks the family independently.\n  diff(y(x), x, 2) - 3 * diff(y(x), x) + 2 * y(x) = 0\n  -> Eq(y(x), (C1 + C2 * exp(x)) * exp(x))\n  Verified by backend identity: The symbolic ODE solver returned this family for the classified method.\n  Arbitrary constants: [C1, C2]\nStep 3 (Check the solution by substitution): Substitute the solution into the differential equation; the difference between both sides must simplify to zero for every constant.\n  Eq(y(x), (C1 + C2 * exp(x)) * exp(x))\n  -> 0 = 0\n  Verified by substitution: Substituting the solution leaves a residual of exactly zero.\n  Arbitrary constants: [C1, C2]\nResult: Eq(y(x), (C1 + C2 * exp(x)) * exp(x))",
+    "outcome": "answer",
+    "native_status": "ExactResult",
+    "answer": {
+     "kind": "equation",
+     "text": "Eq(y(x), (C1 + C2 * exp(x)) * exp(x))"
+    },
+    "req_id": "U02",
+    "maxrss_kb": 0
+   },
+   "hash": "ae1b58c772e06b1f",
+   "warm_times_ms": [
+    1793.8565000658855
+   ],
+   "repeat_hashes": [
+    "ae1b58c772e06b1f"
+   ],
+   "repeatable": true
+  },
+  "U03": {
+   "case_id": "U03",
+   "wall_ms": 1135.6348000699654,
+   "transport": "ok",
+   "reply": {
+    "solver": "stepsolver",
+    "domain_assumption_passed": false,
+    "input_overrides_used": true,
+    "api_call": "Solver().solve('dsolve(diff(y(x), x, 2) - 2*diff(y(x), x) + y(x) = 0, y(x))')",
+    "input_sent": [
+     "dsolve(diff(y(x), x, 2) - 2*diff(y(x), x) + y(x) = 0, y(x))"
+    ],
+    "time_ms": 1132.971900049597,
+    "steps": [
+     {
+      "rule": "Identify the differential equation",
+      "description": "The equation is an ordinary differential equation of order 2 for the unknown function.",
+      "before": "dsolve(diff(y(x), x, 2) - 2 * diff(y(x), x) + y(x) = 0, y(x))",
+      "after": "diff(y(x), x, 2) - 2 * diff(y(x), x) + y(x) = 0",
+      "notes": [
+       [
+        "Order",
+        "2"
+       ],
+       [
+        "Unknown function",
+        "y(x)"
+       ]
+      ],
+      "verification": "exact arithmetic: The highest derivative order was read from the equation.",
+      "constraints": []
+     },
+     {
+      "rule": "Apply the classified solution method",
+      "description": "The equation is classified as 'factorable', and that method gives a solution family with 2 arbitrary constant(s). The individual integration steps of that method are not expanded here; the next step checks the family independently.",
+      "before": "diff(y(x), x, 2) - 2 * diff(y(x), x) + y(x) = 0",
+      "after": "Eq(y(x), (C1 + C2 * x) * exp(x))",
+      "notes": [
+       [
+        "Arbitrary constants",
+        "[C1, C2]"
+       ]
+      ],
+      "verification": "backend identity: The symbolic ODE solver returned this family for the classified method.",
+      "constraints": []
+     },
+     {
+      "rule": "Check the solution by substitution",
+      "description": "Substitute the solution into the differential equation; the difference between both sides must simplify to zero for every constant.",
+      "before": "Eq(y(x), (C1 + C2 * x) * exp(x))",
+      "after": "0 = 0",
+      "notes": [
+       [
+        "Arbitrary constants",
+        "[C1, C2]"
+       ]
+      ],
+      "verification": "substitution: Substituting the solution leaves a residual of exactly zero.",
+      "constraints": []
+     }
+    ],
+    "restrictions_reported": [],
+    "native_flags": {
+     "result_types": [
+      "ExactResult"
+     ],
+     "composed_from": null,
+     "opaque_steps": 0
+    },
+    "raw_output": "Input: dsolve(diff(y(x), x, 2) - 2*diff(y(x), x) + y(x) = 0, y(x))\nStep 1 (Identify the differential equation): The equation is an ordinary differential equation of order 2 for the unknown function.\n  dsolve(diff(y(x), x, 2) - 2 * diff(y(x), x) + y(x) = 0, y(x))\n  -> diff(y(x), x, 2) - 2 * diff(y(x), x) + y(x) = 0\n  Verified by exact arithmetic: The highest derivative order was read from the equation.\n  Order: 2\n  Unknown function: y(x)\nStep 2 (Apply the classified solution method): The equation is classified as 'factorable', and that method gives a solution family with 2 arbitrary constant(s). The individual integration steps of that method are not expanded here; the next step checks the family independently.\n  diff(y(x), x, 2) - 2 * diff(y(x), x) + y(x) = 0\n  -> Eq(y(x), (C1 + C2 * x) * exp(x))\n  Verified by backend identity: The symbolic ODE solver returned this family for the classified method.\n  Arbitrary constants: [C1, C2]\nStep 3 (Check the solution by substitution): Substitute the solution into the differential equation; the difference between both sides must simplify to zero for every constant.\n  Eq(y(x), (C1 + C2 * x) * exp(x))\n  -> 0 = 0\n  Verified by substitution: Substituting the solution leaves a residual of exactly zero.\n  Arbitrary constants: [C1, C2]\nResult: Eq(y(x), (C1 + C2 * x) * exp(x))",
+    "outcome": "answer",
+    "native_status": "ExactResult",
+    "answer": {
+     "kind": "equation",
+     "text": "Eq(y(x), (C1 + C2 * x) * exp(x))"
+    },
+    "req_id": "U03",
+    "maxrss_kb": 0
+   },
+   "hash": "338c230000b0680f",
+   "warm_times_ms": [
+    1122.717099962756
+   ],
+   "repeat_hashes": [
+    "338c230000b0680f"
+   ],
+   "repeatable": true
+  },
+  "U04": {
+   "case_id": "U04",
+   "wall_ms": 1508.9754000073299,
+   "transport": "ok",
+   "reply": {
+    "solver": "stepsolver",
+    "domain_assumption_passed": false,
+    "input_overrides_used": true,
+    "api_call": "Solver().solve('dsolve(diff(y(x), x, 2) + 2*diff(y(x), x) + 5*y(x) = 0, y(x))')",
+    "input_sent": [
+     "dsolve(diff(y(x), x, 2) + 2*diff(y(x), x) + 5*y(x) = 0, y(x))"
+    ],
+    "time_ms": 1506.747500039637,
+    "steps": [
+     {
+      "rule": "Identify the differential equation",
+      "description": "The equation is an ordinary differential equation of order 2 for the unknown function.",
+      "before": "dsolve(diff(y(x), x, 2) + 2 * diff(y(x), x) + 5 * y(x) = 0, y(x))",
+      "after": "diff(y(x), x, 2) + 2 * diff(y(x), x) + 5 * y(x) = 0",
+      "notes": [
+       [
+        "Order",
+        "2"
+       ],
+       [
+        "Unknown function",
+        "y(x)"
+       ]
+      ],
+      "verification": "exact arithmetic: The highest derivative order was read from the equation.",
+      "constraints": []
+     },
+     {
+      "rule": "Apply the classified solution method",
+      "description": "The equation is classified as 'factorable', and that method gives a solution family with 2 arbitrary constant(s). The individual integration steps of that method are not expanded here; the next step checks the family independently.",
+      "before": "diff(y(x), x, 2) + 2 * diff(y(x), x) + 5 * y(x) = 0",
+      "after": "Eq(y(x), (C1 * sin(2 * x) + C2 * cos(2 * x)) * exp(-x))",
+      "notes": [
+       [
+        "Arbitrary constants",
+        "[C1, C2]"
+       ]
+      ],
+      "verification": "backend identity: The symbolic ODE solver returned this family for the classified method.",
+      "constraints": []
+     },
+     {
+      "rule": "Check the solution by substitution",
+      "description": "Substitute the solution into the differential equation; the difference between both sides must simplify to zero for every constant.",
+      "before": "Eq(y(x), (C1 * sin(2 * x) + C2 * cos(2 * x)) * exp(-x))",
+      "after": "0 = 0",
+      "notes": [
+       [
+        "Arbitrary constants",
+        "[C1, C2]"
+       ]
+      ],
+      "verification": "substitution: Substituting the solution leaves a residual of exactly zero.",
+      "constraints": []
+     }
+    ],
+    "restrictions_reported": [],
+    "native_flags": {
+     "result_types": [
+      "ExactResult"
+     ],
+     "composed_from": null,
+     "opaque_steps": 0
+    },
+    "raw_output": "Input: dsolve(diff(y(x), x, 2) + 2*diff(y(x), x) + 5*y(x) = 0, y(x))\nStep 1 (Identify the differential equation): The equation is an ordinary differential equation of order 2 for the unknown function.\n  dsolve(diff(y(x), x, 2) + 2 * diff(y(x), x) + 5 * y(x) = 0, y(x))\n  -> diff(y(x), x, 2) + 2 * diff(y(x), x) + 5 * y(x) = 0\n  Verified by exact arithmetic: The highest derivative order was read from the equation.\n  Order: 2\n  Unknown function: y(x)\nStep 2 (Apply the classified solution method): The equation is classified as 'factorable', and that method gives a solution family with 2 arbitrary constant(s). The individual integration steps of that method are not expanded here; the next step checks the family independently.\n  diff(y(x), x, 2) + 2 * diff(y(x), x) + 5 * y(x) = 0\n  -> Eq(y(x), (C1 * sin(2 * x) + C2 * cos(2 * x)) * exp(-x))\n  Verified by backend identity: The symbolic ODE solver returned this family for the classified method.\n  Arbitrary constants: [C1, C2]\nStep 3 (Check the solution by substitution): Substitute the solution into the differential equation; the difference between both sides must simplify to zero for every constant.\n  Eq(y(x), (C1 * sin(2 * x) + C2 * cos(2 * x)) * exp(-x))\n  -> 0 = 0\n  Verified by substitution: Substituting the solution leaves a residual of exactly zero.\n  Arbitrary constants: [C1, C2]\nResult: Eq(y(x), (C1 * sin(2 * x) + C2 * cos(2 * x)) * exp(-x))",
+    "outcome": "answer",
+    "native_status": "ExactResult",
+    "answer": {
+     "kind": "equation",
+     "text": "Eq(y(x), (C1 * sin(2 * x) + C2 * cos(2 * x)) * exp(-x))"
+    },
+    "req_id": "U04",
+    "maxrss_kb": 0
+   },
+   "hash": "ea5cae4cc0454e88",
+   "warm_times_ms": [
+    1531.0718999244273
+   ],
+   "repeat_hashes": [
+    "ea5cae4cc0454e88"
+   ],
+   "repeatable": true
+  },
+  "U05": {
+   "case_id": "U05",
+   "wall_ms": 1301.260199979879,
+   "transport": "ok",
+   "reply": {
+    "solver": "stepsolver",
+    "domain_assumption_passed": false,
+    "input_overrides_used": true,
+    "api_call": "Solver().solve('dsolve(diff(y(x), x) = x*y(x), y(x))')",
+    "input_sent": [
+     "dsolve(diff(y(x), x) = x*y(x), y(x))"
+    ],
+    "time_ms": 1299.8230999801308,
+    "steps": [
+     {
+      "rule": "Identify the differential equation",
+      "description": "The equation is an ordinary differential equation of order 1 for the unknown function.",
+      "before": "dsolve(diff(y(x), x) = x * y(x), y(x))",
+      "after": "diff(y(x), x) = x * y(x)",
+      "notes": [
+       [
+        "Order",
+        "1"
+       ],
+       [
+        "Unknown function",
+        "y(x)"
+       ]
+      ],
+      "verification": "exact arithmetic: The highest derivative order was read from the equation.",
+      "constraints": []
+     },
+     {
+      "rule": "Apply the classified solution method",
+      "description": "The equation is classified as 'separable', and that method gives a solution family with 1 arbitrary constant(s). The individual integration steps of that method are not expanded here; the next step checks the family independently.",
+      "before": "diff(y(x), x) = x * y(x)",
+      "after": "Eq(y(x), C1 * exp(x ^ 2 / 2))",
+      "notes": [
+       [
+        "Arbitrary constants",
+        "[C1]"
+       ]
+      ],
+      "verification": "backend identity: The symbolic ODE solver returned this family for the classified method.",
+      "constraints": []
+     },
+     {
+      "rule": "Check the solution by substitution",
+      "description": "Substitute the solution into the differential equation; the difference between both sides must simplify to zero for every constant.",
+      "before": "Eq(y(x), C1 * exp(x ^ 2 / 2))",
+      "after": "0 = 0",
+      "notes": [
+       [
+        "Arbitrary constants",
+        "[C1]"
+       ]
+      ],
+      "verification": "substitution: Substituting the solution leaves a residual of exactly zero.",
+      "constraints": []
+     }
+    ],
+    "restrictions_reported": [],
+    "native_flags": {
+     "result_types": [
+      "ExactResult"
+     ],
+     "composed_from": null,
+     "opaque_steps": 0
+    },
+    "raw_output": "Input: dsolve(diff(y(x), x) = x*y(x), y(x))\nStep 1 (Identify the differential equation): The equation is an ordinary differential equation of order 1 for the unknown function.\n  dsolve(diff(y(x), x) = x * y(x), y(x))\n  -> diff(y(x), x) = x * y(x)\n  Verified by exact arithmetic: The highest derivative order was read from the equation.\n  Order: 1\n  Unknown function: y(x)\nStep 2 (Apply the classified solution method): The equation is classified as 'separable', and that method gives a solution family with 1 arbitrary constant(s). The individual integration steps of that method are not expanded here; the next step checks the family independently.\n  diff(y(x), x) = x * y(x)\n  -> Eq(y(x), C1 * exp(x ^ 2 / 2))\n  Verified by backend identity: The symbolic ODE solver returned this family for the classified method.\n  Arbitrary constants: [C1]\nStep 3 (Check the solution by substitution): Substitute the solution into the differential equation; the difference between both sides must simplify to zero for every constant.\n  Eq(y(x), C1 * exp(x ^ 2 / 2))\n  -> 0 = 0\n  Verified by substitution: Substituting the solution leaves a residual of exactly zero.\n  Arbitrary constants: [C1]\nResult: Eq(y(x), C1 * exp(x ^ 2 / 2))",
+    "outcome": "answer",
+    "native_status": "ExactResult",
+    "answer": {
+     "kind": "equation",
+     "text": "Eq(y(x), C1 * exp(x ^ 2 / 2))"
+    },
+    "req_id": "U05",
+    "maxrss_kb": 0
+   },
+   "hash": "01eab2b5c483d467",
+   "warm_times_ms": [
+    1506.4644999802113
+   ],
+   "repeat_hashes": [
+    "01eab2b5c483d467"
+   ],
+   "repeatable": true
+  },
+  "U06": {
+   "case_id": "U06",
+   "wall_ms": 671.8580999877304,
+   "transport": "ok",
+   "reply": {
+    "solver": "stepsolver",
+    "domain_assumption_passed": false,
+    "input_overrides_used": true,
+    "api_call": "Solver().solve('dsolve(diff(y(x), x, 2) + y(x) = x, y(x))')",
+    "input_sent": [
+     "dsolve(diff(y(x), x, 2) + y(x) = x, y(x))"
+    ],
+    "time_ms": 669.3701000185683,
+    "steps": [
+     {
+      "rule": "Identify the differential equation",
+      "description": "The equation is an ordinary differential equation of order 2 for the unknown function.",
+      "before": "dsolve(diff(y(x), x, 2) + y(x) = x, y(x))",
+      "after": "diff(y(x), x, 2) + y(x) = x",
+      "notes": [
+       [
+        "Order",
+        "2"
+       ],
+       [
+        "Unknown function",
+        "y(x)"
+       ]
+      ],
+      "verification": "exact arithmetic: The highest derivative order was read from the equation.",
+      "constraints": []
+     },
+     {
+      "rule": "Apply the classified solution method",
+      "description": "The equation is classified as 'nth_linear_constant_coeff_undetermined_coefficients', and that method gives a solution family with 2 arbitrary constant(s). The individual integration steps of that method are not expanded here; the next step checks the family independently.",
+      "before": "diff(y(x), x, 2) + y(x) = x",
+      "after": "Eq(y(x), C1 * sin(x) + C2 * cos(x) + x)",
+      "notes": [
+       [
+        "Arbitrary constants",
+        "[C1, C2]"
+       ]
+      ],
+      "verification": "backend identity: The symbolic ODE solver returned this family for the classified method.",
+      "constraints": []
+     },
+     {
+      "rule": "Check the solution by substitution",
+      "description": "Substitute the solution into the differential equation; the difference between both sides must simplify to zero for every constant.",
+      "before": "Eq(y(x), C1 * sin(x) + C2 * cos(x) + x)",
+      "after": "0 = 0",
+      "notes": [
+       [
+        "Arbitrary constants",
+        "[C1, C2]"
+       ]
+      ],
+      "verification": "substitution: Substituting the solution leaves a residual of exactly zero.",
+      "constraints": []
+     }
+    ],
+    "restrictions_reported": [],
+    "native_flags": {
+     "result_types": [
+      "ExactResult"
+     ],
+     "composed_from": null,
+     "opaque_steps": 0
+    },
+    "raw_output": "Input: dsolve(diff(y(x), x, 2) + y(x) = x, y(x))\nStep 1 (Identify the differential equation): The equation is an ordinary differential equation of order 2 for the unknown function.\n  dsolve(diff(y(x), x, 2) + y(x) = x, y(x))\n  -> diff(y(x), x, 2) + y(x) = x\n  Verified by exact arithmetic: The highest derivative order was read from the equation.\n  Order: 2\n  Unknown function: y(x)\nStep 2 (Apply the classified solution method): The equation is classified as 'nth_linear_constant_coeff_undetermined_coefficients', and that method gives a solution family with 2 arbitrary constant(s). The individual integration steps of that method are not expanded here; the next step checks the family independently.\n  diff(y(x), x, 2) + y(x) = x\n  -> Eq(y(x), C1 * sin(x) + C2 * cos(x) + x)\n  Verified by backend identity: The symbolic ODE solver returned this family for the classified method.\n  Arbitrary constants: [C1, C2]\nStep 3 (Check the solution by substitution): Substitute the solution into the differential equation; the difference between both sides must simplify to zero for every constant.\n  Eq(y(x), C1 * sin(x) + C2 * cos(x) + x)\n  -> 0 = 0\n  Verified by substitution: Substituting the solution leaves a residual of exactly zero.\n  Arbitrary constants: [C1, C2]\nResult: Eq(y(x), C1 * sin(x) + C2 * cos(x) + x)",
+    "outcome": "answer",
+    "native_status": "ExactResult",
+    "answer": {
+     "kind": "equation",
+     "text": "Eq(y(x), C1 * sin(x) + C2 * cos(x) + x)"
+    },
+    "req_id": "U06",
+    "maxrss_kb": 0
+   },
+   "hash": "fac01ce2fcb561e4",
+   "warm_times_ms": [
+    1106.8681000033394
+   ],
+   "repeat_hashes": [
+    "fac01ce2fcb561e4"
+   ],
+   "repeatable": true
+  },
+  "U07": {
+   "case_id": "U07",
+   "wall_ms": 1028.9432000136003,
+   "transport": "ok",
+   "reply": {
+    "solver": "stepsolver",
+    "domain_assumption_passed": false,
+    "input_overrides_used": true,
+    "api_call": "Solver().solve('dsolve(diff(y(x), x) = y(x)^2, y(x))')",
+    "input_sent": [
+     "dsolve(diff(y(x), x) = y(x)^2, y(x))"
+    ],
+    "time_ms": 1027.5034001097083,
+    "steps": [
+     {
+      "rule": "Identify the differential equation",
+      "description": "The equation is an ordinary differential equation of order 1 for the unknown function.",
+      "before": "dsolve(diff(y(x), x) = y(x) ^ 2, y(x))",
+      "after": "diff(y(x), x) = y(x) ^ 2",
+      "notes": [
+       [
+        "Order",
+        "1"
+       ],
+       [
+        "Unknown function",
+        "y(x)"
+       ]
+      ],
+      "verification": "exact arithmetic: The highest derivative order was read from the equation.",
+      "constraints": []
+     },
+     {
+      "rule": "Apply the classified solution method",
+      "description": "The equation is classified as 'separable', and that method gives a solution family with 1 arbitrary constant(s). The individual integration steps of that method are not expanded here; the next step checks the family independently.",
+      "before": "diff(y(x), x) = y(x) ^ 2",
+      "after": "Eq(y(x), -1 / (C1 + x))",
+      "notes": [
+       [
+        "Arbitrary constants",
+        "[C1]"
+       ]
+      ],
+      "verification": "backend identity: The symbolic ODE solver returned this family for the classified method.",
+      "constraints": []
+     },
+     {
+      "rule": "Check the solution by substitution",
+      "description": "Substitute the solution into the differential equation; the difference between both sides must simplify to zero for every constant.",
+      "before": "Eq(y(x), -1 / (C1 + x))",
+      "after": "0 = 0",
+      "notes": [
+       [
+        "Arbitrary constants",
+        "[C1]"
+       ]
+      ],
+      "verification": "substitution: Substituting the solution leaves a residual of exactly zero.",
+      "constraints": []
+     }
+    ],
+    "restrictions_reported": [],
+    "native_flags": {
+     "result_types": [
+      "ExactResult"
+     ],
+     "composed_from": null,
+     "opaque_steps": 0
+    },
+    "raw_output": "Input: dsolve(diff(y(x), x) = y(x)^2, y(x))\nStep 1 (Identify the differential equation): The equation is an ordinary differential equation of order 1 for the unknown function.\n  dsolve(diff(y(x), x) = y(x) ^ 2, y(x))\n  -> diff(y(x), x) = y(x) ^ 2\n  Verified by exact arithmetic: The highest derivative order was read from the equation.\n  Order: 1\n  Unknown function: y(x)\nStep 2 (Apply the classified solution method): The equation is classified as 'separable', and that method gives a solution family with 1 arbitrary constant(s). The individual integration steps of that method are not expanded here; the next step checks the family independently.\n  diff(y(x), x) = y(x) ^ 2\n  -> Eq(y(x), -1 / (C1 + x))\n  Verified by backend identity: The symbolic ODE solver returned this family for the classified method.\n  Arbitrary constants: [C1]\nStep 3 (Check the solution by substitution): Substitute the solution into the differential equation; the difference between both sides must simplify to zero for every constant.\n  Eq(y(x), -1 / (C1 + x))\n  -> 0 = 0\n  Verified by substitution: Substituting the solution leaves a residual of exactly zero.\n  Arbitrary constants: [C1]\nResult: Eq(y(x), -1 / (C1 + x))",
+    "outcome": "answer",
+    "native_status": "ExactResult",
+    "answer": {
+     "kind": "equation",
+     "text": "Eq(y(x), -1 / (C1 + x))"
+    },
+    "req_id": "U07",
+    "maxrss_kb": 0
+   },
+   "hash": "ffe053607f06fcb4",
+   "warm_times_ms": [
+    919.6657000575215
+   ],
+   "repeat_hashes": [
+    "ffe053607f06fcb4"
+   ],
+   "repeatable": true
+  }
+ },
+ "info": {
+  "solver": "stepsolver",
+  "version": "0.1.0",
+  "package": "stepsolver",
+  "python": "3.12.13",
+  "commit": null,
+  "sympy_version": "1.14.0",
+  "operations": [
+   "simplify",
+   "expand",
+   "factor",
+   "cancel",
+   "apart",
+   "solve",
+   "nsolve",
+   "solve_inequality",
+   "diff",
+   "integrate",
+   "contour_integrate",
+   "limit",
+   "series",
+   "sum",
+   "product",
+   "matrix",
+   "det",
+   "inverse",
+   "rank",
+   "rref",
+   "eigenvalues",
+   "dsolve",
+   "rsolve",
+   "laplace",
+   "inverse_laplace",
+   "fourier",
+   "inverse_fourier",
+   "gcd",
+   "lcm",
+   "is_prime",
+   "prime_factors",
+   "binomial",
+   "permutations",
+   "combinations",
+   "numeric"
+  ],
+  "req_id": null,
+  "maxrss_kb": 0
+ },
+ "maxrss_kb": 0,
+ "timeouts": 0,
+ "crashes": 0,
+ "protocol": {
+  "repeats": 1,
+  "timeout_s": 30.0,
+  "cases_run": [
+   "R06",
+   "T06",
+   "U01",
+   "U02",
+   "U03",
+   "U04",
+   "U05",
+   "U06",
+   "U07"
+  ],
+  "cpu_count": 8,
+  "started_unix": 1793881806.0536602
+ }
+}

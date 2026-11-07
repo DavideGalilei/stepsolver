@@ -1,0 +1,18 @@
+{
+ "suite": "V2 Stress",
+ "name": "V2 Stress 141",
+ "cases": 141,
+ "strict_correct": 141,
+ "covered": 141,
+ "invalid": 0,
+ "errors": 0,
+ "unsupported": 0,
+ "derivations_available": 141,
+ "derivation_mean_final": 9.3262,
+ "derivation_mean_automated": 9.3121,
+ "domain_sensitive_cases": 47,
+ "domain_sensitive_strict": 47,
+ "adapter_overrides": 0,
+ "warm_median_ms": 12.91,
+ "case_ids": null
+}

@@ -1,0 +1,2883 @@
+[
+ {
+  "case_id": "A01",
+  "category": "A",
+  "operation": "evaluate",
+  "display_input": "2 + 3 * 4",
+  "status": "valid",
+  "status_detail": "",
+  "strict_correct": true,
+  "covered": true,
+  "value_correct": true,
+  "actual": "14",
+  "restrictions_reported": [],
+  "adapter_overrides": false,
+  "adapter_input": [
+   "simplify(2 + 3 * 4)"
+  ],
+  "warm_median_ms": null,
+  "derivation_available": true,
+  "derivation_final": 10
+ },
+ {
+  "case_id": "A02",
+  "category": "A",
+  "operation": "evaluate",
+  "display_input": "(2 + 3) * 4",
+  "status": "valid",
+  "status_detail": "",
+  "strict_correct": true,
+  "covered": true,
+  "value_correct": true,
+  "actual": "20",
+  "restrictions_reported": [],
+  "adapter_overrides": false,
+  "adapter_input": [
+   "simplify((2 + 3) * 4)"
+  ],
+  "warm_median_ms": null,
+  "derivation_available": true,
+  "derivation_final": 10
+ },
+ {
+  "case_id": "A03",
+  "category": "A",
+  "operation": "evaluate",
+  "display_input": "7/12 + 5/18",
+  "status": "valid",
+  "status_detail": "",
+  "strict_correct": true,
+  "covered": true,
+  "value_correct": true,
+  "actual": "31/36",
+  "restrictions_reported": [],
+  "adapter_overrides": false,
+  "adapter_input": [
+   "simplify(7/12 + 5/18)"
+  ],
+  "warm_median_ms": null,
+  "derivation_available": true,
+  "derivation_final": 9
+ },
+ {
+  "case_id": "A04",
+  "category": "A",
+  "operation": "evaluate",
+  "display_input": "sqrt(72)",
+  "status": "valid",
+  "status_detail": "",
+  "strict_correct": true,
+  "covered": true,
+  "value_correct": true,
+  "actual": "6 * sqrt(2)",
+  "restrictions_reported": [],
+  "adapter_overrides": false,
+  "adapter_input": [
+   "simplify(sqrt(72))"
+  ],
+  "warm_median_ms": null,
+  "derivation_available": true,
+  "derivation_final": 8
+ },
+ {
+  "case_id": "A05",
+  "category": "A",
+  "operation": "evaluate",
+  "display_input": "(2^3)^2",
+  "status": "valid",
+  "status_detail": "",
+  "strict_correct": true,
+  "covered": true,
+  "value_correct": true,
+  "actual": "64",
+  "restrictions_reported": [],
+  "adapter_overrides": false,
+  "adapter_input": [
+   "simplify((2^3)^2)"
+  ],
+  "warm_median_ms": null,
+  "derivation_available": true,
+  "derivation_final": 10
+ },
+ {
+  "case_id": "A06",
+  "category": "A",
+  "operation": "evaluate",
+  "display_input": "0.125 * 80",
+  "status": "valid",
+  "status_detail": "",
+  "strict_correct": true,
+  "covered": true,
+  "value_correct": true,
+  "actual": "10",
+  "restrictions_reported": [],
+  "adapter_overrides": false,
+  "adapter_input": [
+   "simplify(0.125 * 80)"
+  ],
+  "warm_median_ms": null,
+  "derivation_available": true,
+  "derivation_final": 10
+ },
+ {
+  "case_id": "A07",
+  "category": "A",
+  "operation": "evaluate",
+  "display_input": "(-3)^2 - 3^2",
+  "status": "valid",
+  "status_detail": "",
+  "strict_correct": true,
+  "covered": true,
+  "value_correct": true,
+  "actual": "0",
+  "restrictions_reported": [],
+  "adapter_overrides": false,
+  "adapter_input": [
+   "simplify((-3)^2 - 3^2)"
+  ],
+  "warm_median_ms": null,
+  "derivation_available": true,
+  "derivation_final": 10
+ },
+ {
+  "case_id": "A08",
+  "category": "A",
+  "operation": "evaluate",
+  "display_input": "abs(-7) + abs(3-9)",
+  "status": "valid",
+  "status_detail": "",
+  "strict_correct": true,
+  "covered": true,
+  "value_correct": true,
+  "actual": "13",
+  "restrictions_reported": [],
+  "adapter_overrides": false,
+  "adapter_input": [
+   "simplify(abs(-7) + abs(3-9))"
+  ],
+  "warm_median_ms": null,
+  "derivation_available": true,
+  "derivation_final": 8
+ },
+ {
+  "case_id": "B01",
+  "category": "B",
+  "operation": "simplify",
+  "display_input": "3*x + 5*x - 2*x",
+  "status": "valid",
+  "status_detail": "",
+  "strict_correct": true,
+  "covered": true,
+  "value_correct": true,
+  "actual": "6 * x",
+  "restrictions_reported": [],
+  "adapter_overrides": false,
+  "adapter_input": [
+   "simplify(3*x + 5*x - 2*x)"
+  ],
+  "warm_median_ms": null,
+  "derivation_available": true,
+  "derivation_final": 10
+ },
+ {
+  "case_id": "B02",
+  "category": "B",
+  "operation": "simplify",
+  "display_input": "2*(x + 3) - x",
+  "status": "valid",
+  "status_detail": "",
+  "strict_correct": true,
+  "covered": true,
+  "value_correct": true,
+  "actual": "x + 6",
+  "restrictions_reported": [],
+  "adapter_overrides": false,
+  "adapter_input": [
+   "simplify(2*(x + 3) - x)"
+  ],
+  "warm_median_ms": null,
+  "derivation_available": true,
+  "derivation_final": 10
+ },
+ {
+  "case_id": "B03",
+  "category": "B",
+  "operation": "expand",
+  "display_input": "(x + 2)*(x + 3) \u2014 expand",
+  "status": "valid",
+  "status_detail": "",
+  "strict_correct": true,
+  "covered": true,
+  "value_correct": true,
+  "actual": "x ^ 2 + 5 * x + 6",
+  "restrictions_reported": [],
+  "adapter_overrides": false,
+  "adapter_input": [
+   "expand((x + 2)*(x + 3))"
+  ],
+  "warm_median_ms": null,
+  "derivation_available": true,
+  "derivation_final": 10
+ },
+ {
+  "case_id": "B04",
+  "category": "B",
+  "operation": "factor",
+  "display_input": "x^2 + 5*x + 6 \u2014 factor",
+  "status": "valid",
+  "status_detail": "",
+  "strict_correct": true,
+  "covered": true,
+  "value_correct": true,
+  "actual": "(x + 2) * (x + 3)",
+  "restrictions_reported": [],
+  "adapter_overrides": false,
+  "adapter_input": [
+   "factor(x^2 + 5*x + 6)"
+  ],
+  "warm_median_ms": null,
+  "derivation_available": true,
+  "derivation_final": 9
+ },
+ {
+  "case_id": "B05",
+  "category": "B",
+  "operation": "factor",
+  "display_input": "x^2 - 9 \u2014 factor",
+  "status": "valid",
+  "status_detail": "",
+  "strict_correct": true,
+  "covered": true,
+  "value_correct": true,
+  "actual": "(x - 3) * (x + 3)",
+  "restrictions_reported": [],
+  "adapter_overrides": false,
+  "adapter_input": [
+   "factor(x^2 - 9)"
+  ],
+  "warm_median_ms": null,
+  "derivation_available": true,
+  "derivation_final": 9
+ },
+ {
+  "case_id": "B06",
+  "category": "B",
+  "operation": "simplify",
+  "display_input": "(x^2 - 1)/(x - 1) \u2014 simplify",
+  "status": "valid",
+  "status_detail": "",
+  "strict_correct": true,
+  "covered": true,
+  "value_correct": true,
+  "actual": "x + 1",
+  "restrictions_reported": [
+   "An original denominator cannot equal zero. | x != 1"
+  ],
+  "adapter_overrides": false,
+  "adapter_input": [
+   "simplify((x^2 - 1)/(x - 1))"
+  ],
+  "warm_median_ms": null,
+  "derivation_available": true,
+  "derivation_final": 10
+ },
+ {
+  "case_id": "B07",
+  "category": "B",
+  "operation": "simplify",
+  "display_input": "x/x \u2014 simplify",
+  "status": "valid",
+  "status_detail": "",
+  "strict_correct": true,
+  "covered": true,
+  "value_correct": true,
+  "actual": "1",
+  "restrictions_reported": [
+   "An original denominator cannot equal zero. | x != 0"
+  ],
+  "adapter_overrides": false,
+  "adapter_input": [
+   "simplify(x/x)"
+  ],
+  "warm_median_ms": null,
+  "derivation_available": true,
+  "derivation_final": 10
+ },
+ {
+  "case_id": "B08",
+  "category": "B",
+  "operation": "simplify",
+  "display_input": "(2*x^2*y)/(4*x*y^2) \u2014 simplify",
+  "status": "valid",
+  "status_detail": "",
+  "strict_correct": true,
+  "covered": true,
+  "value_correct": true,
+  "actual": "x / (2 * y)",
+  "restrictions_reported": [
+   "An original denominator cannot equal zero. | x != 0",
+   "An original denominator cannot equal zero. | y != 0"
+  ],
+  "adapter_overrides": false,
+  "adapter_input": [
+   "simplify((2*x^2*y)/(4*x*y^2))"
+  ],
+  "warm_median_ms": null,
+  "derivation_available": true,
+  "derivation_final": 10
+ },
+ {
+  "case_id": "C01",
+  "category": "C",
+  "operation": "solve",
+  "display_input": "2*x + 3 = 11",
+  "status": "valid",
+  "status_detail": "",
+  "strict_correct": true,
+  "covered": true,
+  "value_correct": true,
+  "actual": "{4}",
+  "restrictions_reported": [],
+  "adapter_overrides": false,
+  "adapter_input": [
+   "solve(2*x + 3 = 11, x)"
+  ],
+  "warm_median_ms": null,
+  "derivation_available": true,
+  "derivation_final": 10
+ },
+ {
+  "case_id": "C02",
+  "category": "C",
+  "operation": "solve",
+  "display_input": "2*(x + 3) = 14",
+  "status": "valid",
+  "status_detail": "",
+  "strict_correct": true,
+  "covered": true,
+  "value_correct": true,
+  "actual": "{4}",
+  "restrictions_reported": [],
+  "adapter_overrides": false,
+  "adapter_input": [
+   "solve(2*(x + 3) = 14, x)"
+  ],
+  "warm_median_ms": null,
+  "derivation_available": true,
+  "derivation_final": 10
+ },
+ {
+  "case_id": "C03",
+  "category": "C",
+  "operation": "solve",
+  "display_input": "3*x - 7 = x + 5",
+  "status": "valid",
+  "status_detail": "",
+  "strict_correct": true,
+  "covered": true,
+  "value_correct": true,
+  "actual": "{6}",
+  "restrictions_reported": [],
+  "adapter_overrides": false,
+  "adapter_input": [
+   "solve(3*x - 7 = x + 5, x)"
+  ],
+  "warm_median_ms": null,
+  "derivation_available": true,
+  "derivation_final": 10
+ },
+ {
+  "case_id": "C04",
+  "category": "C",
+  "operation": "solve",
+  "display_input": "x/3 + 2 = 5",
+  "status": "valid",
+  "status_detail": "",
+  "strict_correct": true,
+  "covered": true,
+  "value_correct": true,
+  "actual": "{9}",
+  "restrictions_reported": [],
+  "adapter_overrides": false,
+  "adapter_input": [
+   "solve(x/3 + 2 = 5, x)"
+  ],
+  "warm_median_ms": null,
+  "derivation_available": true,
+  "derivation_final": 10
+ },
+ {
+  "case_id": "C05",
+  "category": "C",
+  "operation": "solve",
+  "display_input": "x^2 - 5*x + 6 = 0",
+  "status": "valid",
+  "status_detail": "",
+  "strict_correct": true,
+  "covered": true,
+  "value_correct": true,
+  "actual": "{2, 3}",
+  "restrictions_reported": [],
+  "adapter_overrides": false,
+  "adapter_input": [
+   "solve(x^2 - 5*x + 6 = 0, x)"
+  ],
+  "warm_median_ms": null,
+  "derivation_available": true,
+  "derivation_final": 9
+ },
+ {
+  "case_id": "C06",
+  "category": "C",
+  "operation": "solve",
+  "display_input": "x^2 - 4 = 0",
+  "status": "valid",
+  "status_detail": "",
+  "strict_correct": true,
+  "covered": true,
+  "value_correct": true,
+  "actual": "{-2, 2}",
+  "restrictions_reported": [],
+  "adapter_overrides": false,
+  "adapter_input": [
+   "solve(x^2 - 4 = 0, x)"
+  ],
+  "warm_median_ms": null,
+  "derivation_available": true,
+  "derivation_final": 9
+ },
+ {
+  "case_id": "C07",
+  "category": "C",
+  "operation": "solve",
+  "display_input": "x^2 + 1 = 0",
+  "status": "valid",
+  "status_detail": "",
+  "strict_correct": true,
+  "covered": true,
+  "value_correct": true,
+  "actual": "{-i, i}",
+  "restrictions_reported": [],
+  "adapter_overrides": false,
+  "adapter_input": [
+   "solve(x^2 + 1 = 0, x)"
+  ],
+  "warm_median_ms": null,
+  "derivation_available": true,
+  "derivation_final": 8
+ },
+ {
+  "case_id": "C08",
+  "category": "C",
+  "operation": "solve",
+  "display_input": "x^2 + 2*x + 1 = 0",
+  "status": "valid",
+  "status_detail": "",
+  "strict_correct": true,
+  "covered": true,
+  "value_correct": true,
+  "actual": "{-1}",
+  "restrictions_reported": [],
+  "adapter_overrides": false,
+  "adapter_input": [
+   "solve(x^2 + 2*x + 1 = 0, x)"
+  ],
+  "warm_median_ms": null,
+  "derivation_available": true,
+  "derivation_final": 8
+ },
+ {
+  "case_id": "C09",
+  "category": "C",
+  "operation": "solve",
+  "display_input": "2*x + 1 = 2*x + 3",
+  "status": "valid",
+  "status_detail": "",
+  "strict_correct": true,
+  "covered": true,
+  "value_correct": true,
+  "actual": "no solution (empty set)",
+  "restrictions_reported": [],
+  "adapter_overrides": false,
+  "adapter_input": [
+   "solve(2*x + 1 = 2*x + 3, x)"
+  ],
+  "warm_median_ms": null,
+  "derivation_available": true,
+  "derivation_final": 9
+ },
+ {
+  "case_id": "C10",
+  "category": "C",
+  "operation": "solve",
+  "display_input": "2*x + 1 = 2*x + 1",
+  "status": "invalid_answer",
+  "status_detail": "unexpected answer form 'unknown'",
+  "strict_correct": false,
+  "covered": false,
+  "value_correct": null,
+  "actual": "{\"kind\": \"unknown\", \"text\": \"UniversalSolutionValue(domain=<SolutionDomain.REAL: 'real'>, exclusions=())\"}",
+  "restrictions_reported": [],
+  "adapter_overrides": false,
+  "adapter_input": [
+   "solve(2*x + 1 = 2*x + 1, x)"
+  ],
+  "warm_median_ms": null,
+  "derivation_available": true,
+  "derivation_final": 5
+ },
+ {
+  "case_id": "D01",
+  "category": "D",
+  "operation": "solve_system",
+  "display_input": "x + y = 7; x - y = 1",
+  "status": "valid",
+  "status_detail": "",
+  "strict_correct": true,
+  "covered": true,
+  "value_correct": true,
+  "actual": "[{\"x\": \"4\", \"y\": \"3\"}]",
+  "restrictions_reported": [],
+  "adapter_overrides": false,
+  "adapter_input": [
+   "solve([x + y = 7, x - y = 1], [x, y])"
+  ],
+  "warm_median_ms": null,
+  "derivation_available": true,
+  "derivation_final": 9
+ },
+ {
+  "case_id": "D02",
+  "category": "D",
+  "operation": "solve_system",
+  "display_input": "2*x + y = 8; x - y = 1",
+  "status": "valid",
+  "status_detail": "",
+  "strict_correct": true,
+  "covered": true,
+  "value_correct": true,
+  "actual": "[{\"x\": \"3\", \"y\": \"2\"}]",
+  "restrictions_reported": [],
+  "adapter_overrides": false,
+  "adapter_input": [
+   "solve([2*x + y = 8, x - y = 1], [x, y])"
+  ],
+  "warm_median_ms": null,
+  "derivation_available": true,
+  "derivation_final": 9
+ },
+ {
+  "case_id": "D03",
+  "category": "D",
+  "operation": "solve_system",
+  "display_input": "x + y = 2; x + y = 5",
+  "status": "valid",
+  "status_detail": "",
+  "strict_correct": true,
+  "covered": true,
+  "value_correct": true,
+  "actual": "no solution",
+  "restrictions_reported": [],
+  "adapter_overrides": false,
+  "adapter_input": [
+   "solve([x + y = 2, x + y = 5], [x, y])"
+  ],
+  "warm_median_ms": null,
+  "derivation_available": true,
+  "derivation_final": 9
+ },
+ {
+  "case_id": "D04",
+  "category": "D",
+  "operation": "solve_inequality",
+  "display_input": "2*x + 3 < 11",
+  "status": "valid",
+  "status_detail": "",
+  "strict_correct": true,
+  "covered": true,
+  "value_correct": true,
+  "actual": "x < 4",
+  "restrictions_reported": [],
+  "adapter_overrides": false,
+  "adapter_input": [
+   "solve_inequality(2*x + 3 < 11, x)"
+  ],
+  "warm_median_ms": null,
+  "derivation_available": true,
+  "derivation_final": 10
+ },
+ {
+  "case_id": "D05",
+  "category": "D",
+  "operation": "solve_inequality",
+  "display_input": "-2*x > 6",
+  "status": "valid",
+  "status_detail": "",
+  "strict_correct": true,
+  "covered": true,
+  "value_correct": true,
+  "actual": "x < -3",
+  "restrictions_reported": [],
+  "adapter_overrides": false,
+  "adapter_input": [
+   "solve_inequality(-2*x > 6, x)"
+  ],
+  "warm_median_ms": null,
+  "derivation_available": true,
+  "derivation_final": 9
+ },
+ {
+  "case_id": "D06",
+  "category": "D",
+  "operation": "solve_inequality",
+  "display_input": "x^2 - 4 > 0",
+  "status": "valid",
+  "status_detail": "",
+  "strict_correct": true,
+  "covered": true,
+  "value_correct": true,
+  "actual": "(2 < x) | (x < -2)",
+  "restrictions_reported": [],
+  "adapter_overrides": false,
+  "adapter_input": [
+   "solve_inequality(x^2 - 4 > 0, x)"
+  ],
+  "warm_median_ms": null,
+  "derivation_available": true,
+  "derivation_final": 9
+ },
+ {
+  "case_id": "E01",
+  "category": "E",
+  "operation": "simplify",
+  "display_input": "x^3 * x^4",
+  "status": "valid",
+  "status_detail": "",
+  "strict_correct": true,
+  "covered": true,
+  "value_correct": true,
+  "actual": "x ^ 7",
+  "restrictions_reported": [],
+  "adapter_overrides": false,
+  "adapter_input": [
+   "simplify(x^3 * x^4)"
+  ],
+  "warm_median_ms": null,
+  "derivation_available": true,
+  "derivation_final": 10
+ },
+ {
+  "case_id": "E02",
+  "category": "E",
+  "operation": "simplify",
+  "display_input": "x^6 / x^2",
+  "status": "valid",
+  "status_detail": "",
+  "strict_correct": true,
+  "covered": true,
+  "value_correct": true,
+  "actual": "x ^ 4",
+  "restrictions_reported": [
+   "An original denominator cannot equal zero. | x != 0"
+  ],
+  "adapter_overrides": false,
+  "adapter_input": [
+   "simplify(x^6 / x^2)"
+  ],
+  "warm_median_ms": null,
+  "derivation_available": true,
+  "derivation_final": 9
+ },
+ {
+  "case_id": "E03",
+  "category": "E",
+  "operation": "simplify",
+  "display_input": "sqrt(x^2)",
+  "status": "valid",
+  "status_detail": "",
+  "strict_correct": true,
+  "covered": true,
+  "value_correct": true,
+  "actual": "abs(x)",
+  "restrictions_reported": [],
+  "adapter_overrides": false,
+  "adapter_input": [
+   "simplify(sqrt(x^2))"
+  ],
+  "warm_median_ms": null,
+  "derivation_available": true,
+  "derivation_final": 8
+ },
+ {
+  "case_id": "E04",
+  "category": "E",
+  "operation": "evaluate",
+  "display_input": "log(1000, 10)",
+  "status": "valid",
+  "status_detail": "",
+  "strict_correct": true,
+  "covered": true,
+  "value_correct": true,
+  "actual": "3",
+  "restrictions_reported": [],
+  "adapter_overrides": false,
+  "adapter_input": [
+   "simplify(log(1000, 10))"
+  ],
+  "warm_median_ms": null,
+  "derivation_available": true,
+  "derivation_final": 8
+ },
+ {
+  "case_id": "E05",
+  "category": "E",
+  "operation": "simplify",
+  "display_input": "ln(e^x)",
+  "status": "valid",
+  "status_detail": "",
+  "strict_correct": true,
+  "covered": true,
+  "value_correct": true,
+  "actual": "x",
+  "restrictions_reported": [],
+  "adapter_overrides": false,
+  "adapter_input": [
+   "simplify(ln(e^x))"
+  ],
+  "warm_median_ms": null,
+  "derivation_available": true,
+  "derivation_final": 6
+ },
+ {
+  "case_id": "E06",
+  "category": "E",
+  "operation": "evaluate",
+  "display_input": "sin(pi/6)",
+  "status": "valid",
+  "status_detail": "",
+  "strict_correct": true,
+  "covered": true,
+  "value_correct": true,
+  "actual": "1/2",
+  "restrictions_reported": [],
+  "adapter_overrides": false,
+  "adapter_input": [
+   "simplify(sin(pi/6))"
+  ],
+  "warm_median_ms": null,
+  "derivation_available": true,
+  "derivation_final": 8
+ },
+ {
+  "case_id": "E07",
+  "category": "E",
+  "operation": "evaluate",
+  "display_input": "cos(pi/3)",
+  "status": "valid",
+  "status_detail": "",
+  "strict_correct": true,
+  "covered": true,
+  "value_correct": true,
+  "actual": "1/2",
+  "restrictions_reported": [],
+  "adapter_overrides": false,
+  "adapter_input": [
+   "simplify(cos(pi/3))"
+  ],
+  "warm_median_ms": null,
+  "derivation_available": true,
+  "derivation_final": 8
+ },
+ {
+  "case_id": "E08",
+  "category": "E",
+  "operation": "evaluate",
+  "display_input": "tan(pi/4)",
+  "status": "valid",
+  "status_detail": "",
+  "strict_correct": true,
+  "covered": true,
+  "value_correct": true,
+  "actual": "1",
+  "restrictions_reported": [],
+  "adapter_overrides": false,
+  "adapter_input": [
+   "simplify(tan(pi/4))"
+  ],
+  "warm_median_ms": null,
+  "derivation_available": true,
+  "derivation_final": 8
+ },
+ {
+  "case_id": "F01",
+  "category": "F",
+  "operation": "diff",
+  "display_input": "Differentiate x^3",
+  "status": "valid",
+  "status_detail": "",
+  "strict_correct": true,
+  "covered": true,
+  "value_correct": true,
+  "actual": "3 * x ^ 2",
+  "restrictions_reported": [],
+  "adapter_overrides": false,
+  "adapter_input": [
+   "diff(x^3, x)"
+  ],
+  "warm_median_ms": null,
+  "derivation_available": true,
+  "derivation_final": 9
+ },
+ {
+  "case_id": "F02",
+  "category": "F",
+  "operation": "diff",
+  "display_input": "Differentiate 5*x^4 - 2*x + 7",
+  "status": "valid",
+  "status_detail": "",
+  "strict_correct": true,
+  "covered": true,
+  "value_correct": true,
+  "actual": "20 * x ^ 3 - 2",
+  "restrictions_reported": [],
+  "adapter_overrides": false,
+  "adapter_input": [
+   "diff(5*x^4 - 2*x + 7, x)"
+  ],
+  "warm_median_ms": null,
+  "derivation_available": true,
+  "derivation_final": 9
+ },
+ {
+  "case_id": "F03",
+  "category": "F",
+  "operation": "diff",
+  "display_input": "Differentiate x^2 * sin(x)",
+  "status": "valid",
+  "status_detail": "",
+  "strict_correct": true,
+  "covered": true,
+  "value_correct": true,
+  "actual": "x ^ 2 * cos(x) + 2 * x * sin(x)",
+  "restrictions_reported": [],
+  "adapter_overrides": false,
+  "adapter_input": [
+   "diff(x^2 * sin(x), x)"
+  ],
+  "warm_median_ms": null,
+  "derivation_available": true,
+  "derivation_final": 9
+ },
+ {
+  "case_id": "F04",
+  "category": "F",
+  "operation": "diff",
+  "display_input": "Differentiate sin(x^2)",
+  "status": "valid",
+  "status_detail": "",
+  "strict_correct": true,
+  "covered": true,
+  "value_correct": true,
+  "actual": "2 * x * cos(x ^ 2)",
+  "restrictions_reported": [],
+  "adapter_overrides": false,
+  "adapter_input": [
+   "diff(sin(x^2), x)"
+  ],
+  "warm_median_ms": null,
+  "derivation_available": true,
+  "derivation_final": 9
+ },
+ {
+  "case_id": "F05",
+  "category": "F",
+  "operation": "diff",
+  "display_input": "Differentiate ln(x)",
+  "status": "valid",
+  "status_detail": "",
+  "strict_correct": true,
+  "covered": true,
+  "value_correct": true,
+  "actual": "1 / x",
+  "restrictions_reported": [
+   "The real logarithm requires a positive argument. | x > 0"
+  ],
+  "adapter_overrides": false,
+  "adapter_input": [
+   "diff(ln(x), x)"
+  ],
+  "warm_median_ms": null,
+  "derivation_available": true,
+  "derivation_final": 8
+ },
+ {
+  "case_id": "F06",
+  "category": "F",
+  "operation": "diff",
+  "display_input": "Differentiate x^x",
+  "status": "valid",
+  "status_detail": "",
+  "strict_correct": true,
+  "covered": true,
+  "value_correct": true,
+  "actual": "x ^ x * (log(x) + 1)",
+  "restrictions_reported": [
+   "Logarithmic differentiation uses the real logarithm of the base. | x > 0"
+  ],
+  "adapter_overrides": false,
+  "adapter_input": [
+   "diff(x^x, x)"
+  ],
+  "warm_median_ms": null,
+  "derivation_available": true,
+  "derivation_final": 9
+ },
+ {
+  "case_id": "G01",
+  "category": "G",
+  "operation": "integrate",
+  "display_input": "Integrate 3*x^2",
+  "status": "valid",
+  "status_detail": "",
+  "strict_correct": true,
+  "covered": true,
+  "value_correct": true,
+  "actual": "x ^ 3 + C",
+  "restrictions_reported": [],
+  "adapter_overrides": false,
+  "adapter_input": [
+   "integrate(3*x^2, x)"
+  ],
+  "warm_median_ms": null,
+  "derivation_available": true,
+  "derivation_final": 9
+ },
+ {
+  "case_id": "G02",
+  "category": "G",
+  "operation": "integrate",
+  "display_input": "Integrate 2*x + 5",
+  "status": "valid",
+  "status_detail": "",
+  "strict_correct": true,
+  "covered": true,
+  "value_correct": true,
+  "actual": "x ^ 2 + 5 * x + C",
+  "restrictions_reported": [],
+  "adapter_overrides": false,
+  "adapter_input": [
+   "integrate(2*x + 5, x)"
+  ],
+  "warm_median_ms": null,
+  "derivation_available": true,
+  "derivation_final": 10
+ },
+ {
+  "case_id": "G03",
+  "category": "G",
+  "operation": "integrate",
+  "display_input": "Integrate cos(x)",
+  "status": "valid",
+  "status_detail": "",
+  "strict_correct": true,
+  "covered": true,
+  "value_correct": true,
+  "actual": "sin(x) + C",
+  "restrictions_reported": [],
+  "adapter_overrides": false,
+  "adapter_input": [
+   "integrate(cos(x), x)"
+  ],
+  "warm_median_ms": null,
+  "derivation_available": true,
+  "derivation_final": 9
+ },
+ {
+  "case_id": "G04",
+  "category": "G",
+  "operation": "integrate",
+  "display_input": "Integrate 1/x",
+  "status": "valid",
+  "status_detail": "",
+  "strict_correct": true,
+  "covered": true,
+  "value_correct": true,
+  "actual": "log(abs(x)) + C",
+  "restrictions_reported": [
+   "The denominator cannot equal zero. | x != 0"
+  ],
+  "adapter_overrides": false,
+  "adapter_input": [
+   "integrate(1/x, x)"
+  ],
+  "warm_median_ms": null,
+  "derivation_available": true,
+  "derivation_final": 10
+ },
+ {
+  "case_id": "G05",
+  "category": "G",
+  "operation": "integrate",
+  "display_input": "Integrate x*exp(x^2)",
+  "status": "valid",
+  "status_detail": "",
+  "strict_correct": true,
+  "covered": true,
+  "value_correct": true,
+  "actual": "exp(x ^ 2) / 2 + C",
+  "restrictions_reported": [],
+  "adapter_overrides": false,
+  "adapter_input": [
+   "integrate(x*exp(x^2), x)"
+  ],
+  "warm_median_ms": null,
+  "derivation_available": true,
+  "derivation_final": 10
+ },
+ {
+  "case_id": "G06",
+  "category": "G",
+  "operation": "integrate",
+  "display_input": "Integrate x^2 from 0 to 3",
+  "status": "valid",
+  "status_detail": "",
+  "strict_correct": true,
+  "covered": true,
+  "value_correct": true,
+  "actual": "9",
+  "restrictions_reported": [],
+  "adapter_overrides": false,
+  "adapter_input": [
+   "integrate(x^2, x, 0, 3)"
+  ],
+  "warm_median_ms": null,
+  "derivation_available": true,
+  "derivation_final": 10
+ },
+ {
+  "case_id": "H01",
+  "category": "H",
+  "operation": "limit",
+  "display_input": "Limit as x approaches 0 of sin(x)/x",
+  "status": "valid",
+  "status_detail": "",
+  "strict_correct": true,
+  "covered": true,
+  "value_correct": true,
+  "actual": "1",
+  "restrictions_reported": [],
+  "adapter_overrides": false,
+  "adapter_input": [
+   "limit(sin(x)/x, x, 0)"
+  ],
+  "warm_median_ms": null,
+  "derivation_available": true,
+  "derivation_final": 10
+ },
+ {
+  "case_id": "H02",
+  "category": "H",
+  "operation": "limit",
+  "display_input": "Limit as x approaches 2 of (x^2 - 4)/(x - 2)",
+  "status": "valid",
+  "status_detail": "",
+  "strict_correct": true,
+  "covered": true,
+  "value_correct": true,
+  "actual": "4",
+  "restrictions_reported": [],
+  "adapter_overrides": false,
+  "adapter_input": [
+   "limit((x^2 - 4)/(x - 2), x, 2)"
+  ],
+  "warm_median_ms": null,
+  "derivation_available": true,
+  "derivation_final": 10
+ },
+ {
+  "case_id": "H03",
+  "category": "H",
+  "operation": "limit",
+  "display_input": "Limit as x approaches infinity of (3*x^2 + 1)/(x^2 - 5)",
+  "status": "valid",
+  "status_detail": "",
+  "strict_correct": true,
+  "covered": true,
+  "value_correct": true,
+  "actual": "3",
+  "restrictions_reported": [],
+  "adapter_overrides": false,
+  "adapter_input": [
+   "limit((3*x^2 + 1)/(x^2 - 5), x, oo)"
+  ],
+  "warm_median_ms": null,
+  "derivation_available": true,
+  "derivation_final": 9
+ },
+ {
+  "case_id": "H04",
+  "category": "H",
+  "operation": "limit",
+  "display_input": "Limit as x approaches 0 of (1 - cos(x))/x^2",
+  "status": "valid",
+  "status_detail": "",
+  "strict_correct": true,
+  "covered": true,
+  "value_correct": true,
+  "actual": "1/2",
+  "restrictions_reported": [],
+  "adapter_overrides": false,
+  "adapter_input": [
+   "limit((1 - cos(x))/x^2, x, 0)"
+  ],
+  "warm_median_ms": null,
+  "derivation_available": true,
+  "derivation_final": 10
+ },
+ {
+  "case_id": "I01",
+  "category": "I",
+  "operation": "solve_system",
+  "display_input": "Solve x + y = 5; x - y = 1 by elimination",
+  "status": "valid",
+  "status_detail": "",
+  "strict_correct": true,
+  "covered": true,
+  "value_correct": true,
+  "actual": "[{\"x\": \"3\", \"y\": \"2\"}]",
+  "restrictions_reported": [],
+  "adapter_overrides": false,
+  "adapter_input": [
+   "solve([x + y = 5, x - y = 1], [x, y])"
+  ],
+  "warm_median_ms": null,
+  "derivation_available": true,
+  "derivation_final": 9
+ },
+ {
+  "case_id": "I02",
+  "category": "I",
+  "operation": "det",
+  "display_input": "Determinant of [[1,2],[3,4]]",
+  "status": "valid",
+  "status_detail": "",
+  "strict_correct": true,
+  "covered": true,
+  "value_correct": true,
+  "actual": "-2",
+  "restrictions_reported": [],
+  "adapter_overrides": false,
+  "adapter_input": [
+   "det(matrix([[1, 2], [3, 4]]))"
+  ],
+  "warm_median_ms": null,
+  "derivation_available": true,
+  "derivation_final": 10
+ },
+ {
+  "case_id": "I03",
+  "category": "I",
+  "operation": "inverse",
+  "display_input": "Inverse of [[1,2],[3,4]]",
+  "status": "valid",
+  "status_detail": "",
+  "strict_correct": true,
+  "covered": true,
+  "value_correct": true,
+  "actual": "[[-2, 1], [3/2, -1/2]]",
+  "restrictions_reported": [],
+  "adapter_overrides": false,
+  "adapter_input": [
+   "inverse(matrix([[1, 2], [3, 4]]))"
+  ],
+  "warm_median_ms": null,
+  "derivation_available": true,
+  "derivation_final": 10
+ },
+ {
+  "case_id": "I04",
+  "category": "I",
+  "operation": "rref",
+  "display_input": "RREF of [[1,2,3],[2,4,6]]",
+  "status": "valid",
+  "status_detail": "",
+  "strict_correct": true,
+  "covered": true,
+  "value_correct": true,
+  "actual": "[[1, 2, 3], [0, 0, 0]]",
+  "restrictions_reported": [],
+  "adapter_overrides": false,
+  "adapter_input": [
+   "rref(matrix([[1, 2, 3], [2, 4, 6]]))"
+  ],
+  "warm_median_ms": null,
+  "derivation_available": true,
+  "derivation_final": 10
+ },
+ {
+  "case_id": "J01",
+  "category": "J",
+  "operation": "dsolve",
+  "display_input": "Solve y' = 3*y",
+  "status": "valid",
+  "status_detail": "",
+  "strict_correct": true,
+  "covered": true,
+  "value_correct": true,
+  "actual": "Eq(y(x), C1 * exp(3 * x))",
+  "restrictions_reported": [],
+  "adapter_overrides": true,
+  "adapter_input": [
+   "dsolve(diff(y(x), x) = 3*y(x), y(x))"
+  ],
+  "warm_median_ms": null,
+  "derivation_available": true,
+  "derivation_final": 10
+ },
+ {
+  "case_id": "J02",
+  "category": "J",
+  "operation": "dsolve",
+  "display_input": "Solve y'' + y = 0",
+  "status": "valid",
+  "status_detail": "",
+  "strict_correct": true,
+  "covered": true,
+  "value_correct": true,
+  "actual": "Eq(y(x), C1 * sin(x) + C2 * cos(x))",
+  "restrictions_reported": [],
+  "adapter_overrides": true,
+  "adapter_input": [
+   "dsolve(diff(y(x), x, 2) + y(x) = 0, y(x))"
+  ],
+  "warm_median_ms": null,
+  "derivation_available": true,
+  "derivation_final": 10
+ },
+ {
+  "case_id": "J03",
+  "category": "J",
+  "operation": "partial_derivative",
+  "display_input": "Differentiate exp(x*y) with respect to x, treating y as constant",
+  "status": "valid",
+  "status_detail": "",
+  "strict_correct": true,
+  "covered": true,
+  "value_correct": true,
+  "actual": "y * exp(x * y)",
+  "restrictions_reported": [],
+  "adapter_overrides": false,
+  "adapter_input": [
+   "diff(exp(x*y), x)"
+  ],
+  "warm_median_ms": null,
+  "derivation_available": true,
+  "derivation_final": 9
+ },
+ {
+  "case_id": "J04",
+  "category": "J",
+  "operation": "gradient",
+  "display_input": "Gradient of f(x,y) = x^2 + x*y + y^2",
+  "status": "valid",
+  "status_detail": "",
+  "strict_correct": true,
+  "covered": true,
+  "value_correct": true,
+  "actual": "(2 * x + y, x + 2 * y)",
+  "restrictions_reported": [],
+  "adapter_overrides": false,
+  "adapter_input": [
+   "diff(x^2 + x*y + y^2, x)",
+   "diff(x^2 + x*y + y^2, y)"
+  ],
+  "warm_median_ms": null,
+  "derivation_available": true,
+  "derivation_final": 9
+ },
+ {
+  "case_id": "K01",
+  "category": "K",
+  "operation": "partial_fractions",
+  "display_input": "Partial fractions of 1/(x^2 - 1)",
+  "status": "valid",
+  "status_detail": "",
+  "strict_correct": true,
+  "covered": true,
+  "value_correct": true,
+  "actual": "-1 / (2 * (x + 1)) + 1 / (2 * (x - 1))",
+  "restrictions_reported": [
+   "An original denominator cannot equal zero. | x != -1",
+   "An original denominator cannot equal zero. | x != 1"
+  ],
+  "adapter_overrides": false,
+  "adapter_input": [
+   "apart(1/(x^2 - 1), x)"
+  ],
+  "warm_median_ms": null,
+  "derivation_available": true,
+  "derivation_final": 8
+ },
+ {
+  "case_id": "K02",
+  "category": "K",
+  "operation": "solve",
+  "display_input": "Solve x^3 - 1 = 0 over complex numbers",
+  "status": "valid",
+  "status_detail": "",
+  "strict_correct": true,
+  "covered": true,
+  "value_correct": true,
+  "actual": "{1, -1 / 2 - sqrt(3) * i / 2, -1 / 2 + sqrt(3) * i / 2}",
+  "restrictions_reported": [],
+  "adapter_overrides": false,
+  "adapter_input": [
+   "solve(x^3 - 1 = 0, x)"
+  ],
+  "warm_median_ms": null,
+  "derivation_available": true,
+  "derivation_final": 9
+ },
+ {
+  "case_id": "K03",
+  "category": "K",
+  "operation": "nsolve",
+  "display_input": "Numerically solve cos(x) = x near 0.7",
+  "status": "runtime_error",
+  "status_detail": "UnexpectedResultType",
+  "strict_correct": false,
+  "covered": false,
+  "value_correct": null,
+  "actual": "UnexpectedResultType: NumericResult",
+  "restrictions_reported": [],
+  "adapter_overrides": false,
+  "adapter_input": [
+   "nsolve(cos(x) = x, x, 0.7)"
+  ],
+  "warm_median_ms": null,
+  "derivation_available": true,
+  "derivation_final": null
+ },
+ {
+  "case_id": "K04",
+  "category": "K",
+  "operation": "nsolve",
+  "display_input": "Numerically solve x^5 - x - 1 = 0",
+  "status": "valid",
+  "status_detail": "",
+  "strict_correct": true,
+  "covered": true,
+  "value_correct": true,
+  "actual": "[CRootOf(x ^ 5 - x - 1, 0), CRootOf(x ^ 5 - x - 1, 1), CRootOf(x ^ 5 - x - 1, 2), CRootOf(x ^ 5 - x - 1, 3), CRootOf(x ^ 5 - x - 1, 4)]",
+  "restrictions_reported": [],
+  "adapter_overrides": false,
+  "adapter_input": [
+   "solve(x^5 - x - 1 = 0, x)"
+  ],
+  "warm_median_ms": null,
+  "derivation_available": true,
+  "derivation_final": 9
+ },
+ {
+  "case_id": "L01",
+  "category": "L",
+  "operation": "solve",
+  "display_input": "Solve (x^2 - 1)/(x - 1) = 0",
+  "status": "valid",
+  "status_detail": "",
+  "strict_correct": true,
+  "covered": true,
+  "value_correct": true,
+  "actual": "{-1}",
+  "restrictions_reported": [
+   "An original denominator cannot equal zero. | x - 1 != 0",
+   "This value is outside the domain of the original equation. | x != 1"
+  ],
+  "adapter_overrides": false,
+  "adapter_input": [
+   "solve((x^2 - 1)/(x - 1) = 0, x)"
+  ],
+  "warm_median_ms": null,
+  "derivation_available": true,
+  "derivation_final": 10
+ },
+ {
+  "case_id": "L02",
+  "category": "L",
+  "operation": "solve",
+  "display_input": "Solve sqrt(x + 1) = x - 1 over the reals",
+  "status": "valid",
+  "status_detail": "",
+  "strict_correct": true,
+  "covered": true,
+  "value_correct": true,
+  "actual": "{3}",
+  "restrictions_reported": [
+   "The square root requires a nonnegative radicand. | x + 1 >= 0"
+  ],
+  "adapter_overrides": false,
+  "adapter_input": [
+   "solve(sqrt(x + 1) = x - 1, x)"
+  ],
+  "warm_median_ms": null,
+  "derivation_available": true,
+  "derivation_final": 10
+ },
+ {
+  "case_id": "L03",
+  "category": "L",
+  "operation": "simplify",
+  "display_input": "Simplify sqrt(x^2)",
+  "status": "valid",
+  "status_detail": "",
+  "strict_correct": true,
+  "covered": true,
+  "value_correct": true,
+  "actual": "abs(x)",
+  "restrictions_reported": [],
+  "adapter_overrides": false,
+  "adapter_input": [
+   "simplify(sqrt(x^2))"
+  ],
+  "warm_median_ms": null,
+  "derivation_available": true,
+  "derivation_final": 8
+ },
+ {
+  "case_id": "L04",
+  "category": "L",
+  "operation": "solve",
+  "display_input": "Solve 1/(x - x) = 2",
+  "status": "valid",
+  "status_detail": "explicit_undefined_result",
+  "strict_correct": true,
+  "covered": true,
+  "value_correct": true,
+  "actual": "undefined: This expression is undefined because a denominator is zero.",
+  "restrictions_reported": [
+   "undefined: This expression is undefined because a denominator is zero."
+  ],
+  "adapter_overrides": false,
+  "adapter_input": [
+   "solve(1/(x - x) = 2, x)"
+  ],
+  "warm_median_ms": null,
+  "derivation_available": true,
+  "derivation_final": 10
+ },
+ {
+  "case_id": "A09",
+  "category": "A",
+  "operation": "evaluate",
+  "display_input": "(2^3)^(2^2)",
+  "status": "valid",
+  "status_detail": "",
+  "strict_correct": true,
+  "covered": true,
+  "value_correct": true,
+  "actual": "4096",
+  "restrictions_reported": [],
+  "adapter_overrides": false,
+  "adapter_input": [
+   "simplify((2^3)^(2^2))"
+  ],
+  "warm_median_ms": null,
+  "derivation_available": true,
+  "derivation_final": 10
+ },
+ {
+  "case_id": "A10",
+  "category": "A",
+  "operation": "evaluate",
+  "display_input": "-2^2 + (-2)^2",
+  "status": "valid",
+  "status_detail": "",
+  "strict_correct": true,
+  "covered": true,
+  "value_correct": true,
+  "actual": "0",
+  "restrictions_reported": [],
+  "adapter_overrides": false,
+  "adapter_input": [
+   "simplify(-2^2 + (-2)^2)"
+  ],
+  "warm_median_ms": null,
+  "derivation_available": true,
+  "derivation_final": 10
+ },
+ {
+  "case_id": "A11",
+  "category": "A",
+  "operation": "evaluate",
+  "display_input": "(-2)^5",
+  "status": "valid",
+  "status_detail": "",
+  "strict_correct": true,
+  "covered": true,
+  "value_correct": true,
+  "actual": "-32",
+  "restrictions_reported": [],
+  "adapter_overrides": false,
+  "adapter_input": [
+   "simplify((-2)^5)"
+  ],
+  "warm_median_ms": null,
+  "derivation_available": true,
+  "derivation_final": 10
+ },
+ {
+  "case_id": "A12",
+  "category": "A",
+  "operation": "evaluate",
+  "display_input": "((3/2)^2)^3",
+  "status": "valid",
+  "status_detail": "",
+  "strict_correct": true,
+  "covered": true,
+  "value_correct": true,
+  "actual": "729/64",
+  "restrictions_reported": [],
+  "adapter_overrides": false,
+  "adapter_input": [
+   "simplify(((3/2)^2)^3)"
+  ],
+  "warm_median_ms": null,
+  "derivation_available": true,
+  "derivation_final": 10
+ },
+ {
+  "case_id": "A13",
+  "category": "A",
+  "operation": "evaluate",
+  "display_input": "sqrt(12)*sqrt(3)",
+  "status": "valid",
+  "status_detail": "",
+  "strict_correct": true,
+  "covered": true,
+  "value_correct": true,
+  "actual": "6",
+  "restrictions_reported": [],
+  "adapter_overrides": false,
+  "adapter_input": [
+   "simplify(sqrt(12)*sqrt(3))"
+  ],
+  "warm_median_ms": null,
+  "derivation_available": true,
+  "derivation_final": 9
+ },
+ {
+  "case_id": "B09",
+  "category": "B",
+  "operation": "factor",
+  "display_input": "Factor x^3 - x^2 + 2*x - 2",
+  "status": "valid",
+  "status_detail": "",
+  "strict_correct": true,
+  "covered": true,
+  "value_correct": true,
+  "actual": "(x - 1) * (x ^ 2 + 2)",
+  "restrictions_reported": [],
+  "adapter_overrides": false,
+  "adapter_input": [
+   "factor(x^3 - x^2 + 2*x - 2)"
+  ],
+  "warm_median_ms": null,
+  "derivation_available": true,
+  "derivation_final": 9
+ },
+ {
+  "case_id": "B10",
+  "category": "B",
+  "operation": "simplify",
+  "display_input": "Simplify (x^2 - 1)/(x^2 + 2*x + 1)",
+  "status": "valid",
+  "status_detail": "",
+  "strict_correct": true,
+  "covered": true,
+  "value_correct": true,
+  "actual": "(x - 1) / (x + 1)",
+  "restrictions_reported": [
+   "An original denominator cannot equal zero. | x != -1"
+  ],
+  "adapter_overrides": false,
+  "adapter_input": [
+   "simplify((x^2 - 1)/(x^2 + 2*x + 1))"
+  ],
+  "warm_median_ms": null,
+  "derivation_available": true,
+  "derivation_final": 10
+ },
+ {
+  "case_id": "B11",
+  "category": "B",
+  "operation": "expand",
+  "display_input": "Expand (2*x - 3)*(x^2 + x + 4)",
+  "status": "valid",
+  "status_detail": "",
+  "strict_correct": true,
+  "covered": true,
+  "value_correct": true,
+  "actual": "2 * x ^ 3 - x ^ 2 + 5 * x - 12",
+  "restrictions_reported": [],
+  "adapter_overrides": false,
+  "adapter_input": [
+   "expand((2*x - 3)*(x^2 + x + 4))"
+  ],
+  "warm_median_ms": null,
+  "derivation_available": true,
+  "derivation_final": 10
+ },
+ {
+  "case_id": "B12",
+  "category": "B",
+  "operation": "simplify",
+  "display_input": "Simplify (x^2 + 2*x + 1)/(x + 1)",
+  "status": "valid",
+  "status_detail": "",
+  "strict_correct": true,
+  "covered": true,
+  "value_correct": true,
+  "actual": "x + 1",
+  "restrictions_reported": [
+   "An original denominator cannot equal zero. | x != -1"
+  ],
+  "adapter_overrides": false,
+  "adapter_input": [
+   "simplify((x^2 + 2*x + 1)/(x + 1))"
+  ],
+  "warm_median_ms": null,
+  "derivation_available": true,
+  "derivation_final": 10
+ },
+ {
+  "case_id": "B13",
+  "category": "B",
+  "operation": "factor",
+  "display_input": "Factor x^4 - 5*x^2 + 4",
+  "status": "valid",
+  "status_detail": "",
+  "strict_correct": true,
+  "covered": true,
+  "value_correct": true,
+  "actual": "(x - 2) * (x - 1) * (x + 1) * (x + 2)",
+  "restrictions_reported": [],
+  "adapter_overrides": false,
+  "adapter_input": [
+   "factor(x^4 - 5*x^2 + 4)"
+  ],
+  "warm_median_ms": null,
+  "derivation_available": true,
+  "derivation_final": 9
+ },
+ {
+  "case_id": "C11",
+  "category": "C",
+  "operation": "solve",
+  "display_input": "3*x + 2 = 2*x - 5",
+  "status": "valid",
+  "status_detail": "",
+  "strict_correct": true,
+  "covered": true,
+  "value_correct": true,
+  "actual": "{-7}",
+  "restrictions_reported": [],
+  "adapter_overrides": false,
+  "adapter_input": [
+   "solve(3*x + 2 = 2*x - 5, x)"
+  ],
+  "warm_median_ms": null,
+  "derivation_available": true,
+  "derivation_final": 10
+ },
+ {
+  "case_id": "C12",
+  "category": "C",
+  "operation": "solve",
+  "display_input": "x^2 - x - 2 = 0",
+  "status": "valid",
+  "status_detail": "",
+  "strict_correct": true,
+  "covered": true,
+  "value_correct": true,
+  "actual": "{-1, 2}",
+  "restrictions_reported": [],
+  "adapter_overrides": false,
+  "adapter_input": [
+   "solve(x^2 - x - 2 = 0, x)"
+  ],
+  "warm_median_ms": null,
+  "derivation_available": true,
+  "derivation_final": 9
+ },
+ {
+  "case_id": "C13",
+  "category": "C",
+  "operation": "solve",
+  "display_input": "x^2 - 2*x + 5 = 0",
+  "status": "valid",
+  "status_detail": "",
+  "strict_correct": true,
+  "covered": true,
+  "value_correct": true,
+  "actual": "{1 - 2 * i, 1 + 2 * i}",
+  "restrictions_reported": [],
+  "adapter_overrides": false,
+  "adapter_input": [
+   "solve(x^2 - 2*x + 5 = 0, x)"
+  ],
+  "warm_median_ms": null,
+  "derivation_available": true,
+  "derivation_final": 8
+ },
+ {
+  "case_id": "C14",
+  "category": "C",
+  "operation": "solve",
+  "display_input": "(x + 1)^2 = x^2 + 2*x + 1",
+  "status": "invalid_answer",
+  "status_detail": "unexpected answer form 'unknown'",
+  "strict_correct": false,
+  "covered": false,
+  "value_correct": null,
+  "actual": "{\"kind\": \"unknown\", \"text\": \"UniversalSolutionValue(domain=<SolutionDomain.REAL: 'real'>, exclusions=())\"}",
+  "restrictions_reported": [],
+  "adapter_overrides": false,
+  "adapter_input": [
+   "solve((x + 1)^2 = x^2 + 2*x + 1, x)"
+  ],
+  "warm_median_ms": null,
+  "derivation_available": true,
+  "derivation_final": 5
+ },
+ {
+  "case_id": "C15",
+  "category": "C",
+  "operation": "solve",
+  "display_input": "x^2 + 4 = 0",
+  "status": "invalid_answer",
+  "status_detail": "returned solutions where empty expected",
+  "strict_correct": false,
+  "covered": true,
+  "value_correct": false,
+  "actual": "{-2 * i, 2 * i}",
+  "restrictions_reported": [],
+  "adapter_overrides": false,
+  "adapter_input": [
+   "solve(x^2 + 4 = 0, x)"
+  ],
+  "warm_median_ms": null,
+  "derivation_available": true,
+  "derivation_final": 4
+ },
+ {
+  "case_id": "C16",
+  "category": "C",
+  "operation": "solve",
+  "display_input": "(x^2 - 4)/(x - 2) = 0",
+  "status": "valid",
+  "status_detail": "",
+  "strict_correct": true,
+  "covered": true,
+  "value_correct": true,
+  "actual": "{-2}",
+  "restrictions_reported": [
+   "An original denominator cannot equal zero. | x - 2 != 0",
+   "This value is outside the domain of the original equation. | x != 2"
+  ],
+  "adapter_overrides": false,
+  "adapter_input": [
+   "solve((x^2 - 4)/(x - 2) = 0, x)"
+  ],
+  "warm_median_ms": null,
+  "derivation_available": true,
+  "derivation_final": 10
+ },
+ {
+  "case_id": "D07",
+  "category": "D",
+  "operation": "solve_system",
+  "display_input": "2*x + 3*y = 7; x - y = 1",
+  "status": "valid",
+  "status_detail": "",
+  "strict_correct": true,
+  "covered": true,
+  "value_correct": true,
+  "actual": "[{\"x\": \"2\", \"y\": \"1\"}]",
+  "restrictions_reported": [],
+  "adapter_overrides": false,
+  "adapter_input": [
+   "solve([2*x + 3*y = 7, x - y = 1], [x, y])"
+  ],
+  "warm_median_ms": null,
+  "derivation_available": true,
+  "derivation_final": 9
+ },
+ {
+  "case_id": "D08",
+  "category": "D",
+  "operation": "solve_system",
+  "display_input": "x + 2*y = 4; 2*x + 4*y = 10",
+  "status": "valid",
+  "status_detail": "",
+  "strict_correct": true,
+  "covered": true,
+  "value_correct": true,
+  "actual": "no solution",
+  "restrictions_reported": [],
+  "adapter_overrides": false,
+  "adapter_input": [
+   "solve([x + 2*y = 4, 2*x + 4*y = 10], [x, y])"
+  ],
+  "warm_median_ms": null,
+  "derivation_available": true,
+  "derivation_final": 9
+ },
+ {
+  "case_id": "D09",
+  "category": "D",
+  "operation": "solve_inequality",
+  "display_input": "Solve x^2 - 5*x + 6 > 0",
+  "status": "valid",
+  "status_detail": "",
+  "strict_correct": true,
+  "covered": true,
+  "value_correct": true,
+  "actual": "(3 < x) | (x < 2)",
+  "restrictions_reported": [],
+  "adapter_overrides": false,
+  "adapter_input": [
+   "solve_inequality(x^2 - 5*x + 6 > 0, x)"
+  ],
+  "warm_median_ms": null,
+  "derivation_available": true,
+  "derivation_final": 9
+ },
+ {
+  "case_id": "D10",
+  "category": "D",
+  "operation": "solve_inequality",
+  "display_input": "Solve -(x - 2)*(x + 1) < 0",
+  "status": "valid",
+  "status_detail": "",
+  "strict_correct": true,
+  "covered": true,
+  "value_correct": true,
+  "actual": "(2 < x) | (x < -1)",
+  "restrictions_reported": [],
+  "adapter_overrides": false,
+  "adapter_input": [
+   "solve_inequality(-(x - 2)*(x + 1) < 0, x)"
+  ],
+  "warm_median_ms": null,
+  "derivation_available": true,
+  "derivation_final": 9
+ },
+ {
+  "case_id": "D11",
+  "category": "D",
+  "operation": "solve_inequality",
+  "display_input": "Solve x^2 - 4 <= 0",
+  "status": "valid",
+  "status_detail": "",
+  "strict_correct": true,
+  "covered": true,
+  "value_correct": true,
+  "actual": "(-2 <= x) & (x <= 2)",
+  "restrictions_reported": [],
+  "adapter_overrides": false,
+  "adapter_input": [
+   "solve_inequality(x^2 - 4 <= 0, x)"
+  ],
+  "warm_median_ms": null,
+  "derivation_available": true,
+  "derivation_final": 10
+ },
+ {
+  "case_id": "E09",
+  "category": "E",
+  "operation": "simplify",
+  "display_input": "ln(exp(2*x))",
+  "status": "valid",
+  "status_detail": "",
+  "strict_correct": true,
+  "covered": true,
+  "value_correct": true,
+  "actual": "2 * x",
+  "restrictions_reported": [],
+  "adapter_overrides": false,
+  "adapter_input": [
+   "simplify(ln(exp(2*x)))"
+  ],
+  "warm_median_ms": null,
+  "derivation_available": true,
+  "derivation_final": 6
+ },
+ {
+  "case_id": "E10",
+  "category": "E",
+  "operation": "simplify",
+  "display_input": "sqrt((x - 1)^2)",
+  "status": "valid",
+  "status_detail": "",
+  "strict_correct": true,
+  "covered": true,
+  "value_correct": true,
+  "actual": "abs(x - 1)",
+  "restrictions_reported": [],
+  "adapter_overrides": false,
+  "adapter_input": [
+   "simplify(sqrt((x - 1)^2))"
+  ],
+  "warm_median_ms": null,
+  "derivation_available": true,
+  "derivation_final": 9
+ },
+ {
+  "case_id": "E11",
+  "category": "E",
+  "operation": "simplify",
+  "display_input": "sin(2*x)^2 + cos(2*x)^2",
+  "status": "valid",
+  "status_detail": "",
+  "strict_correct": true,
+  "covered": true,
+  "value_correct": true,
+  "actual": "1",
+  "restrictions_reported": [],
+  "adapter_overrides": false,
+  "adapter_input": [
+   "simplify(sin(2*x)^2 + cos(2*x)^2)"
+  ],
+  "warm_median_ms": null,
+  "derivation_available": true,
+  "derivation_final": 6
+ },
+ {
+  "case_id": "E12",
+  "category": "E",
+  "operation": "evaluate",
+  "display_input": "log(8, 2) + sqrt(81)",
+  "status": "valid",
+  "status_detail": "",
+  "strict_correct": true,
+  "covered": true,
+  "value_correct": true,
+  "actual": "12",
+  "restrictions_reported": [],
+  "adapter_overrides": false,
+  "adapter_input": [
+   "simplify(log(8, 2) + sqrt(81))"
+  ],
+  "warm_median_ms": null,
+  "derivation_available": true,
+  "derivation_final": 8
+ },
+ {
+  "case_id": "E13",
+  "category": "E",
+  "operation": "evaluate",
+  "display_input": "tan(pi/3)",
+  "status": "valid",
+  "status_detail": "",
+  "strict_correct": true,
+  "covered": true,
+  "value_correct": true,
+  "actual": "sqrt(3)",
+  "restrictions_reported": [],
+  "adapter_overrides": false,
+  "adapter_input": [
+   "simplify(tan(pi/3))"
+  ],
+  "warm_median_ms": null,
+  "derivation_available": true,
+  "derivation_final": 7
+ },
+ {
+  "case_id": "F07",
+  "category": "F",
+  "operation": "diff",
+  "display_input": "Differentiate exp(x)*sin(x)",
+  "status": "valid",
+  "status_detail": "",
+  "strict_correct": true,
+  "covered": true,
+  "value_correct": true,
+  "actual": "exp(x) * sin(x) + exp(x) * cos(x)",
+  "restrictions_reported": [],
+  "adapter_overrides": false,
+  "adapter_input": [
+   "diff(exp(x)*sin(x), x)"
+  ],
+  "warm_median_ms": null,
+  "derivation_available": true,
+  "derivation_final": 9
+ },
+ {
+  "case_id": "F08",
+  "category": "F",
+  "operation": "diff",
+  "display_input": "Differentiate ln(x^2 + 1)",
+  "status": "valid",
+  "status_detail": "",
+  "strict_correct": true,
+  "covered": true,
+  "value_correct": true,
+  "actual": "2 * x / (x ^ 2 + 1)",
+  "restrictions_reported": [
+   "The real logarithm requires a positive argument. | x ^ 2 + 1 > 0"
+  ],
+  "adapter_overrides": false,
+  "adapter_input": [
+   "diff(ln(x^2 + 1), x)"
+  ],
+  "warm_median_ms": null,
+  "derivation_available": true,
+  "derivation_final": 9
+ },
+ {
+  "case_id": "F09",
+  "category": "F",
+  "operation": "diff",
+  "display_input": "Differentiate sqrt(x)/(x + 1)",
+  "status": "valid",
+  "status_detail": "",
+  "strict_correct": true,
+  "covered": true,
+  "value_correct": true,
+  "actual": "-sqrt(x) / (x + 1) ^ 2 + 1 / (2 * sqrt(x) * (x + 1))",
+  "restrictions_reported": [],
+  "adapter_overrides": false,
+  "adapter_input": [
+   "diff(sqrt(x)/(x + 1), x)"
+  ],
+  "warm_median_ms": null,
+  "derivation_available": true,
+  "derivation_final": 10
+ },
+ {
+  "case_id": "F10",
+  "category": "F",
+  "operation": "diff",
+  "display_input": "Differentiate sin(x^2 + 3*x)",
+  "status": "valid",
+  "status_detail": "",
+  "strict_correct": true,
+  "covered": true,
+  "value_correct": true,
+  "actual": "(2 * x + 3) * cos(x ^ 2 + 3 * x)",
+  "restrictions_reported": [],
+  "adapter_overrides": false,
+  "adapter_input": [
+   "diff(sin(x^2 + 3*x), x)"
+  ],
+  "warm_median_ms": null,
+  "derivation_available": true,
+  "derivation_final": 9
+ },
+ {
+  "case_id": "F11",
+  "category": "F",
+  "operation": "partial_derivative",
+  "display_input": "Differentiate x^2*y^3 + exp(x*y) with respect to y",
+  "status": "valid",
+  "status_detail": "",
+  "strict_correct": true,
+  "covered": true,
+  "value_correct": true,
+  "actual": "3 * x ^ 2 * y ^ 2 + x * exp(x * y)",
+  "restrictions_reported": [],
+  "adapter_overrides": false,
+  "adapter_input": [
+   "diff(x^2*y^3 + exp(x*y), y)"
+  ],
+  "warm_median_ms": null,
+  "derivation_available": true,
+  "derivation_final": 9
+ },
+ {
+  "case_id": "F12",
+  "category": "F",
+  "operation": "gradient",
+  "display_input": "Gradient of f(x,y) = x^2*y + y^3",
+  "status": "valid",
+  "status_detail": "",
+  "strict_correct": true,
+  "covered": true,
+  "value_correct": true,
+  "actual": "(2 * x * y, x ^ 2 + 3 * y ^ 2)",
+  "restrictions_reported": [],
+  "adapter_overrides": false,
+  "adapter_input": [
+   "diff(x^2*y + y^3, x)",
+   "diff(x^2*y + y^3, y)"
+  ],
+  "warm_median_ms": null,
+  "derivation_available": true,
+  "derivation_final": 9
+ },
+ {
+  "case_id": "G07",
+  "category": "G",
+  "operation": "integrate",
+  "display_input": "Integrate 4*x^3 - 3*x^2 + 2*x - 7",
+  "status": "valid",
+  "status_detail": "",
+  "strict_correct": true,
+  "covered": true,
+  "value_correct": true,
+  "actual": "x ^ 4 - x ^ 3 + x ^ 2 - 7 * x + C",
+  "restrictions_reported": [],
+  "adapter_overrides": false,
+  "adapter_input": [
+   "integrate(4*x^3 - 3*x^2 + 2*x - 7, x)"
+  ],
+  "warm_median_ms": null,
+  "derivation_available": true,
+  "derivation_final": 10
+ },
+ {
+  "case_id": "G08",
+  "category": "G",
+  "operation": "integrate",
+  "display_input": "Integrate 2/(2*x + 1)",
+  "status": "valid",
+  "status_detail": "",
+  "strict_correct": true,
+  "covered": true,
+  "value_correct": true,
+  "actual": "log(abs(2 * x + 1)) + C",
+  "restrictions_reported": [
+   "The denominator cannot equal zero. | 2 * x + 1 != 0",
+   "This value is outside the domain of the integrand. | x != -1/2"
+  ],
+  "adapter_overrides": false,
+  "adapter_input": [
+   "integrate(2/(2*x + 1), x)"
+  ],
+  "warm_median_ms": null,
+  "derivation_available": true,
+  "derivation_final": 10
+ },
+ {
+  "case_id": "G09",
+  "category": "G",
+  "operation": "integrate",
+  "display_input": "Integrate sin(3*x)",
+  "status": "valid",
+  "status_detail": "",
+  "strict_correct": true,
+  "covered": true,
+  "value_correct": true,
+  "actual": "-cos(3 * x) / 3 + C",
+  "restrictions_reported": [],
+  "adapter_overrides": false,
+  "adapter_input": [
+   "integrate(sin(3*x), x)"
+  ],
+  "warm_median_ms": null,
+  "derivation_available": true,
+  "derivation_final": 9
+ },
+ {
+  "case_id": "G10",
+  "category": "G",
+  "operation": "integrate",
+  "display_input": "Integrate exp(2*x)",
+  "status": "valid",
+  "status_detail": "",
+  "strict_correct": true,
+  "covered": true,
+  "value_correct": true,
+  "actual": "exp(2 * x) / 2 + C",
+  "restrictions_reported": [],
+  "adapter_overrides": false,
+  "adapter_input": [
+   "integrate(exp(2*x), x)"
+  ],
+  "warm_median_ms": null,
+  "derivation_available": true,
+  "derivation_final": 9
+ },
+ {
+  "case_id": "G11",
+  "category": "G",
+  "operation": "integrate",
+  "display_input": "Integrate x*cos(x^2)",
+  "status": "valid",
+  "status_detail": "",
+  "strict_correct": true,
+  "covered": true,
+  "value_correct": true,
+  "actual": "sin(x ^ 2) / 2 + C",
+  "restrictions_reported": [],
+  "adapter_overrides": false,
+  "adapter_input": [
+   "integrate(x*cos(x^2), x)"
+  ],
+  "warm_median_ms": null,
+  "derivation_available": true,
+  "derivation_final": 10
+ },
+ {
+  "case_id": "G12",
+  "category": "G",
+  "operation": "integrate",
+  "display_input": "Integrate 2*x + 1 from 0 to 4",
+  "status": "valid",
+  "status_detail": "",
+  "strict_correct": true,
+  "covered": true,
+  "value_correct": true,
+  "actual": "20",
+  "restrictions_reported": [],
+  "adapter_overrides": false,
+  "adapter_input": [
+   "integrate(2*x + 1, x, 0, 4)"
+  ],
+  "warm_median_ms": null,
+  "derivation_available": true,
+  "derivation_final": 10
+ },
+ {
+  "case_id": "G13",
+  "category": "G",
+  "operation": "integrate",
+  "display_input": "Integrate 1/(x^2 + 1)",
+  "status": "valid",
+  "status_detail": "",
+  "strict_correct": true,
+  "covered": true,
+  "value_correct": true,
+  "actual": "atan(x) + C",
+  "restrictions_reported": [],
+  "adapter_overrides": false,
+  "adapter_input": [
+   "integrate(1/(x^2 + 1), x)"
+  ],
+  "warm_median_ms": null,
+  "derivation_available": true,
+  "derivation_final": 9
+ },
+ {
+  "case_id": "H05",
+  "category": "H",
+  "operation": "limit",
+  "display_input": "Limit as x approaches 1 of (x^2 - 1)/(x - 1)",
+  "status": "valid",
+  "status_detail": "",
+  "strict_correct": true,
+  "covered": true,
+  "value_correct": true,
+  "actual": "2",
+  "restrictions_reported": [],
+  "adapter_overrides": false,
+  "adapter_input": [
+   "limit((x^2 - 1)/(x - 1), x, 1)"
+  ],
+  "warm_median_ms": null,
+  "derivation_available": true,
+  "derivation_final": 10
+ },
+ {
+  "case_id": "H06",
+  "category": "H",
+  "operation": "limit",
+  "display_input": "Limit as x approaches 0 of (exp(x) - 1)/x",
+  "status": "valid",
+  "status_detail": "",
+  "strict_correct": true,
+  "covered": true,
+  "value_correct": true,
+  "actual": "1",
+  "restrictions_reported": [],
+  "adapter_overrides": false,
+  "adapter_input": [
+   "limit((exp(x) - 1)/x, x, 0)"
+  ],
+  "warm_median_ms": null,
+  "derivation_available": true,
+  "derivation_final": 10
+ },
+ {
+  "case_id": "H07",
+  "category": "H",
+  "operation": "limit",
+  "display_input": "Limit as x approaches 0 of sin(5x)/x",
+  "status": "valid",
+  "status_detail": "",
+  "strict_correct": true,
+  "covered": true,
+  "value_correct": true,
+  "actual": "5",
+  "restrictions_reported": [],
+  "adapter_overrides": false,
+  "adapter_input": [
+   "limit(sin(5*x)/x, x, 0)"
+  ],
+  "warm_median_ms": null,
+  "derivation_available": true,
+  "derivation_final": 10
+ },
+ {
+  "case_id": "H08",
+  "category": "H",
+  "operation": "limit",
+  "display_input": "Limit as x approaches 0 of (sqrt(x + 4) - 2)/x",
+  "status": "valid",
+  "status_detail": "",
+  "strict_correct": true,
+  "covered": true,
+  "value_correct": true,
+  "actual": "1/4",
+  "restrictions_reported": [],
+  "adapter_overrides": false,
+  "adapter_input": [
+   "limit((sqrt(x + 4) - 2)/x, x, 0)"
+  ],
+  "warm_median_ms": null,
+  "derivation_available": true,
+  "derivation_final": 10
+ },
+ {
+  "case_id": "H09",
+  "category": "H",
+  "operation": "limit",
+  "display_input": "Limit as x approaches 0 of x*sin(1/x)",
+  "status": "valid",
+  "status_detail": "",
+  "strict_correct": true,
+  "covered": true,
+  "value_correct": true,
+  "actual": "0",
+  "restrictions_reported": [
+   "The oscillating factor requires a nonzero argument. | x != 0"
+  ],
+  "adapter_overrides": false,
+  "adapter_input": [
+   "limit(x*sin(1/x), x, 0)"
+  ],
+  "warm_median_ms": null,
+  "derivation_available": true,
+  "derivation_final": 10
+ },
+ {
+  "case_id": "I05",
+  "category": "I",
+  "operation": "det",
+  "display_input": "Determinant of [[1,2,3],[0,1,4],[5,6,0]]",
+  "status": "valid",
+  "status_detail": "",
+  "strict_correct": true,
+  "covered": true,
+  "value_correct": true,
+  "actual": "1",
+  "restrictions_reported": [],
+  "adapter_overrides": false,
+  "adapter_input": [
+   "det(matrix([[1, 2, 3], [0, 1, 4], [5, 6, 0]]))"
+  ],
+  "warm_median_ms": null,
+  "derivation_available": true,
+  "derivation_final": 10
+ },
+ {
+  "case_id": "I06",
+  "category": "I",
+  "operation": "inverse",
+  "display_input": "Inverse of [[2,1],[5,3]]",
+  "status": "valid",
+  "status_detail": "",
+  "strict_correct": true,
+  "covered": true,
+  "value_correct": true,
+  "actual": "[[3, -1], [-5, 2]]",
+  "restrictions_reported": [],
+  "adapter_overrides": false,
+  "adapter_input": [
+   "inverse(matrix([[2, 1], [5, 3]]))"
+  ],
+  "warm_median_ms": null,
+  "derivation_available": true,
+  "derivation_final": 10
+ },
+ {
+  "case_id": "I07",
+  "category": "I",
+  "operation": "rref",
+  "display_input": "RREF of [[1,2,3,4],[2,4,6,8],[1,1,1,1]]",
+  "status": "valid",
+  "status_detail": "",
+  "strict_correct": true,
+  "covered": true,
+  "value_correct": true,
+  "actual": "[[1, 0, -1, -2], [0, 1, 2, 3], [0, 0, 0, 0]]",
+  "restrictions_reported": [],
+  "adapter_overrides": false,
+  "adapter_input": [
+   "rref(matrix([[1, 2, 3, 4], [2, 4, 6, 8], [1, 1, 1, 1]]))"
+  ],
+  "warm_median_ms": null,
+  "derivation_available": true,
+  "derivation_final": 10
+ },
+ {
+  "case_id": "I08",
+  "category": "I",
+  "operation": "solve_system",
+  "display_input": "x/2 + y/3 = 2; x - y = 1",
+  "status": "valid",
+  "status_detail": "",
+  "strict_correct": true,
+  "covered": true,
+  "value_correct": true,
+  "actual": "[{\"x\": \"14/5\", \"y\": \"9/5\"}]",
+  "restrictions_reported": [],
+  "adapter_overrides": false,
+  "adapter_input": [
+   "solve([x/2 + y/3 = 2, x - y = 1], [x, y])"
+  ],
+  "warm_median_ms": null,
+  "derivation_available": true,
+  "derivation_final": 9
+ },
+ {
+  "case_id": "I09",
+  "category": "I",
+  "operation": "rref",
+  "display_input": "RREF of [[1,2,1],[2,4,2],[1,1,0]]",
+  "status": "valid",
+  "status_detail": "",
+  "strict_correct": true,
+  "covered": true,
+  "value_correct": true,
+  "actual": "[[1, 0, -1], [0, 1, 1], [0, 0, 0]]",
+  "restrictions_reported": [],
+  "adapter_overrides": false,
+  "adapter_input": [
+   "rref(matrix([[1, 2, 1], [2, 4, 2], [1, 1, 0]]))"
+  ],
+  "warm_median_ms": null,
+  "derivation_available": true,
+  "derivation_final": 10
+ },
+ {
+  "case_id": "J05",
+  "category": "J",
+  "operation": "dsolve",
+  "display_input": "Solve y' + 2y = 0",
+  "status": "unsupported",
+  "status_detail": "no_api",
+  "strict_correct": false,
+  "covered": false,
+  "value_correct": null,
+  "actual": "adapter has no mapping for operation 'dsolve'",
+  "restrictions_reported": [],
+  "adapter_overrides": false,
+  "adapter_input": null,
+  "warm_median_ms": null,
+  "derivation_available": false,
+  "derivation_final": null
+ },
+ {
+  "case_id": "J06",
+  "category": "J",
+  "operation": "dsolve",
+  "display_input": "Solve y'' - 3y' + 2y = 0",
+  "status": "unsupported",
+  "status_detail": "no_api",
+  "strict_correct": false,
+  "covered": false,
+  "value_correct": null,
+  "actual": "adapter has no mapping for operation 'dsolve'",
+  "restrictions_reported": [],
+  "adapter_overrides": false,
+  "adapter_input": null,
+  "warm_median_ms": null,
+  "derivation_available": false,
+  "derivation_final": null
+ },
+ {
+  "case_id": "J07",
+  "category": "J",
+  "operation": "partial_derivative",
+  "display_input": "Differentiate sin(x*y) with respect to x",
+  "status": "valid",
+  "status_detail": "",
+  "strict_correct": true,
+  "covered": true,
+  "value_correct": true,
+  "actual": "y * cos(x * y)",
+  "restrictions_reported": [],
+  "adapter_overrides": false,
+  "adapter_input": [
+   "diff(sin(x*y), x)"
+  ],
+  "warm_median_ms": null,
+  "derivation_available": true,
+  "derivation_final": 9
+ },
+ {
+  "case_id": "J08",
+  "category": "J",
+  "operation": "gradient",
+  "display_input": "Gradient of f(x,y) = exp(x*y) + x^2*y",
+  "status": "valid",
+  "status_detail": "",
+  "strict_correct": true,
+  "covered": true,
+  "value_correct": true,
+  "actual": "(2 * x * y + y * exp(x * y), x ^ 2 + x * exp(x * y))",
+  "restrictions_reported": [],
+  "adapter_overrides": false,
+  "adapter_input": [
+   "diff(exp(x*y) + x^2*y, x)",
+   "diff(exp(x*y) + x^2*y, y)"
+  ],
+  "warm_median_ms": null,
+  "derivation_available": true,
+  "derivation_final": 9
+ },
+ {
+  "case_id": "K05",
+  "category": "K",
+  "operation": "solve",
+  "display_input": "Solve x^4 + 4 = 0 over the complex numbers",
+  "status": "valid",
+  "status_detail": "",
+  "strict_correct": true,
+  "covered": true,
+  "value_correct": true,
+  "actual": "{-1 - i, -1 + i, 1 - i, 1 + i}",
+  "restrictions_reported": [],
+  "adapter_overrides": false,
+  "adapter_input": [
+   "solve(x^4 + 4 = 0, x)"
+  ],
+  "warm_median_ms": null,
+  "derivation_available": true,
+  "derivation_final": 9
+ },
+ {
+  "case_id": "K06",
+  "category": "K",
+  "operation": "solve",
+  "display_input": "Solve x^4 - 5*x^2 + 4 = 0 over the reals",
+  "status": "valid",
+  "status_detail": "",
+  "strict_correct": true,
+  "covered": true,
+  "value_correct": true,
+  "actual": "{-2, -1, 1, 2}",
+  "restrictions_reported": [],
+  "adapter_overrides": false,
+  "adapter_input": [
+   "solve(x^4 - 5*x^2 + 4 = 0, x)"
+  ],
+  "warm_median_ms": null,
+  "derivation_available": true,
+  "derivation_final": 9
+ },
+ {
+  "case_id": "K07",
+  "category": "K",
+  "operation": "partial_fractions",
+  "display_input": "Partial fractions of 1/(x^2*(x + 1))",
+  "status": "valid",
+  "status_detail": "",
+  "strict_correct": true,
+  "covered": true,
+  "value_correct": true,
+  "actual": "1 / (x + 1) - 1 / x + x ^ (-2)",
+  "restrictions_reported": [
+   "An original denominator cannot equal zero. | x != 0",
+   "An original denominator cannot equal zero. | x != -1"
+  ],
+  "adapter_overrides": false,
+  "adapter_input": [
+   "apart(1/(x^2*(x + 1)), x)"
+  ],
+  "warm_median_ms": null,
+  "derivation_available": true,
+  "derivation_final": 8
+ },
+ {
+  "case_id": "K08",
+  "category": "K",
+  "operation": "nsolve",
+  "display_input": "Numerically solve x^3 - 2*x - 5 = 0 near 2",
+  "status": "runtime_error",
+  "status_detail": "UnexpectedResultType",
+  "strict_correct": false,
+  "covered": false,
+  "value_correct": null,
+  "actual": "UnexpectedResultType: NumericResult",
+  "restrictions_reported": [],
+  "adapter_overrides": false,
+  "adapter_input": [
+   "nsolve(x^3 - 2*x - 5 = 0, x, 2)"
+  ],
+  "warm_median_ms": null,
+  "derivation_available": true,
+  "derivation_final": null
+ },
+ {
+  "case_id": "K09",
+  "category": "K",
+  "operation": "nsolve",
+  "display_input": "Numerically solve exp(-x) = x near 0.5",
+  "status": "runtime_error",
+  "status_detail": "UnexpectedResultType",
+  "strict_correct": false,
+  "covered": false,
+  "value_correct": null,
+  "actual": "UnexpectedResultType: NumericResult",
+  "restrictions_reported": [],
+  "adapter_overrides": false,
+  "adapter_input": [
+   "nsolve(exp(-x) = x, x, 0.5)"
+  ],
+  "warm_median_ms": null,
+  "derivation_available": true,
+  "derivation_final": null
+ },
+ {
+  "case_id": "K10",
+  "category": "K",
+  "operation": "nsolve",
+  "display_input": "Numerically solve sin(x) = 1/2 near 0.5",
+  "status": "runtime_error",
+  "status_detail": "UnexpectedResultType",
+  "strict_correct": false,
+  "covered": false,
+  "value_correct": null,
+  "actual": "UnexpectedResultType: NumericResult",
+  "restrictions_reported": [],
+  "adapter_overrides": false,
+  "adapter_input": [
+   "nsolve(sin(x) = 1/2, x, 0.5)"
+  ],
+  "warm_median_ms": null,
+  "derivation_available": true,
+  "derivation_final": null
+ },
+ {
+  "case_id": "K11",
+  "category": "K",
+  "operation": "nsolve",
+  "display_input": "Numerically solve ln(x) = 1 near 2.5",
+  "status": "runtime_error",
+  "status_detail": "UnexpectedResultType",
+  "strict_correct": false,
+  "covered": false,
+  "value_correct": null,
+  "actual": "UnexpectedResultType: NumericResult",
+  "restrictions_reported": [],
+  "adapter_overrides": false,
+  "adapter_input": [
+   "nsolve(ln(x) = 1, x, 2.5)"
+  ],
+  "warm_median_ms": null,
+  "derivation_available": true,
+  "derivation_final": null
+ },
+ {
+  "case_id": "K12",
+  "category": "K",
+  "operation": "solve",
+  "display_input": "Solve x^3 + 2*x^2 + 2*x + 1 = 0 over the complex numbers",
+  "status": "valid",
+  "status_detail": "",
+  "strict_correct": true,
+  "covered": true,
+  "value_correct": true,
+  "actual": "{-1, -1 / 2 - sqrt(3) * i / 2, -1 / 2 + sqrt(3) * i / 2}",
+  "restrictions_reported": [],
+  "adapter_overrides": false,
+  "adapter_input": [
+   "solve(x^3 + 2*x^2 + 2*x + 1 = 0, x)"
+  ],
+  "warm_median_ms": null,
+  "derivation_available": true,
+  "derivation_final": 9
+ },
+ {
+  "case_id": "L05",
+  "category": "L",
+  "operation": "simplify",
+  "display_input": "Simplify ((x - 2)*(x + 2))/(x - 2)",
+  "status": "valid",
+  "status_detail": "",
+  "strict_correct": true,
+  "covered": true,
+  "value_correct": true,
+  "actual": "x + 2",
+  "restrictions_reported": [
+   "An original denominator cannot equal zero. | x != 2"
+  ],
+  "adapter_overrides": false,
+  "adapter_input": [
+   "simplify(((x - 2)*(x + 2))/(x - 2))"
+  ],
+  "warm_median_ms": null,
+  "derivation_available": true,
+  "derivation_final": 10
+ },
+ {
+  "case_id": "L06",
+  "category": "L",
+  "operation": "solve",
+  "display_input": "Solve sqrt(x - 3) = x - 3 over the reals",
+  "status": "valid",
+  "status_detail": "",
+  "strict_correct": true,
+  "covered": true,
+  "value_correct": true,
+  "actual": "{3, 4}",
+  "restrictions_reported": [
+   "The square root requires a nonnegative radicand. | x - 3 >= 0"
+  ],
+  "adapter_overrides": false,
+  "adapter_input": [
+   "solve(sqrt(x - 3) = x - 3, x)"
+  ],
+  "warm_median_ms": null,
+  "derivation_available": true,
+  "derivation_final": 10
+ },
+ {
+  "case_id": "L07",
+  "category": "L",
+  "operation": "solve",
+  "display_input": "Solve (x^2 - 1)/(x - 1) = 2 with the original domain",
+  "status": "valid",
+  "status_detail": "",
+  "strict_correct": true,
+  "covered": true,
+  "value_correct": true,
+  "actual": "no solution (empty set)",
+  "restrictions_reported": [
+   "An original denominator cannot equal zero. | x - 1 != 0",
+   "This value is outside the domain of the original equation. | x != 1"
+  ],
+  "adapter_overrides": false,
+  "adapter_input": [
+   "solve((x^2 - 1)/(x - 1) = 2, x)"
+  ],
+  "warm_median_ms": null,
+  "derivation_available": true,
+  "derivation_final": 10
+ },
+ {
+  "case_id": "L08",
+  "category": "L",
+  "operation": "solve",
+  "display_input": "Solve 1/(x - 1) = 1/(x - 1)",
+  "status": "invalid_answer",
+  "status_detail": "unexpected answer form 'unknown'",
+  "strict_correct": false,
+  "covered": false,
+  "value_correct": null,
+  "actual": "{\"kind\": \"unknown\", \"text\": \"UniversalSolutionValue(domain=<SolutionDomain.REAL: 'real'>, exclusions=(Number(value=Fraction(1, 1)),))\"}",
+  "restrictions_reported": [
+   "An original denominator cannot equal zero. | x - 1 != 0",
+   "This value is outside the domain of the original equation. | x != 1"
+  ],
+  "adapter_overrides": false,
+  "adapter_input": [
+   "solve(1/(x - 1) = 1/(x - 1), x)"
+  ],
+  "warm_median_ms": null,
+  "derivation_available": true,
+  "derivation_final": 5
+ },
+ {
+  "case_id": "L09",
+  "category": "L",
+  "operation": "solve",
+  "display_input": "Solve 1/(x^2 - 4) = 0",
+  "status": "valid",
+  "status_detail": "",
+  "strict_correct": true,
+  "covered": true,
+  "value_correct": true,
+  "actual": "no solution (empty set)",
+  "restrictions_reported": [
+   "An original denominator cannot equal zero. | (x - 2) * (x + 2) != 0",
+   "This value is outside the domain of the original equation. | x != -2",
+   "This value is outside the domain of the original equation. | x != 2"
+  ],
+  "adapter_overrides": false,
+  "adapter_input": [
+   "solve(1/(x^2 - 4) = 0, x)"
+  ],
+  "warm_median_ms": null,
+  "derivation_available": true,
+  "derivation_final": 10
+ },
+ {
+  "case_id": "L10",
+  "category": "L",
+  "operation": "solve",
+  "display_input": "Solve 1/(x - x) = x",
+  "status": "valid",
+  "status_detail": "explicit_undefined_result",
+  "strict_correct": true,
+  "covered": true,
+  "value_correct": true,
+  "actual": "undefined: This expression is undefined because a denominator is zero.",
+  "restrictions_reported": [
+   "undefined: This expression is undefined because a denominator is zero."
+  ],
+  "adapter_overrides": false,
+  "adapter_input": [
+   "solve(1/(x - x) = x, x)"
+  ],
+  "warm_median_ms": null,
+  "derivation_available": true,
+  "derivation_final": 10
+ },
+ {
+  "case_id": "L11",
+  "category": "L",
+  "operation": "simplify",
+  "display_input": "Simplify x^3/x^2",
+  "status": "valid",
+  "status_detail": "",
+  "strict_correct": true,
+  "covered": true,
+  "value_correct": true,
+  "actual": "x",
+  "restrictions_reported": [
+   "An original denominator cannot equal zero. | x != 0"
+  ],
+  "adapter_overrides": false,
+  "adapter_input": [
+   "simplify(x^3/x^2)"
+  ],
+  "warm_median_ms": null,
+  "derivation_available": true,
+  "derivation_final": 10
+ },
+ {
+  "case_id": "L12",
+  "category": "L",
+  "operation": "solve",
+  "display_input": "Solve sqrt(x + 2) = x over the reals",
+  "status": "valid",
+  "status_detail": "",
+  "strict_correct": true,
+  "covered": true,
+  "value_correct": true,
+  "actual": "{2}",
+  "restrictions_reported": [
+   "The square root requires a nonnegative radicand. | x + 2 >= 0"
+  ],
+  "adapter_overrides": false,
+  "adapter_input": [
+   "solve(sqrt(x + 2) = x, x)"
+  ],
+  "warm_median_ms": null,
+  "derivation_available": true,
+  "derivation_final": 10
+ }
+]

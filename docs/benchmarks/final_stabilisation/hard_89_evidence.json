@@ -1,0 +1,31 @@
+{
+ "stepsolver": {
+  "installed": true,
+  "install_error": null,
+  "sympy_pin_fallback": false,
+  "install_seconds": null,
+  "commit": "ef474f6ada961a23733f84535ba7aebcf9ae8fd6",
+  "url": "https://github.com/Jayfraggs/stepsolver.git",
+  "ref": "main",
+  "source": "https://github.com/Jayfraggs/stepsolver.git @ ef474f6ada96",
+  "licence": "MIT",
+  "licence_class": "permissive",
+  "python_requires": ">=3.12,<3.15",
+  "runtime_deps": 7,
+  "history": {
+   "commits": 66,
+   "authors": 3,
+   "tags": 0,
+   "age_days": 81,
+   "days_since_last_commit": 0
+  },
+  "tests": {
+   "static_test_functions": 385,
+   "own_suite": {
+    "run": false
+   }
+  },
+  "source_dir": "C:\\Users\\Olabode Nathaniel\\Code\\Step Solver\\stepsolver\\src",
+  "checkout_dir": "C:\\Users\\Olabode Nathaniel\\Code\\Step Solver\\stepsolver"
+ }
+}

@@ -1,0 +1,18 @@
+{
+ "suite": "Hard & Adversarial",
+ "name": "Hard 89",
+ "cases": 89,
+ "strict_correct": 89,
+ "covered": 89,
+ "invalid": 0,
+ "errors": 0,
+ "unsupported": 0,
+ "derivations_available": 89,
+ "derivation_mean_final": 9.2921,
+ "derivation_mean_automated": 9.2921,
+ "domain_sensitive_cases": 26,
+ "domain_sensitive_strict": 26,
+ "adapter_overrides": 0,
+ "warm_median_ms": 46.147,
+ "case_ids": null
+}

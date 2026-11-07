@@ -1,0 +1,1991 @@
+{
+ "meta": {
+  "stepsolver": {
+   "version": "0.1.0",
+   "commit": "ef474f6ada961a23733f84535ba7aebcf9ae8fd6",
+   "package": "stepsolver",
+   "python": "3.12.13",
+   "sympy_version": "1.14.0",
+   "cold_start": [
+    {
+     "spawn_to_ready_ms": 1856.56999994535,
+     "first_solve_wall_ms": 572.0238999929279,
+     "first_solve_inner_ms": 570.1950000366196,
+     "status": "ok"
+    },
+    {
+     "spawn_to_ready_ms": 1913.7617000378668,
+     "first_solve_wall_ms": 550.9126000106335,
+     "first_solve_inner_ms": 548.7824999727309,
+     "status": "ok"
+    },
+    {
+     "spawn_to_ready_ms": 1873.2941000489518,
+     "first_solve_wall_ms": 579.0101001039147,
+     "first_solve_inner_ms": 576.4654000522569,
+     "status": "ok"
+    },
+    {
+     "spawn_to_ready_ms": 2201.3974000001326,
+     "first_solve_wall_ms": 939.473700011149,
+     "first_solve_inner_ms": 935.9890000196174,
+     "status": "ok"
+    },
+    {
+     "spawn_to_ready_ms": 1665.0143000297248,
+     "first_solve_wall_ms": 545.5212999368086,
+     "first_solve_inner_ms": 543.3813000563532,
+     "status": "ok"
+    }
+   ],
+   "maxrss_kb": 0,
+   "timeouts": 0,
+   "crashes": 0,
+   "protocol": {
+    "repeats": 1,
+    "timeout_s": 30.0,
+    "cases_run": [
+     "R06",
+     "T06",
+     "U01",
+     "U02",
+     "U03",
+     "U04",
+     "U05",
+     "U06",
+     "U07"
+    ],
+    "cpu_count": 8,
+    "started_unix": 1793881806.0536602
+   },
+   "public_methods": null,
+   "operations": [
+    "simplify",
+    "expand",
+    "factor",
+    "cancel",
+    "apart",
+    "solve",
+    "nsolve",
+    "solve_inequality",
+    "diff",
+    "integrate",
+    "contour_integrate",
+    "limit",
+    "series",
+    "sum",
+    "product",
+    "matrix",
+    "det",
+    "inverse",
+    "rank",
+    "rref",
+    "eigenvalues",
+    "dsolve",
+    "rsolve",
+    "laplace",
+    "inverse_laplace",
+    "fourier",
+    "inverse_fourier",
+    "gcd",
+    "lcm",
+    "is_prime",
+    "prime_factors",
+    "binomial",
+    "permutations",
+    "combinations",
+    "numeric"
+   ]
+  }
+ },
+ "rows": [
+  {
+   "solver": "stepsolver",
+   "case_id": "M01",
+   "status": "skipped",
+   "skip_reason": "case not selected in this run"
+  },
+  {
+   "solver": "stepsolver",
+   "case_id": "M02",
+   "status": "skipped",
+   "skip_reason": "case not selected in this run"
+  },
+  {
+   "solver": "stepsolver",
+   "case_id": "M03",
+   "status": "skipped",
+   "skip_reason": "case not selected in this run"
+  },
+  {
+   "solver": "stepsolver",
+   "case_id": "M04",
+   "status": "skipped",
+   "skip_reason": "case not selected in this run"
+  },
+  {
+   "solver": "stepsolver",
+   "case_id": "M05",
+   "status": "skipped",
+   "skip_reason": "case not selected in this run"
+  },
+  {
+   "solver": "stepsolver",
+   "case_id": "M06",
+   "status": "skipped",
+   "skip_reason": "case not selected in this run"
+  },
+  {
+   "solver": "stepsolver",
+   "case_id": "M07",
+   "status": "skipped",
+   "skip_reason": "case not selected in this run"
+  },
+  {
+   "solver": "stepsolver",
+   "case_id": "M08",
+   "status": "skipped",
+   "skip_reason": "case not selected in this run"
+  },
+  {
+   "solver": "stepsolver",
+   "case_id": "N01",
+   "status": "skipped",
+   "skip_reason": "case not selected in this run"
+  },
+  {
+   "solver": "stepsolver",
+   "case_id": "N02",
+   "status": "skipped",
+   "skip_reason": "case not selected in this run"
+  },
+  {
+   "solver": "stepsolver",
+   "case_id": "N03",
+   "status": "skipped",
+   "skip_reason": "case not selected in this run"
+  },
+  {
+   "solver": "stepsolver",
+   "case_id": "N04",
+   "status": "skipped",
+   "skip_reason": "case not selected in this run"
+  },
+  {
+   "solver": "stepsolver",
+   "case_id": "N05",
+   "status": "skipped",
+   "skip_reason": "case not selected in this run"
+  },
+  {
+   "solver": "stepsolver",
+   "case_id": "N06",
+   "status": "skipped",
+   "skip_reason": "case not selected in this run"
+  },
+  {
+   "solver": "stepsolver",
+   "case_id": "N07",
+   "status": "skipped",
+   "skip_reason": "case not selected in this run"
+  },
+  {
+   "solver": "stepsolver",
+   "case_id": "N08",
+   "status": "skipped",
+   "skip_reason": "case not selected in this run"
+  },
+  {
+   "solver": "stepsolver",
+   "case_id": "N09",
+   "status": "skipped",
+   "skip_reason": "case not selected in this run"
+  },
+  {
+   "solver": "stepsolver",
+   "case_id": "N10",
+   "status": "skipped",
+   "skip_reason": "case not selected in this run"
+  },
+  {
+   "solver": "stepsolver",
+   "case_id": "N11",
+   "status": "skipped",
+   "skip_reason": "case not selected in this run"
+  },
+  {
+   "solver": "stepsolver",
+   "case_id": "O01",
+   "status": "skipped",
+   "skip_reason": "case not selected in this run"
+  },
+  {
+   "solver": "stepsolver",
+   "case_id": "O02",
+   "status": "skipped",
+   "skip_reason": "case not selected in this run"
+  },
+  {
+   "solver": "stepsolver",
+   "case_id": "O03",
+   "status": "skipped",
+   "skip_reason": "case not selected in this run"
+  },
+  {
+   "solver": "stepsolver",
+   "case_id": "O04",
+   "status": "skipped",
+   "skip_reason": "case not selected in this run"
+  },
+  {
+   "solver": "stepsolver",
+   "case_id": "O05",
+   "status": "skipped",
+   "skip_reason": "case not selected in this run"
+  },
+  {
+   "solver": "stepsolver",
+   "case_id": "O06",
+   "status": "skipped",
+   "skip_reason": "case not selected in this run"
+  },
+  {
+   "solver": "stepsolver",
+   "case_id": "O07",
+   "status": "skipped",
+   "skip_reason": "case not selected in this run"
+  },
+  {
+   "solver": "stepsolver",
+   "case_id": "O08",
+   "status": "skipped",
+   "skip_reason": "case not selected in this run"
+  },
+  {
+   "solver": "stepsolver",
+   "case_id": "P01",
+   "status": "skipped",
+   "skip_reason": "case not selected in this run"
+  },
+  {
+   "solver": "stepsolver",
+   "case_id": "P02",
+   "status": "skipped",
+   "skip_reason": "case not selected in this run"
+  },
+  {
+   "solver": "stepsolver",
+   "case_id": "P03",
+   "status": "skipped",
+   "skip_reason": "case not selected in this run"
+  },
+  {
+   "solver": "stepsolver",
+   "case_id": "P04",
+   "status": "skipped",
+   "skip_reason": "case not selected in this run"
+  },
+  {
+   "solver": "stepsolver",
+   "case_id": "P05",
+   "status": "skipped",
+   "skip_reason": "case not selected in this run"
+  },
+  {
+   "solver": "stepsolver",
+   "case_id": "Q01",
+   "status": "skipped",
+   "skip_reason": "case not selected in this run"
+  },
+  {
+   "solver": "stepsolver",
+   "case_id": "Q02",
+   "status": "skipped",
+   "skip_reason": "case not selected in this run"
+  },
+  {
+   "solver": "stepsolver",
+   "case_id": "Q03",
+   "status": "skipped",
+   "skip_reason": "case not selected in this run"
+  },
+  {
+   "solver": "stepsolver",
+   "case_id": "Q04",
+   "status": "skipped",
+   "skip_reason": "case not selected in this run"
+  },
+  {
+   "solver": "stepsolver",
+   "case_id": "Q05",
+   "status": "skipped",
+   "skip_reason": "case not selected in this run"
+  },
+  {
+   "solver": "stepsolver",
+   "case_id": "R01",
+   "status": "skipped",
+   "skip_reason": "case not selected in this run"
+  },
+  {
+   "solver": "stepsolver",
+   "case_id": "R02",
+   "status": "skipped",
+   "skip_reason": "case not selected in this run"
+  },
+  {
+   "solver": "stepsolver",
+   "case_id": "R03",
+   "status": "skipped",
+   "skip_reason": "case not selected in this run"
+  },
+  {
+   "solver": "stepsolver",
+   "case_id": "R04",
+   "status": "skipped",
+   "skip_reason": "case not selected in this run"
+  },
+  {
+   "solver": "stepsolver",
+   "case_id": "R05",
+   "status": "skipped",
+   "skip_reason": "case not selected in this run"
+  },
+  {
+   "solver": "stepsolver",
+   "solver_version": "0.1.0",
+   "solver_commit": "ef474f6ada961a23733f84535ba7aebcf9ae8fd6",
+   "case_id": "R06",
+   "category": "R",
+   "tier": 2,
+   "weight": 2,
+   "adversarial": false,
+   "operation": "integrate",
+   "display_input": "Integrate 1/(x^2 - 1)",
+   "normalised_operation": "integrate",
+   "problem": {
+    "expr": "1/(x^2 - 1)",
+    "var": "x"
+   },
+   "domain": "real",
+   "domain_sensitive": true,
+   "adapter_api_call": "Solver().solve('integrate(1/(x^2 - 1), x)')",
+   "adapter_input": [
+    "integrate(1/(x^2 - 1), x)"
+   ],
+   "adapter_overrides": false,
+   "domain_assumption_passed": false,
+   "raw_output": "Input: integrate(1/(x^2 - 1), x)\nStep 1 (Decompose into partial fractions): Rewrite the rational function as a sum of simpler fractions that can be integrated separately.\n  integrate(1 / (x ^ 2 - 1), x)\n  -> integrate(-1 / (2 * (x + 1)) + 1 / (2 * (x - 1)), x)\n  Verified by symbolic equivalence: Combining the partial fractions recovers the original fraction.\n  Partial-fraction identity: 1 / (x ^ 2 - 1) = -1 / (2 * (x + 1)) + 1 / (2 * (x - 1))\nStep 2 (Integrate each partial fraction): Integrate the separated terms. Each linear denominator contributes a logarithm of an absolute value, while the remaining power and quadratic terms use their elementary rules.\n  integrate(-1 / (2 * (x + 1)) + 1 / (2 * (x - 1)), x)\n  -> -log(abs(x + 1)) / 2 + log(abs(x - 1)) / 2 + C\n  Verified by differentiation: Differentiating the final result recovers the rational function on every interval where the original denominator is nonzero.\n  Term 1: integrate(-1 / (2 * (x + 1)), x) = -log(abs(x + 1)) / 2\n  Term 2: integrate(1 / (2 * (x - 1)), x) = log(abs(x - 1)) / 2\n  Domain constraint: x != -1 (The original denominator cannot equal zero.)\n  Domain constraint: x != 1 (The original denominator cannot equal zero.)\nResult: -log(abs(x + 1)) / 2 + log(abs(x - 1)) / 2 + C",
+   "raw_answer_canonical": {
+    "kind": "expr",
+    "text": "-log(abs(x + 1)) / 2 + log(abs(x - 1)) / 2 + C"
+   },
+   "raw_steps": [
+    {
+     "rule": "Decompose into partial fractions",
+     "description": "Rewrite the rational function as a sum of simpler fractions that can be integrated separately.",
+     "before": "integrate(1 / (x ^ 2 - 1), x)",
+     "after": "integrate(-1 / (2 * (x + 1)) + 1 / (2 * (x - 1)), x)",
+     "notes": [
+      [
+       "Partial-fraction identity",
+       "1 / (x ^ 2 - 1) = -1 / (2 * (x + 1)) + 1 / (2 * (x - 1))"
+      ]
+     ],
+     "verification": "symbolic equivalence: Combining the partial fractions recovers the original fraction.",
+     "constraints": []
+    },
+    {
+     "rule": "Integrate each partial fraction",
+     "description": "Integrate the separated terms. Each linear denominator contributes a logarithm of an absolute value, while the remaining power and quadratic terms use their elementary rules.",
+     "before": "integrate(-1 / (2 * (x + 1)) + 1 / (2 * (x - 1)), x)",
+     "after": "-log(abs(x + 1)) / 2 + log(abs(x - 1)) / 2 + C",
+     "notes": [
+      [
+       "Term 1",
+       "integrate(-1 / (2 * (x + 1)), x) = -log(abs(x + 1)) / 2"
+      ],
+      [
+       "Term 2",
+       "integrate(1 / (2 * (x - 1)), x) = log(abs(x - 1)) / 2"
+      ]
+     ],
+     "verification": "differentiation: Differentiating the final result recovers the rational function on every interval where the original denominator is nonzero.",
+     "constraints": [
+      [
+       "The original denominator cannot equal zero.",
+       "x != -1"
+      ],
+      [
+       "The original denominator cannot equal zero.",
+       "x != 1"
+      ]
+     ]
+    }
+   ],
+   "native_status": "ExactResult",
+   "native_flags": {
+    "result_types": [
+     "ExactResult"
+    ],
+    "composed_from": null,
+    "opaque_steps": 0
+   },
+   "restrictions_reported": [
+    "The original denominator cannot equal zero. | x != -1",
+    "The original denominator cannot equal zero. | x != 1"
+   ],
+   "expected_spec": "(1/2) ln|(x-1)/(x+1)| + C on each interval",
+   "expected_reference": {
+    "expr": "log(abs((x - 1)/(x + 1)))/2"
+   },
+   "actual": "-log(abs(x + 1)) / 2 + log(abs(x - 1)) / 2 + C",
+   "status": "invalid_answer",
+   "status_detail": "wrong_value",
+   "value_correct": false,
+   "form_ok": null,
+   "form_note": "",
+   "domain_ok": true,
+   "domain_check": {
+    "required": [],
+    "reported": [
+     "The original denominator cannot equal zero. | x != -1",
+     "The original denominator cannot equal zero. | x != 1"
+    ],
+    "satisfied": null
+   },
+   "answer_produced": true,
+   "covered": true,
+   "strict_correct": false,
+   "value_only_correct": false,
+   "equivalence_proof": "mismatch",
+   "judge_detail": "F'==f: False ; real-valued at x<0 and x>0: True",
+   "constant_shown": true,
+   "derivation": {
+    "available": true,
+    "n_steps": 2,
+    "scored": true,
+    "automated": {
+     "correctness": 0,
+     "completeness": 2,
+     "explanation": 2,
+     "consistency": 0,
+     "domain": 0,
+     "presentation": 1
+    },
+    "automated_total": 5,
+    "evidence": {
+     "correctness": "final answer not correct",
+     "milestones_hit": "2/2",
+     "mean_explanation_per_step": 2.0,
+     "substantive_steps": 2,
+     "steps_auto_checked": 0,
+     "invalid_steps": 0,
+     "opaque_steps": 0,
+     "native_flags": {
+      "steps_mode": null,
+      "steps_verified": null,
+      "workings_tied_to_answer": null
+     }
+    },
+    "final": {
+     "correctness": 0,
+     "completeness": 2,
+     "explanation": 2,
+     "consistency": 0,
+     "domain": 0,
+     "presentation": 1
+    },
+    "final_total": 5
+   },
+   "unsupported_reason": null,
+   "error": null,
+   "time_first_call_ms": 3295.477500068955,
+   "wall_ms": 3297.656700015068,
+   "warm_times_ms": [
+    2142.2528999391943
+   ],
+   "warm_median_ms": 2142.2528999391943,
+   "repeatable": true,
+   "timeout": false,
+   "manual_review_flag": false,
+   "manual_review_reasons": []
+  },
+  {
+   "solver": "stepsolver",
+   "case_id": "R07",
+   "status": "skipped",
+   "skip_reason": "case not selected in this run"
+  },
+  {
+   "solver": "stepsolver",
+   "case_id": "R08",
+   "status": "skipped",
+   "skip_reason": "case not selected in this run"
+  },
+  {
+   "solver": "stepsolver",
+   "case_id": "R09",
+   "status": "skipped",
+   "skip_reason": "case not selected in this run"
+  },
+  {
+   "solver": "stepsolver",
+   "case_id": "R10",
+   "status": "skipped",
+   "skip_reason": "case not selected in this run"
+  },
+  {
+   "solver": "stepsolver",
+   "case_id": "R11",
+   "status": "skipped",
+   "skip_reason": "case not selected in this run"
+  },
+  {
+   "solver": "stepsolver",
+   "case_id": "S01",
+   "status": "skipped",
+   "skip_reason": "case not selected in this run"
+  },
+  {
+   "solver": "stepsolver",
+   "case_id": "S02",
+   "status": "skipped",
+   "skip_reason": "case not selected in this run"
+  },
+  {
+   "solver": "stepsolver",
+   "case_id": "S03",
+   "status": "skipped",
+   "skip_reason": "case not selected in this run"
+  },
+  {
+   "solver": "stepsolver",
+   "case_id": "S04",
+   "status": "skipped",
+   "skip_reason": "case not selected in this run"
+  },
+  {
+   "solver": "stepsolver",
+   "case_id": "S05",
+   "status": "skipped",
+   "skip_reason": "case not selected in this run"
+  },
+  {
+   "solver": "stepsolver",
+   "case_id": "S06",
+   "status": "skipped",
+   "skip_reason": "case not selected in this run"
+  },
+  {
+   "solver": "stepsolver",
+   "case_id": "S07",
+   "status": "skipped",
+   "skip_reason": "case not selected in this run"
+  },
+  {
+   "solver": "stepsolver",
+   "case_id": "S08",
+   "status": "skipped",
+   "skip_reason": "case not selected in this run"
+  },
+  {
+   "solver": "stepsolver",
+   "case_id": "S09",
+   "status": "skipped",
+   "skip_reason": "case not selected in this run"
+  },
+  {
+   "solver": "stepsolver",
+   "case_id": "S10",
+   "status": "skipped",
+   "skip_reason": "case not selected in this run"
+  },
+  {
+   "solver": "stepsolver",
+   "case_id": "S11",
+   "status": "skipped",
+   "skip_reason": "case not selected in this run"
+  },
+  {
+   "solver": "stepsolver",
+   "case_id": "S12",
+   "status": "skipped",
+   "skip_reason": "case not selected in this run"
+  },
+  {
+   "solver": "stepsolver",
+   "case_id": "T01",
+   "status": "skipped",
+   "skip_reason": "case not selected in this run"
+  },
+  {
+   "solver": "stepsolver",
+   "case_id": "T02",
+   "status": "skipped",
+   "skip_reason": "case not selected in this run"
+  },
+  {
+   "solver": "stepsolver",
+   "case_id": "T03",
+   "status": "skipped",
+   "skip_reason": "case not selected in this run"
+  },
+  {
+   "solver": "stepsolver",
+   "case_id": "T04",
+   "status": "skipped",
+   "skip_reason": "case not selected in this run"
+  },
+  {
+   "solver": "stepsolver",
+   "case_id": "T05",
+   "status": "skipped",
+   "skip_reason": "case not selected in this run"
+  },
+  {
+   "solver": "stepsolver",
+   "solver_version": "0.1.0",
+   "solver_commit": "ef474f6ada961a23733f84535ba7aebcf9ae8fd6",
+   "case_id": "T06",
+   "category": "T",
+   "tier": 3,
+   "weight": 3,
+   "adversarial": true,
+   "operation": "inverse",
+   "display_input": "Inverse of the singular matrix [[1,2],[2,4]]",
+   "normalised_operation": "inverse",
+   "problem": {
+    "matrix": [
+     [
+      1,
+      2
+     ],
+     [
+      2,
+      4
+     ]
+    ]
+   },
+   "domain": "real",
+   "domain_sensitive": true,
+   "adapter_api_call": "Solver().solve('inverse(matrix([[1, 2], [2, 4]]))')",
+   "adapter_input": [
+    "inverse(matrix([[1, 2], [2, 4]]))"
+   ],
+   "adapter_overrides": false,
+   "domain_assumption_passed": false,
+   "raw_output": "Input: inverse(matrix([[1, 2], [2, 4]]))\nStep 1 (Compute the determinant): A square matrix has an inverse exactly when its determinant is nonzero, so evaluate the determinant first.\n  matrix([[1, 2], [2, 4]])\n  -> 0\n  Verified by exact arithmetic: The determinant was evaluated exactly from the matrix entries.\nStep 2 (Conclude the matrix is singular): The determinant is zero, so the matrix is singular and no inverse matrix exists. This is a property of the matrix itself, not an empty solution set.\n  det(matrix([[1, 2], [2, 4]])) = 0\n  -> inverse does not exist\n  Verified by exact arithmetic: A square matrix is invertible exactly when its determinant is nonzero; the computed determinant is zero.\n  Rank: 1 < 2\nSingular matrix: The matrix is singular because its determinant is zero, so its inverse does not exist.",
+   "raw_answer_canonical": null,
+   "raw_steps": [
+    {
+     "rule": "Compute the determinant",
+     "description": "A square matrix has an inverse exactly when its determinant is nonzero, so evaluate the determinant first.",
+     "before": "matrix([[1, 2], [2, 4]])",
+     "after": "0",
+     "notes": [],
+     "verification": "exact arithmetic: The determinant was evaluated exactly from the matrix entries.",
+     "constraints": []
+    },
+    {
+     "rule": "Conclude the matrix is singular",
+     "description": "The determinant is zero, so the matrix is singular and no inverse matrix exists. This is a property of the matrix itself, not an empty solution set.",
+     "before": "det(matrix([[1, 2], [2, 4]])) = 0",
+     "after": "inverse does not exist",
+     "notes": [
+      [
+       "Rank",
+       "1 < 2"
+      ]
+     ],
+     "verification": "exact arithmetic: A square matrix is invertible exactly when its determinant is nonzero; the computed determinant is zero.",
+     "constraints": []
+    }
+   ],
+   "native_status": null,
+   "native_flags": {
+    "result_types": [
+     "SingularMatrixResult"
+    ],
+    "composed_from": null,
+    "opaque_steps": 0
+   },
+   "restrictions_reported": [],
+   "expected_spec": "Does not exist (det = 0)",
+   "expected_reference": {
+    "special": "error"
+   },
+   "actual": "UnexpectedResultType: SingularMatrixResult",
+   "status": "valid",
+   "status_detail": "error_signalled_negative_result",
+   "value_correct": true,
+   "form_ok": true,
+   "form_note": "",
+   "domain_ok": null,
+   "domain_check": {
+    "required": [],
+    "reported": [],
+    "satisfied": null
+   },
+   "answer_produced": true,
+   "covered": true,
+   "strict_correct": true,
+   "value_only_correct": true,
+   "equivalence_proof": null,
+   "judge_detail": "",
+   "constant_shown": null,
+   "derivation": {
+    "available": true,
+    "n_steps": 2,
+    "scored": false
+   },
+   "unsupported_reason": null,
+   "error": {
+    "type": "UnexpectedResultType",
+    "message": "SingularMatrixResult"
+   },
+   "time_first_call_ms": 1.1736999731510878,
+   "wall_ms": 2.1786000579595566,
+   "warm_times_ms": [],
+   "warm_median_ms": null,
+   "repeatable": null,
+   "timeout": false,
+   "manual_review_flag": true,
+   "manual_review_reasons": [
+    "correct negative result signalled by an error: UnexpectedResultType: SingularMatrixResult"
+   ]
+  },
+  {
+   "solver": "stepsolver",
+   "case_id": "T07",
+   "status": "skipped",
+   "skip_reason": "case not selected in this run"
+  },
+  {
+   "solver": "stepsolver",
+   "solver_version": "0.1.0",
+   "solver_commit": "ef474f6ada961a23733f84535ba7aebcf9ae8fd6",
+   "case_id": "U01",
+   "category": "U",
+   "tier": 1,
+   "weight": 1,
+   "adversarial": false,
+   "operation": "dsolve",
+   "display_input": "Solve y' + y = x",
+   "normalised_operation": "dsolve",
+   "problem": {
+    "ode": "Derivative(y(x), x) + y(x) - x",
+    "func": "y",
+    "var": "x",
+    "order": 1
+   },
+   "domain": "real",
+   "domain_sensitive": false,
+   "adapter_api_call": "Solver().solve('dsolve(diff(y(x), x) + y(x) = x, y(x))')",
+   "adapter_input": [
+    "dsolve(diff(y(x), x) + y(x) = x, y(x))"
+   ],
+   "adapter_overrides": true,
+   "domain_assumption_passed": false,
+   "raw_output": "Input: dsolve(diff(y(x), x) + y(x) = x, y(x))\nStep 1 (Identify the differential equation): The equation is an ordinary differential equation of order 1 for the unknown function.\n  dsolve(diff(y(x), x) + y(x) = x, y(x))\n  -> diff(y(x), x) + y(x) = x\n  Verified by exact arithmetic: The highest derivative order was read from the equation.\n  Order: 1\n  Unknown function: y(x)\nStep 2 (Apply the classified solution method): The equation is classified as '1st_exact', and that method gives a solution family with 1 arbitrary constant(s). The individual integration steps of that method are not expanded here; the next step checks the family independently.\n  diff(y(x), x) + y(x) = x\n  -> Eq(y(x), C1 * exp(-x) + x - 1)\n  Verified by backend identity: The symbolic ODE solver returned this family for the classified method.\n  Arbitrary constants: [C1]\nStep 3 (Check the solution by substitution): Substitute the solution into the differential equation; the difference between both sides must simplify to zero for every constant.\n  Eq(y(x), C1 * exp(-x) + x - 1)\n  -> 0 = 0\n  Verified by substitution: Substituting the solution leaves a residual of exactly zero.\n  Arbitrary constants: [C1]\nResult: Eq(y(x), C1 * exp(-x) + x - 1)",
+   "raw_answer_canonical": {
+    "kind": "equation",
+    "text": "Eq(y(x), C1 * exp(-x) + x - 1)"
+   },
+   "raw_steps": [
+    {
+     "rule": "Identify the differential equation",
+     "description": "The equation is an ordinary differential equation of order 1 for the unknown function.",
+     "before": "dsolve(diff(y(x), x) + y(x) = x, y(x))",
+     "after": "diff(y(x), x) + y(x) = x",
+     "notes": [
+      [
+       "Order",
+       "1"
+      ],
+      [
+       "Unknown function",
+       "y(x)"
+      ]
+     ],
+     "verification": "exact arithmetic: The highest derivative order was read from the equation.",
+     "constraints": []
+    },
+    {
+     "rule": "Apply the classified solution method",
+     "description": "The equation is classified as '1st_exact', and that method gives a solution family with 1 arbitrary constant(s). The individual integration steps of that method are not expanded here; the next step checks the family independently.",
+     "before": "diff(y(x), x) + y(x) = x",
+     "after": "Eq(y(x), C1 * exp(-x) + x - 1)",
+     "notes": [
+      [
+       "Arbitrary constants",
+       "[C1]"
+      ]
+     ],
+     "verification": "backend identity: The symbolic ODE solver returned this family for the classified method.",
+     "constraints": []
+    },
+    {
+     "rule": "Check the solution by substitution",
+     "description": "Substitute the solution into the differential equation; the difference between both sides must simplify to zero for every constant.",
+     "before": "Eq(y(x), C1 * exp(-x) + x - 1)",
+     "after": "0 = 0",
+     "notes": [
+      [
+       "Arbitrary constants",
+       "[C1]"
+      ]
+     ],
+     "verification": "substitution: Substituting the solution leaves a residual of exactly zero.",
+     "constraints": []
+    }
+   ],
+   "native_status": "ExactResult",
+   "native_flags": {
+    "result_types": [
+     "ExactResult"
+    ],
+    "composed_from": null,
+    "opaque_steps": 0
+   },
+   "restrictions_reported": [],
+   "expected_spec": "y = x - 1 + C e^(-x)",
+   "expected_reference": {
+    "family": "x - 1 + C*exp(-x)",
+    "n_constants": 1
+   },
+   "actual": "Eq(y(x), C1 * exp(-x) + x - 1)",
+   "status": "valid",
+   "status_detail": "",
+   "value_correct": true,
+   "form_ok": true,
+   "form_note": "",
+   "domain_ok": null,
+   "domain_check": {
+    "required": [],
+    "reported": [],
+    "satisfied": null
+   },
+   "answer_produced": true,
+   "covered": true,
+   "strict_correct": true,
+   "value_only_correct": true,
+   "equivalence_proof": null,
+   "judge_detail": "ODE residual after substitution: 0 ; constants=1 ; independent basis: True",
+   "constant_shown": null,
+   "derivation": {
+    "available": true,
+    "n_steps": 3,
+    "scored": true,
+    "automated": {
+     "correctness": 3,
+     "completeness": 2,
+     "explanation": 2,
+     "consistency": 1,
+     "domain": 1,
+     "presentation": 1
+    },
+    "automated_total": 10,
+    "evidence": {
+     "correctness": "no invalid step found (0 transitions auto-checked)",
+     "milestones_hit": "1/1",
+     "mean_explanation_per_step": 2.0,
+     "substantive_steps": 2,
+     "steps_auto_checked": 0,
+     "invalid_steps": 0,
+     "opaque_steps": 0,
+     "native_flags": {
+      "steps_mode": null,
+      "steps_verified": null,
+      "workings_tied_to_answer": null
+     }
+    },
+    "final": {
+     "correctness": 3,
+     "completeness": 2,
+     "explanation": 2,
+     "consistency": 1,
+     "domain": 1,
+     "presentation": 1
+    },
+    "final_total": 10
+   },
+   "unsupported_reason": null,
+   "error": null,
+   "time_first_call_ms": 1398.1431999709457,
+   "wall_ms": 1410.1242000469938,
+   "warm_times_ms": [
+    1040.982700069435
+   ],
+   "warm_median_ms": 1040.982700069435,
+   "repeatable": true,
+   "timeout": false,
+   "manual_review_flag": false,
+   "manual_review_reasons": []
+  },
+  {
+   "solver": "stepsolver",
+   "solver_version": "0.1.0",
+   "solver_commit": "ef474f6ada961a23733f84535ba7aebcf9ae8fd6",
+   "case_id": "U02",
+   "category": "U",
+   "tier": 1,
+   "weight": 1,
+   "adversarial": false,
+   "operation": "dsolve",
+   "display_input": "Solve y'' - 3y' + 2y = 0",
+   "normalised_operation": "dsolve",
+   "problem": {
+    "ode": "Derivative(y(x), (x, 2)) - 3*Derivative(y(x), x) + 2*y(x)",
+    "func": "y",
+    "var": "x",
+    "order": 2
+   },
+   "domain": "real",
+   "domain_sensitive": false,
+   "adapter_api_call": "Solver().solve('dsolve(diff(y(x), x, 2) - 3*diff(y(x), x) + 2*y(x) = 0, y(x))')",
+   "adapter_input": [
+    "dsolve(diff(y(x), x, 2) - 3*diff(y(x), x) + 2*y(x) = 0, y(x))"
+   ],
+   "adapter_overrides": true,
+   "domain_assumption_passed": false,
+   "raw_output": "Input: dsolve(diff(y(x), x, 2) - 3*diff(y(x), x) + 2*y(x) = 0, y(x))\nStep 1 (Identify the differential equation): The equation is an ordinary differential equation of order 2 for the unknown function.\n  dsolve(diff(y(x), x, 2) - 3 * diff(y(x), x) + 2 * y(x) = 0, y(x))\n  -> diff(y(x), x, 2) - 3 * diff(y(x), x) + 2 * y(x) = 0\n  Verified by exact arithmetic: The highest derivative order was read from the equation.\n  Order: 2\n  Unknown function: y(x)\nStep 2 (Apply the classified solution method): The equation is classified as 'factorable', and that method gives a solution family with 2 arbitrary constant(s). The individual integration steps of that method are not expanded here; the next step checks the family independently.\n  diff(y(x), x, 2) - 3 * diff(y(x), x) + 2 * y(x) = 0\n  -> Eq(y(x), (C1 + C2 * exp(x)) * exp(x))\n  Verified by backend identity: The symbolic ODE solver returned this family for the classified method.\n  Arbitrary constants: [C1, C2]\nStep 3 (Check the solution by substitution): Substitute the solution into the differential equation; the difference between both sides must simplify to zero for every constant.\n  Eq(y(x), (C1 + C2 * exp(x)) * exp(x))\n  -> 0 = 0\n  Verified by substitution: Substituting the solution leaves a residual of exactly zero.\n  Arbitrary constants: [C1, C2]\nResult: Eq(y(x), (C1 + C2 * exp(x)) * exp(x))",
+   "raw_answer_canonical": {
+    "kind": "equation",
+    "text": "Eq(y(x), (C1 + C2 * exp(x)) * exp(x))"
+   },
+   "raw_steps": [
+    {
+     "rule": "Identify the differential equation",
+     "description": "The equation is an ordinary differential equation of order 2 for the unknown function.",
+     "before": "dsolve(diff(y(x), x, 2) - 3 * diff(y(x), x) + 2 * y(x) = 0, y(x))",
+     "after": "diff(y(x), x, 2) - 3 * diff(y(x), x) + 2 * y(x) = 0",
+     "notes": [
+      [
+       "Order",
+       "2"
+      ],
+      [
+       "Unknown function",
+       "y(x)"
+      ]
+     ],
+     "verification": "exact arithmetic: The highest derivative order was read from the equation.",
+     "constraints": []
+    },
+    {
+     "rule": "Apply the classified solution method",
+     "description": "The equation is classified as 'factorable', and that method gives a solution family with 2 arbitrary constant(s). The individual integration steps of that method are not expanded here; the next step checks the family independently.",
+     "before": "diff(y(x), x, 2) - 3 * diff(y(x), x) + 2 * y(x) = 0",
+     "after": "Eq(y(x), (C1 + C2 * exp(x)) * exp(x))",
+     "notes": [
+      [
+       "Arbitrary constants",
+       "[C1, C2]"
+      ]
+     ],
+     "verification": "backend identity: The symbolic ODE solver returned this family for the classified method.",
+     "constraints": []
+    },
+    {
+     "rule": "Check the solution by substitution",
+     "description": "Substitute the solution into the differential equation; the difference between both sides must simplify to zero for every constant.",
+     "before": "Eq(y(x), (C1 + C2 * exp(x)) * exp(x))",
+     "after": "0 = 0",
+     "notes": [
+      [
+       "Arbitrary constants",
+       "[C1, C2]"
+      ]
+     ],
+     "verification": "substitution: Substituting the solution leaves a residual of exactly zero.",
+     "constraints": []
+    }
+   ],
+   "native_status": "ExactResult",
+   "native_flags": {
+    "result_types": [
+     "ExactResult"
+    ],
+    "composed_from": null,
+    "opaque_steps": 0
+   },
+   "restrictions_reported": [],
+   "expected_spec": "y = C1 e^x + C2 e^(2x)",
+   "expected_reference": {
+    "family": "C1*exp(x) + C2*exp(2*x)",
+    "n_constants": 2
+   },
+   "actual": "Eq(y(x), (C1 + C2 * exp(x)) * exp(x))",
+   "status": "valid",
+   "status_detail": "",
+   "value_correct": true,
+   "form_ok": true,
+   "form_note": "",
+   "domain_ok": null,
+   "domain_check": {
+    "required": [],
+    "reported": [],
+    "satisfied": null
+   },
+   "answer_produced": true,
+   "covered": true,
+   "strict_correct": true,
+   "value_only_correct": true,
+   "equivalence_proof": null,
+   "judge_detail": "ODE residual after substitution: 0 ; constants=2 ; independent basis: True",
+   "constant_shown": null,
+   "derivation": {
+    "available": true,
+    "n_steps": 3,
+    "scored": true,
+    "automated": {
+     "correctness": 3,
+     "completeness": 2,
+     "explanation": 2,
+     "consistency": 1,
+     "domain": 1,
+     "presentation": 1
+    },
+    "automated_total": 10,
+    "evidence": {
+     "correctness": "no invalid step found (0 transitions auto-checked)",
+     "milestones_hit": "1/1",
+     "mean_explanation_per_step": 2.0,
+     "substantive_steps": 2,
+     "steps_auto_checked": 0,
+     "invalid_steps": 0,
+     "opaque_steps": 0,
+     "native_flags": {
+      "steps_mode": null,
+      "steps_verified": null,
+      "workings_tied_to_answer": null
+     }
+    },
+    "final": {
+     "correctness": 3,
+     "completeness": 2,
+     "explanation": 2,
+     "consistency": 1,
+     "domain": 1,
+     "presentation": 1
+    },
+    "final_total": 10
+   },
+   "unsupported_reason": null,
+   "error": null,
+   "time_first_call_ms": 1446.5853999136016,
+   "wall_ms": 1449.6392000000924,
+   "warm_times_ms": [
+    1793.8565000658855
+   ],
+   "warm_median_ms": 1793.8565000658855,
+   "repeatable": true,
+   "timeout": false,
+   "manual_review_flag": false,
+   "manual_review_reasons": []
+  },
+  {
+   "solver": "stepsolver",
+   "solver_version": "0.1.0",
+   "solver_commit": "ef474f6ada961a23733f84535ba7aebcf9ae8fd6",
+   "case_id": "U03",
+   "category": "U",
+   "tier": 2,
+   "weight": 2,
+   "adversarial": false,
+   "operation": "dsolve",
+   "display_input": "Solve y'' - 2y' + y = 0",
+   "normalised_operation": "dsolve",
+   "problem": {
+    "ode": "Derivative(y(x), (x, 2)) - 2*Derivative(y(x), x) + y(x)",
+    "func": "y",
+    "var": "x",
+    "order": 2
+   },
+   "domain": "real",
+   "domain_sensitive": false,
+   "adapter_api_call": "Solver().solve('dsolve(diff(y(x), x, 2) - 2*diff(y(x), x) + y(x) = 0, y(x))')",
+   "adapter_input": [
+    "dsolve(diff(y(x), x, 2) - 2*diff(y(x), x) + y(x) = 0, y(x))"
+   ],
+   "adapter_overrides": true,
+   "domain_assumption_passed": false,
+   "raw_output": "Input: dsolve(diff(y(x), x, 2) - 2*diff(y(x), x) + y(x) = 0, y(x))\nStep 1 (Identify the differential equation): The equation is an ordinary differential equation of order 2 for the unknown function.\n  dsolve(diff(y(x), x, 2) - 2 * diff(y(x), x) + y(x) = 0, y(x))\n  -> diff(y(x), x, 2) - 2 * diff(y(x), x) + y(x) = 0\n  Verified by exact arithmetic: The highest derivative order was read from the equation.\n  Order: 2\n  Unknown function: y(x)\nStep 2 (Apply the classified solution method): The equation is classified as 'factorable', and that method gives a solution family with 2 arbitrary constant(s). The individual integration steps of that method are not expanded here; the next step checks the family independently.\n  diff(y(x), x, 2) - 2 * diff(y(x), x) + y(x) = 0\n  -> Eq(y(x), (C1 + C2 * x) * exp(x))\n  Verified by backend identity: The symbolic ODE solver returned this family for the classified method.\n  Arbitrary constants: [C1, C2]\nStep 3 (Check the solution by substitution): Substitute the solution into the differential equation; the difference between both sides must simplify to zero for every constant.\n  Eq(y(x), (C1 + C2 * x) * exp(x))\n  -> 0 = 0\n  Verified by substitution: Substituting the solution leaves a residual of exactly zero.\n  Arbitrary constants: [C1, C2]\nResult: Eq(y(x), (C1 + C2 * x) * exp(x))",
+   "raw_answer_canonical": {
+    "kind": "equation",
+    "text": "Eq(y(x), (C1 + C2 * x) * exp(x))"
+   },
+   "raw_steps": [
+    {
+     "rule": "Identify the differential equation",
+     "description": "The equation is an ordinary differential equation of order 2 for the unknown function.",
+     "before": "dsolve(diff(y(x), x, 2) - 2 * diff(y(x), x) + y(x) = 0, y(x))",
+     "after": "diff(y(x), x, 2) - 2 * diff(y(x), x) + y(x) = 0",
+     "notes": [
+      [
+       "Order",
+       "2"
+      ],
+      [
+       "Unknown function",
+       "y(x)"
+      ]
+     ],
+     "verification": "exact arithmetic: The highest derivative order was read from the equation.",
+     "constraints": []
+    },
+    {
+     "rule": "Apply the classified solution method",
+     "description": "The equation is classified as 'factorable', and that method gives a solution family with 2 arbitrary constant(s). The individual integration steps of that method are not expanded here; the next step checks the family independently.",
+     "before": "diff(y(x), x, 2) - 2 * diff(y(x), x) + y(x) = 0",
+     "after": "Eq(y(x), (C1 + C2 * x) * exp(x))",
+     "notes": [
+      [
+       "Arbitrary constants",
+       "[C1, C2]"
+      ]
+     ],
+     "verification": "backend identity: The symbolic ODE solver returned this family for the classified method.",
+     "constraints": []
+    },
+    {
+     "rule": "Check the solution by substitution",
+     "description": "Substitute the solution into the differential equation; the difference between both sides must simplify to zero for every constant.",
+     "before": "Eq(y(x), (C1 + C2 * x) * exp(x))",
+     "after": "0 = 0",
+     "notes": [
+      [
+       "Arbitrary constants",
+       "[C1, C2]"
+      ]
+     ],
+     "verification": "substitution: Substituting the solution leaves a residual of exactly zero.",
+     "constraints": []
+    }
+   ],
+   "native_status": "ExactResult",
+   "native_flags": {
+    "result_types": [
+     "ExactResult"
+    ],
+    "composed_from": null,
+    "opaque_steps": 0
+   },
+   "restrictions_reported": [],
+   "expected_spec": "y = (C1 + C2 x) e^x",
+   "expected_reference": {
+    "family": "(C1 + C2*x)*exp(x)",
+    "n_constants": 2
+   },
+   "actual": "Eq(y(x), (C1 + C2 * x) * exp(x))",
+   "status": "valid",
+   "status_detail": "",
+   "value_correct": true,
+   "form_ok": true,
+   "form_note": "",
+   "domain_ok": null,
+   "domain_check": {
+    "required": [],
+    "reported": [],
+    "satisfied": null
+   },
+   "answer_produced": true,
+   "covered": true,
+   "strict_correct": true,
+   "value_only_correct": true,
+   "equivalence_proof": null,
+   "judge_detail": "ODE residual after substitution: 0 ; constants=2 ; independent basis: True",
+   "constant_shown": null,
+   "derivation": {
+    "available": true,
+    "n_steps": 3,
+    "scored": true,
+    "automated": {
+     "correctness": 3,
+     "completeness": 2,
+     "explanation": 2,
+     "consistency": 1,
+     "domain": 1,
+     "presentation": 1
+    },
+    "automated_total": 10,
+    "evidence": {
+     "correctness": "no invalid step found (0 transitions auto-checked)",
+     "milestones_hit": "1/1",
+     "mean_explanation_per_step": 2.0,
+     "substantive_steps": 2,
+     "steps_auto_checked": 0,
+     "invalid_steps": 0,
+     "opaque_steps": 0,
+     "native_flags": {
+      "steps_mode": null,
+      "steps_verified": null,
+      "workings_tied_to_answer": null
+     }
+    },
+    "final": {
+     "correctness": 3,
+     "completeness": 2,
+     "explanation": 2,
+     "consistency": 1,
+     "domain": 1,
+     "presentation": 1
+    },
+    "final_total": 10
+   },
+   "unsupported_reason": null,
+   "error": null,
+   "time_first_call_ms": 1132.971900049597,
+   "wall_ms": 1135.6348000699654,
+   "warm_times_ms": [
+    1122.717099962756
+   ],
+   "warm_median_ms": 1122.717099962756,
+   "repeatable": true,
+   "timeout": false,
+   "manual_review_flag": false,
+   "manual_review_reasons": []
+  },
+  {
+   "solver": "stepsolver",
+   "solver_version": "0.1.0",
+   "solver_commit": "ef474f6ada961a23733f84535ba7aebcf9ae8fd6",
+   "case_id": "U04",
+   "category": "U",
+   "tier": 2,
+   "weight": 2,
+   "adversarial": false,
+   "operation": "dsolve",
+   "display_input": "Solve y'' + 2y' + 5y = 0",
+   "normalised_operation": "dsolve",
+   "problem": {
+    "ode": "Derivative(y(x), (x, 2)) + 2*Derivative(y(x), x) + 5*y(x)",
+    "func": "y",
+    "var": "x",
+    "order": 2
+   },
+   "domain": "real",
+   "domain_sensitive": false,
+   "adapter_api_call": "Solver().solve('dsolve(diff(y(x), x, 2) + 2*diff(y(x), x) + 5*y(x) = 0, y(x))')",
+   "adapter_input": [
+    "dsolve(diff(y(x), x, 2) + 2*diff(y(x), x) + 5*y(x) = 0, y(x))"
+   ],
+   "adapter_overrides": true,
+   "domain_assumption_passed": false,
+   "raw_output": "Input: dsolve(diff(y(x), x, 2) + 2*diff(y(x), x) + 5*y(x) = 0, y(x))\nStep 1 (Identify the differential equation): The equation is an ordinary differential equation of order 2 for the unknown function.\n  dsolve(diff(y(x), x, 2) + 2 * diff(y(x), x) + 5 * y(x) = 0, y(x))\n  -> diff(y(x), x, 2) + 2 * diff(y(x), x) + 5 * y(x) = 0\n  Verified by exact arithmetic: The highest derivative order was read from the equation.\n  Order: 2\n  Unknown function: y(x)\nStep 2 (Apply the classified solution method): The equation is classified as 'factorable', and that method gives a solution family with 2 arbitrary constant(s). The individual integration steps of that method are not expanded here; the next step checks the family independently.\n  diff(y(x), x, 2) + 2 * diff(y(x), x) + 5 * y(x) = 0\n  -> Eq(y(x), (C1 * sin(2 * x) + C2 * cos(2 * x)) * exp(-x))\n  Verified by backend identity: The symbolic ODE solver returned this family for the classified method.\n  Arbitrary constants: [C1, C2]\nStep 3 (Check the solution by substitution): Substitute the solution into the differential equation; the difference between both sides must simplify to zero for every constant.\n  Eq(y(x), (C1 * sin(2 * x) + C2 * cos(2 * x)) * exp(-x))\n  -> 0 = 0\n  Verified by substitution: Substituting the solution leaves a residual of exactly zero.\n  Arbitrary constants: [C1, C2]\nResult: Eq(y(x), (C1 * sin(2 * x) + C2 * cos(2 * x)) * exp(-x))",
+   "raw_answer_canonical": {
+    "kind": "equation",
+    "text": "Eq(y(x), (C1 * sin(2 * x) + C2 * cos(2 * x)) * exp(-x))"
+   },
+   "raw_steps": [
+    {
+     "rule": "Identify the differential equation",
+     "description": "The equation is an ordinary differential equation of order 2 for the unknown function.",
+     "before": "dsolve(diff(y(x), x, 2) + 2 * diff(y(x), x) + 5 * y(x) = 0, y(x))",
+     "after": "diff(y(x), x, 2) + 2 * diff(y(x), x) + 5 * y(x) = 0",
+     "notes": [
+      [
+       "Order",
+       "2"
+      ],
+      [
+       "Unknown function",
+       "y(x)"
+      ]
+     ],
+     "verification": "exact arithmetic: The highest derivative order was read from the equation.",
+     "constraints": []
+    },
+    {
+     "rule": "Apply the classified solution method",
+     "description": "The equation is classified as 'factorable', and that method gives a solution family with 2 arbitrary constant(s). The individual integration steps of that method are not expanded here; the next step checks the family independently.",
+     "before": "diff(y(x), x, 2) + 2 * diff(y(x), x) + 5 * y(x) = 0",
+     "after": "Eq(y(x), (C1 * sin(2 * x) + C2 * cos(2 * x)) * exp(-x))",
+     "notes": [
+      [
+       "Arbitrary constants",
+       "[C1, C2]"
+      ]
+     ],
+     "verification": "backend identity: The symbolic ODE solver returned this family for the classified method.",
+     "constraints": []
+    },
+    {
+     "rule": "Check the solution by substitution",
+     "description": "Substitute the solution into the differential equation; the difference between both sides must simplify to zero for every constant.",
+     "before": "Eq(y(x), (C1 * sin(2 * x) + C2 * cos(2 * x)) * exp(-x))",
+     "after": "0 = 0",
+     "notes": [
+      [
+       "Arbitrary constants",
+       "[C1, C2]"
+      ]
+     ],
+     "verification": "substitution: Substituting the solution leaves a residual of exactly zero.",
+     "constraints": []
+    }
+   ],
+   "native_status": "ExactResult",
+   "native_flags": {
+    "result_types": [
+     "ExactResult"
+    ],
+    "composed_from": null,
+    "opaque_steps": 0
+   },
+   "restrictions_reported": [],
+   "expected_spec": "y = e^(-x) (C1 cos 2x + C2 sin 2x)",
+   "expected_reference": {
+    "family": "exp(-x)*(C1*cos(2*x) + C2*sin(2*x))",
+    "n_constants": 2
+   },
+   "actual": "Eq(y(x), (C1 * sin(2 * x) + C2 * cos(2 * x)) * exp(-x))",
+   "status": "valid",
+   "status_detail": "",
+   "value_correct": true,
+   "form_ok": true,
+   "form_note": "",
+   "domain_ok": null,
+   "domain_check": {
+    "required": [],
+    "reported": [],
+    "satisfied": null
+   },
+   "answer_produced": true,
+   "covered": true,
+   "strict_correct": true,
+   "value_only_correct": true,
+   "equivalence_proof": null,
+   "judge_detail": "ODE residual after substitution: 0 ; constants=2 ; independent basis: True",
+   "constant_shown": null,
+   "derivation": {
+    "available": true,
+    "n_steps": 3,
+    "scored": true,
+    "automated": {
+     "correctness": 3,
+     "completeness": 2,
+     "explanation": 2,
+     "consistency": 1,
+     "domain": 1,
+     "presentation": 1
+    },
+    "automated_total": 10,
+    "evidence": {
+     "correctness": "no invalid step found (0 transitions auto-checked)",
+     "milestones_hit": "1/1",
+     "mean_explanation_per_step": 2.0,
+     "substantive_steps": 2,
+     "steps_auto_checked": 0,
+     "invalid_steps": 0,
+     "opaque_steps": 0,
+     "native_flags": {
+      "steps_mode": null,
+      "steps_verified": null,
+      "workings_tied_to_answer": null
+     }
+    },
+    "final": {
+     "correctness": 3,
+     "completeness": 2,
+     "explanation": 2,
+     "consistency": 1,
+     "domain": 1,
+     "presentation": 1
+    },
+    "final_total": 10
+   },
+   "unsupported_reason": null,
+   "error": null,
+   "time_first_call_ms": 1506.747500039637,
+   "wall_ms": 1508.9754000073299,
+   "warm_times_ms": [
+    1531.0718999244273
+   ],
+   "warm_median_ms": 1531.0718999244273,
+   "repeatable": true,
+   "timeout": false,
+   "manual_review_flag": false,
+   "manual_review_reasons": []
+  },
+  {
+   "solver": "stepsolver",
+   "solver_version": "0.1.0",
+   "solver_commit": "ef474f6ada961a23733f84535ba7aebcf9ae8fd6",
+   "case_id": "U05",
+   "category": "U",
+   "tier": 1,
+   "weight": 1,
+   "adversarial": false,
+   "operation": "dsolve",
+   "display_input": "Solve y' = x*y",
+   "normalised_operation": "dsolve",
+   "problem": {
+    "ode": "Derivative(y(x), x) - x*y(x)",
+    "func": "y",
+    "var": "x",
+    "order": 1
+   },
+   "domain": "real",
+   "domain_sensitive": false,
+   "adapter_api_call": "Solver().solve('dsolve(diff(y(x), x) = x*y(x), y(x))')",
+   "adapter_input": [
+    "dsolve(diff(y(x), x) = x*y(x), y(x))"
+   ],
+   "adapter_overrides": true,
+   "domain_assumption_passed": false,
+   "raw_output": "Input: dsolve(diff(y(x), x) = x*y(x), y(x))\nStep 1 (Identify the differential equation): The equation is an ordinary differential equation of order 1 for the unknown function.\n  dsolve(diff(y(x), x) = x * y(x), y(x))\n  -> diff(y(x), x) = x * y(x)\n  Verified by exact arithmetic: The highest derivative order was read from the equation.\n  Order: 1\n  Unknown function: y(x)\nStep 2 (Apply the classified solution method): The equation is classified as 'separable', and that method gives a solution family with 1 arbitrary constant(s). The individual integration steps of that method are not expanded here; the next step checks the family independently.\n  diff(y(x), x) = x * y(x)\n  -> Eq(y(x), C1 * exp(x ^ 2 / 2))\n  Verified by backend identity: The symbolic ODE solver returned this family for the classified method.\n  Arbitrary constants: [C1]\nStep 3 (Check the solution by substitution): Substitute the solution into the differential equation; the difference between both sides must simplify to zero for every constant.\n  Eq(y(x), C1 * exp(x ^ 2 / 2))\n  -> 0 = 0\n  Verified by substitution: Substituting the solution leaves a residual of exactly zero.\n  Arbitrary constants: [C1]\nResult: Eq(y(x), C1 * exp(x ^ 2 / 2))",
+   "raw_answer_canonical": {
+    "kind": "equation",
+    "text": "Eq(y(x), C1 * exp(x ^ 2 / 2))"
+   },
+   "raw_steps": [
+    {
+     "rule": "Identify the differential equation",
+     "description": "The equation is an ordinary differential equation of order 1 for the unknown function.",
+     "before": "dsolve(diff(y(x), x) = x * y(x), y(x))",
+     "after": "diff(y(x), x) = x * y(x)",
+     "notes": [
+      [
+       "Order",
+       "1"
+      ],
+      [
+       "Unknown function",
+       "y(x)"
+      ]
+     ],
+     "verification": "exact arithmetic: The highest derivative order was read from the equation.",
+     "constraints": []
+    },
+    {
+     "rule": "Apply the classified solution method",
+     "description": "The equation is classified as 'separable', and that method gives a solution family with 1 arbitrary constant(s). The individual integration steps of that method are not expanded here; the next step checks the family independently.",
+     "before": "diff(y(x), x) = x * y(x)",
+     "after": "Eq(y(x), C1 * exp(x ^ 2 / 2))",
+     "notes": [
+      [
+       "Arbitrary constants",
+       "[C1]"
+      ]
+     ],
+     "verification": "backend identity: The symbolic ODE solver returned this family for the classified method.",
+     "constraints": []
+    },
+    {
+     "rule": "Check the solution by substitution",
+     "description": "Substitute the solution into the differential equation; the difference between both sides must simplify to zero for every constant.",
+     "before": "Eq(y(x), C1 * exp(x ^ 2 / 2))",
+     "after": "0 = 0",
+     "notes": [
+      [
+       "Arbitrary constants",
+       "[C1]"
+      ]
+     ],
+     "verification": "substitution: Substituting the solution leaves a residual of exactly zero.",
+     "constraints": []
+    }
+   ],
+   "native_status": "ExactResult",
+   "native_flags": {
+    "result_types": [
+     "ExactResult"
+    ],
+    "composed_from": null,
+    "opaque_steps": 0
+   },
+   "restrictions_reported": [],
+   "expected_spec": "y = C e^(x^2/2)",
+   "expected_reference": {
+    "family": "C*exp(x^2/2)",
+    "n_constants": 1
+   },
+   "actual": "Eq(y(x), C1 * exp(x ^ 2 / 2))",
+   "status": "valid",
+   "status_detail": "",
+   "value_correct": true,
+   "form_ok": true,
+   "form_note": "",
+   "domain_ok": null,
+   "domain_check": {
+    "required": [],
+    "reported": [],
+    "satisfied": null
+   },
+   "answer_produced": true,
+   "covered": true,
+   "strict_correct": true,
+   "value_only_correct": true,
+   "equivalence_proof": null,
+   "judge_detail": "ODE residual after substitution: 0 ; constants=1 ; independent basis: True",
+   "constant_shown": null,
+   "derivation": {
+    "available": true,
+    "n_steps": 3,
+    "scored": true,
+    "automated": {
+     "correctness": 3,
+     "completeness": 2,
+     "explanation": 2,
+     "consistency": 1,
+     "domain": 1,
+     "presentation": 1
+    },
+    "automated_total": 10,
+    "evidence": {
+     "correctness": "no invalid step found (0 transitions auto-checked)",
+     "milestones_hit": "1/1",
+     "mean_explanation_per_step": 2.0,
+     "substantive_steps": 2,
+     "steps_auto_checked": 0,
+     "invalid_steps": 0,
+     "opaque_steps": 0,
+     "native_flags": {
+      "steps_mode": null,
+      "steps_verified": null,
+      "workings_tied_to_answer": null
+     }
+    },
+    "final": {
+     "correctness": 3,
+     "completeness": 2,
+     "explanation": 2,
+     "consistency": 1,
+     "domain": 1,
+     "presentation": 1
+    },
+    "final_total": 10
+   },
+   "unsupported_reason": null,
+   "error": null,
+   "time_first_call_ms": 1299.8230999801308,
+   "wall_ms": 1301.260199979879,
+   "warm_times_ms": [
+    1506.4644999802113
+   ],
+   "warm_median_ms": 1506.4644999802113,
+   "repeatable": true,
+   "timeout": false,
+   "manual_review_flag": false,
+   "manual_review_reasons": []
+  },
+  {
+   "solver": "stepsolver",
+   "case_id": "V01",
+   "status": "skipped",
+   "skip_reason": "case not selected in this run"
+  },
+  {
+   "solver": "stepsolver",
+   "case_id": "V02",
+   "status": "skipped",
+   "skip_reason": "case not selected in this run"
+  },
+  {
+   "solver": "stepsolver",
+   "case_id": "V03",
+   "status": "skipped",
+   "skip_reason": "case not selected in this run"
+  },
+  {
+   "solver": "stepsolver",
+   "case_id": "R12",
+   "status": "skipped",
+   "skip_reason": "case not selected in this run"
+  },
+  {
+   "solver": "stepsolver",
+   "case_id": "R13",
+   "status": "skipped",
+   "skip_reason": "case not selected in this run"
+  },
+  {
+   "solver": "stepsolver",
+   "case_id": "R14",
+   "status": "skipped",
+   "skip_reason": "case not selected in this run"
+  },
+  {
+   "solver": "stepsolver",
+   "case_id": "R15",
+   "status": "skipped",
+   "skip_reason": "case not selected in this run"
+  },
+  {
+   "solver": "stepsolver",
+   "case_id": "S13",
+   "status": "skipped",
+   "skip_reason": "case not selected in this run"
+  },
+  {
+   "solver": "stepsolver",
+   "case_id": "S14",
+   "status": "skipped",
+   "skip_reason": "case not selected in this run"
+  },
+  {
+   "solver": "stepsolver",
+   "case_id": "S15",
+   "status": "skipped",
+   "skip_reason": "case not selected in this run"
+  },
+  {
+   "solver": "stepsolver",
+   "case_id": "S16",
+   "status": "skipped",
+   "skip_reason": "case not selected in this run"
+  },
+  {
+   "solver": "stepsolver",
+   "case_id": "S17",
+   "status": "skipped",
+   "skip_reason": "case not selected in this run"
+  },
+  {
+   "solver": "stepsolver",
+   "case_id": "T08",
+   "status": "skipped",
+   "skip_reason": "case not selected in this run"
+  },
+  {
+   "solver": "stepsolver",
+   "case_id": "T09",
+   "status": "skipped",
+   "skip_reason": "case not selected in this run"
+  },
+  {
+   "solver": "stepsolver",
+   "solver_version": "0.1.0",
+   "solver_commit": "ef474f6ada961a23733f84535ba7aebcf9ae8fd6",
+   "case_id": "U06",
+   "category": "U",
+   "tier": 2,
+   "weight": 2,
+   "adversarial": false,
+   "operation": "dsolve",
+   "display_input": "Solve y'' + y = x",
+   "normalised_operation": "dsolve",
+   "problem": {
+    "ode": "Derivative(y(x), (x, 2)) + y(x) - x",
+    "func": "y",
+    "var": "x",
+    "order": 2
+   },
+   "domain": "real",
+   "domain_sensitive": false,
+   "adapter_api_call": "Solver().solve('dsolve(diff(y(x), x, 2) + y(x) = x, y(x))')",
+   "adapter_input": [
+    "dsolve(diff(y(x), x, 2) + y(x) = x, y(x))"
+   ],
+   "adapter_overrides": true,
+   "domain_assumption_passed": false,
+   "raw_output": "Input: dsolve(diff(y(x), x, 2) + y(x) = x, y(x))\nStep 1 (Identify the differential equation): The equation is an ordinary differential equation of order 2 for the unknown function.\n  dsolve(diff(y(x), x, 2) + y(x) = x, y(x))\n  -> diff(y(x), x, 2) + y(x) = x\n  Verified by exact arithmetic: The highest derivative order was read from the equation.\n  Order: 2\n  Unknown function: y(x)\nStep 2 (Apply the classified solution method): The equation is classified as 'nth_linear_constant_coeff_undetermined_coefficients', and that method gives a solution family with 2 arbitrary constant(s). The individual integration steps of that method are not expanded here; the next step checks the family independently.\n  diff(y(x), x, 2) + y(x) = x\n  -> Eq(y(x), C1 * sin(x) + C2 * cos(x) + x)\n  Verified by backend identity: The symbolic ODE solver returned this family for the classified method.\n  Arbitrary constants: [C1, C2]\nStep 3 (Check the solution by substitution): Substitute the solution into the differential equation; the difference between both sides must simplify to zero for every constant.\n  Eq(y(x), C1 * sin(x) + C2 * cos(x) + x)\n  -> 0 = 0\n  Verified by substitution: Substituting the solution leaves a residual of exactly zero.\n  Arbitrary constants: [C1, C2]\nResult: Eq(y(x), C1 * sin(x) + C2 * cos(x) + x)",
+   "raw_answer_canonical": {
+    "kind": "equation",
+    "text": "Eq(y(x), C1 * sin(x) + C2 * cos(x) + x)"
+   },
+   "raw_steps": [
+    {
+     "rule": "Identify the differential equation",
+     "description": "The equation is an ordinary differential equation of order 2 for the unknown function.",
+     "before": "dsolve(diff(y(x), x, 2) + y(x) = x, y(x))",
+     "after": "diff(y(x), x, 2) + y(x) = x",
+     "notes": [
+      [
+       "Order",
+       "2"
+      ],
+      [
+       "Unknown function",
+       "y(x)"
+      ]
+     ],
+     "verification": "exact arithmetic: The highest derivative order was read from the equation.",
+     "constraints": []
+    },
+    {
+     "rule": "Apply the classified solution method",
+     "description": "The equation is classified as 'nth_linear_constant_coeff_undetermined_coefficients', and that method gives a solution family with 2 arbitrary constant(s). The individual integration steps of that method are not expanded here; the next step checks the family independently.",
+     "before": "diff(y(x), x, 2) + y(x) = x",
+     "after": "Eq(y(x), C1 * sin(x) + C2 * cos(x) + x)",
+     "notes": [
+      [
+       "Arbitrary constants",
+       "[C1, C2]"
+      ]
+     ],
+     "verification": "backend identity: The symbolic ODE solver returned this family for the classified method.",
+     "constraints": []
+    },
+    {
+     "rule": "Check the solution by substitution",
+     "description": "Substitute the solution into the differential equation; the difference between both sides must simplify to zero for every constant.",
+     "before": "Eq(y(x), C1 * sin(x) + C2 * cos(x) + x)",
+     "after": "0 = 0",
+     "notes": [
+      [
+       "Arbitrary constants",
+       "[C1, C2]"
+      ]
+     ],
+     "verification": "substitution: Substituting the solution leaves a residual of exactly zero.",
+     "constraints": []
+    }
+   ],
+   "native_status": "ExactResult",
+   "native_flags": {
+    "result_types": [
+     "ExactResult"
+    ],
+    "composed_from": null,
+    "opaque_steps": 0
+   },
+   "restrictions_reported": [],
+   "expected_spec": "y = x + C1 cos x + C2 sin x",
+   "expected_reference": {
+    "family": "x + C1*cos(x) + C2*sin(x)",
+    "n_constants": 2
+   },
+   "actual": "Eq(y(x), C1 * sin(x) + C2 * cos(x) + x)",
+   "status": "valid",
+   "status_detail": "",
+   "value_correct": true,
+   "form_ok": true,
+   "form_note": "",
+   "domain_ok": null,
+   "domain_check": {
+    "required": [],
+    "reported": [],
+    "satisfied": null
+   },
+   "answer_produced": true,
+   "covered": true,
+   "strict_correct": true,
+   "value_only_correct": true,
+   "equivalence_proof": null,
+   "judge_detail": "ODE residual after substitution: 0 ; constants=2 ; independent basis: True",
+   "constant_shown": null,
+   "derivation": {
+    "available": true,
+    "n_steps": 3,
+    "scored": true,
+    "automated": {
+     "correctness": 3,
+     "completeness": 2,
+     "explanation": 2,
+     "consistency": 1,
+     "domain": 1,
+     "presentation": 1
+    },
+    "automated_total": 10,
+    "evidence": {
+     "correctness": "no invalid step found (0 transitions auto-checked)",
+     "milestones_hit": "1/1",
+     "mean_explanation_per_step": 2.0,
+     "substantive_steps": 2,
+     "steps_auto_checked": 0,
+     "invalid_steps": 0,
+     "opaque_steps": 0,
+     "native_flags": {
+      "steps_mode": null,
+      "steps_verified": null,
+      "workings_tied_to_answer": null
+     }
+    },
+    "final": {
+     "correctness": 3,
+     "completeness": 2,
+     "explanation": 2,
+     "consistency": 1,
+     "domain": 1,
+     "presentation": 1
+    },
+    "final_total": 10
+   },
+   "unsupported_reason": null,
+   "error": null,
+   "time_first_call_ms": 669.3701000185683,
+   "wall_ms": 671.8580999877304,
+   "warm_times_ms": [
+    1106.8681000033394
+   ],
+   "warm_median_ms": 1106.8681000033394,
+   "repeatable": true,
+   "timeout": false,
+   "manual_review_flag": false,
+   "manual_review_reasons": []
+  },
+  {
+   "solver": "stepsolver",
+   "solver_version": "0.1.0",
+   "solver_commit": "ef474f6ada961a23733f84535ba7aebcf9ae8fd6",
+   "case_id": "U07",
+   "category": "U",
+   "tier": 2,
+   "weight": 2,
+   "adversarial": false,
+   "operation": "dsolve",
+   "display_input": "Solve y' = y^2",
+   "normalised_operation": "dsolve",
+   "problem": {
+    "ode": "Derivative(y(x), x) - y(x)^2",
+    "func": "y",
+    "var": "x",
+    "order": 1
+   },
+   "domain": "real",
+   "domain_sensitive": false,
+   "adapter_api_call": "Solver().solve('dsolve(diff(y(x), x) = y(x)^2, y(x))')",
+   "adapter_input": [
+    "dsolve(diff(y(x), x) = y(x)^2, y(x))"
+   ],
+   "adapter_overrides": true,
+   "domain_assumption_passed": false,
+   "raw_output": "Input: dsolve(diff(y(x), x) = y(x)^2, y(x))\nStep 1 (Identify the differential equation): The equation is an ordinary differential equation of order 1 for the unknown function.\n  dsolve(diff(y(x), x) = y(x) ^ 2, y(x))\n  -> diff(y(x), x) = y(x) ^ 2\n  Verified by exact arithmetic: The highest derivative order was read from the equation.\n  Order: 1\n  Unknown function: y(x)\nStep 2 (Apply the classified solution method): The equation is classified as 'separable', and that method gives a solution family with 1 arbitrary constant(s). The individual integration steps of that method are not expanded here; the next step checks the family independently.\n  diff(y(x), x) = y(x) ^ 2\n  -> Eq(y(x), -1 / (C1 + x))\n  Verified by backend identity: The symbolic ODE solver returned this family for the classified method.\n  Arbitrary constants: [C1]\nStep 3 (Check the solution by substitution): Substitute the solution into the differential equation; the difference between both sides must simplify to zero for every constant.\n  Eq(y(x), -1 / (C1 + x))\n  -> 0 = 0\n  Verified by substitution: Substituting the solution leaves a residual of exactly zero.\n  Arbitrary constants: [C1]\nResult: Eq(y(x), -1 / (C1 + x))",
+   "raw_answer_canonical": {
+    "kind": "equation",
+    "text": "Eq(y(x), -1 / (C1 + x))"
+   },
+   "raw_steps": [
+    {
+     "rule": "Identify the differential equation",
+     "description": "The equation is an ordinary differential equation of order 1 for the unknown function.",
+     "before": "dsolve(diff(y(x), x) = y(x) ^ 2, y(x))",
+     "after": "diff(y(x), x) = y(x) ^ 2",
+     "notes": [
+      [
+       "Order",
+       "1"
+      ],
+      [
+       "Unknown function",
+       "y(x)"
+      ]
+     ],
+     "verification": "exact arithmetic: The highest derivative order was read from the equation.",
+     "constraints": []
+    },
+    {
+     "rule": "Apply the classified solution method",
+     "description": "The equation is classified as 'separable', and that method gives a solution family with 1 arbitrary constant(s). The individual integration steps of that method are not expanded here; the next step checks the family independently.",
+     "before": "diff(y(x), x) = y(x) ^ 2",
+     "after": "Eq(y(x), -1 / (C1 + x))",
+     "notes": [
+      [
+       "Arbitrary constants",
+       "[C1]"
+      ]
+     ],
+     "verification": "backend identity: The symbolic ODE solver returned this family for the classified method.",
+     "constraints": []
+    },
+    {
+     "rule": "Check the solution by substitution",
+     "description": "Substitute the solution into the differential equation; the difference between both sides must simplify to zero for every constant.",
+     "before": "Eq(y(x), -1 / (C1 + x))",
+     "after": "0 = 0",
+     "notes": [
+      [
+       "Arbitrary constants",
+       "[C1]"
+      ]
+     ],
+     "verification": "substitution: Substituting the solution leaves a residual of exactly zero.",
+     "constraints": []
+    }
+   ],
+   "native_status": "ExactResult",
+   "native_flags": {
+    "result_types": [
+     "ExactResult"
+    ],
+    "composed_from": null,
+    "opaque_steps": 0
+   },
+   "restrictions_reported": [],
+   "expected_spec": "y = -1/(x + C)",
+   "expected_reference": {
+    "family": "-1/(x + C)",
+    "n_constants": 1
+   },
+   "actual": "Eq(y(x), -1 / (C1 + x))",
+   "status": "valid",
+   "status_detail": "",
+   "value_correct": true,
+   "form_ok": true,
+   "form_note": "",
+   "domain_ok": null,
+   "domain_check": {
+    "required": [],
+    "reported": [],
+    "satisfied": null
+   },
+   "answer_produced": true,
+   "covered": true,
+   "strict_correct": true,
+   "value_only_correct": true,
+   "equivalence_proof": null,
+   "judge_detail": "ODE residual after substitution: 0 ; constants=1 ; independent basis: True",
+   "constant_shown": null,
+   "derivation": {
+    "available": true,
+    "n_steps": 3,
+    "scored": true,
+    "automated": {
+     "correctness": 3,
+     "completeness": 2,
+     "explanation": 2,
+     "consistency": 1,
+     "domain": 1,
+     "presentation": 1
+    },
+    "automated_total": 10,
+    "evidence": {
+     "correctness": "no invalid step found (0 transitions auto-checked)",
+     "milestones_hit": "1/1",
+     "mean_explanation_per_step": 2.0,
+     "substantive_steps": 2,
+     "steps_auto_checked": 0,
+     "invalid_steps": 0,
+     "opaque_steps": 0,
+     "native_flags": {
+      "steps_mode": null,
+      "steps_verified": null,
+      "workings_tied_to_answer": null
+     }
+    },
+    "final": {
+     "correctness": 3,
+     "completeness": 2,
+     "explanation": 2,
+     "consistency": 1,
+     "domain": 1,
+     "presentation": 1
+    },
+    "final_total": 10
+   },
+   "unsupported_reason": null,
+   "error": null,
+   "time_first_call_ms": 1027.5034001097083,
+   "wall_ms": 1028.9432000136003,
+   "warm_times_ms": [
+    919.6657000575215
+   ],
+   "warm_median_ms": 919.6657000575215,
+   "repeatable": true,
+   "timeout": false,
+   "manual_review_flag": false,
+   "manual_review_reasons": []
+  },
+  {
+   "solver": "stepsolver",
+   "case_id": "O09",
+   "status": "skipped",
+   "skip_reason": "case not selected in this run"
+  }
+ ],
+ "stale_manual_reviews": [],
+ "manual_reviews_total": 0
+}

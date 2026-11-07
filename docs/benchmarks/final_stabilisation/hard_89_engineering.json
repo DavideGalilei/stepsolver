@@ -1,0 +1,444 @@
+{
+ "sympy-direct": {
+  "malformed_syntax": {
+   "score": 0.5,
+   "note": "raw Python exception SyntaxError (caught by adapter)",
+   "wall_ms": 13.47080001141876,
+   "reply": {
+    "outcome": "error",
+    "error": {
+     "type": "SyntaxError",
+     "message": "invalid syntax (<string>, line 1)",
+     "traceback_tail": "  File \"<string>\", line 1\n    Integer (2 )+*Integer (3 )\n                 ^\nSyntaxError: invalid syntax\n"
+    },
+    "time_ms": 10.155500029213727,
+    "req_id": "malformed_syntax",
+    "maxrss_kb": 0
+   }
+  },
+  "unbalanced_parens": {
+   "score": 0.5,
+   "note": "raw Python exception TokenError (caught by adapter)",
+   "wall_ms": 1.5363000566139817,
+   "reply": {
+    "outcome": "error",
+    "error": {
+     "type": "TokenError",
+     "message": "('unexpected EOF in multi-line statement', (1, 0))",
+     "traceback_tail": "  File \"C:\\Users\\Olabode Nathaniel\\AppData\\Local\\Temp\\opencode\\math_solver_hard_local\\envs\\sympy\\Lib\\site-packages\\sympy\\parsing\\sympy_parser.py\", line 1075, in parse_expr\n    code = stringify_expr(s, local_dict, global_dict, _transformations)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\Olabode Nathaniel\\AppData\\Local\\Temp\\opencode\\math_solver_hard_local\\envs\\sympy\\Lib\\site-packages\\sympy\\parsing\\sympy_parser.py\", line 890, in stringify_expr\n    for toknum, tokval, _, _, _ in generate_tokens(input_code.readline):\n                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\Olabode Nathaniel\\AppData\\Roaming\\uv\\python\\cpython-3.12-windows-x86_64-none\\Lib\\tokenize.py\", line 590, in _generate_tokens_from_c_tokenizer\n    raise TokenError(msg, (e.lineno, e.offset)) from None\ntokenize.TokenError: ('unexpected EOF in multi-line statement', (1, 0))\n"
+    },
+    "time_ms": 0.224200077354908,
+    "req_id": "unbalanced_parens",
+    "maxrss_kb": 0
+   }
+  },
+  "empty_input": {
+   "score": 0.5,
+   "note": "raw Python exception SyntaxError (caught by adapter)",
+   "wall_ms": 1.207199995405972,
+   "reply": {
+    "outcome": "error",
+    "error": {
+     "type": "SyntaxError",
+     "message": "invalid syntax (<string>, line 0)",
+     "traceback_tail": "  File \"C:\\Users\\Olabode Nathaniel\\AppData\\Local\\Temp\\opencode\\math_solver_hard_local\\envs\\sympy\\Lib\\site-packages\\sympy\\parsing\\sympy_parser.py\", line 905, in eval_expr\n    expr = eval(\n           ^^^^^\n  File \"<string>\", line 0\n    \nSyntaxError: invalid syntax\n"
+    },
+    "time_ms": 0.11440005619078875,
+    "req_id": "empty_input",
+    "maxrss_kb": 0
+   }
+  },
+  "zero_denominator": {
+   "score": 0.5,
+   "note": "returns 'zoo' (complex infinity) without an undefined/domain message",
+   "wall_ms": 0.35310001112520695,
+   "reply": {
+    "outcome": "answer",
+    "raw_output": "zoo",
+    "time_ms": 0.1420000335201621,
+    "req_id": "zero_denominator",
+    "maxrss_kb": 0
+   }
+  },
+  "missing_variable": {
+   "score": 0.5,
+   "note": "answer without fabricating a root: \"EmptySet\"",
+   "wall_ms": 165.52539996337146,
+   "reply": {
+    "outcome": "answer",
+    "raw_output": "EmptySet",
+    "answer_values": null,
+    "time_ms": 5.3054000018164515,
+    "req_id": "missing_variable",
+    "maxrss_kb": 0
+   }
+  },
+  "two_variable_parametric": {
+   "score": 1.0,
+   "note": "parametric solution 6/y",
+   "wall_ms": 23.103599902242422,
+   "reply": {
+    "outcome": "answer",
+    "raw_output": "Intersection({6/y}, Reals)",
+    "answer_values": null,
+    "time_ms": 22.327600046992302,
+    "req_id": "two_variable_parametric",
+    "maxrss_kb": 0
+   }
+  },
+  "unsupported_operation": {
+   "score": null,
+   "note": "not applicable: interface has no operation-name dispatch",
+   "reply": null
+  },
+  "heavy_equation": {
+   "score": 0.0,
+   "note": "worker timeout after 15s - external kill needed",
+   "wall_ms": 15002.795699983835,
+   "reply": {
+    "outcome": "timeout"
+   }
+  },
+  "large_polynomial_equation": {
+   "score": 1.0,
+   "note": "correct root -1 in 129 ms",
+   "wall_ms": 288.988700020127,
+   "reply": {
+    "outcome": "answer",
+    "raw_output": "{-1}",
+    "answer_values": [
+     "-1"
+    ],
+    "time_ms": 128.81530006416142,
+    "req_id": "large_polynomial_equation",
+    "maxrss_kb": 0
+   }
+  },
+  "untrusted_input_canary": {
+   "score": 0.0,
+   "note": "INPUT EVALUATED AS PYTHON (math.factorial(4)=24 reached the solver): \"24\"",
+   "wall_ms": 0.7830000249668956,
+   "reply": {
+    "outcome": "answer",
+    "raw_output": "24",
+    "time_ms": 0.5771999713033438,
+    "req_id": "untrusted_input_canary",
+    "maxrss_kb": 0
+   }
+  }
+ },
+ "smartsolver": {
+  "malformed_syntax": {
+   "score": 0.5,
+   "note": "raw Python exception SyntaxError (caught by adapter)",
+   "wall_ms": 3.498899983242154,
+   "reply": {
+    "outcome": "error",
+    "error": {
+     "type": "SyntaxError",
+     "message": "invalid syntax (<string>, line 1)",
+     "traceback_tail": "  File \"<string>\", line 1\n    Integer (2 )+*Integer (3 )\n                 ^\nSyntaxError: invalid syntax\n"
+    },
+    "time_ms": 0.757700065150857,
+    "req_id": "malformed_syntax",
+    "maxrss_kb": 0
+   }
+  },
+  "unbalanced_parens": {
+   "score": 0.5,
+   "note": "raw Python exception TokenError (caught by adapter)",
+   "wall_ms": 1.7763000214472413,
+   "reply": {
+    "outcome": "error",
+    "error": {
+     "type": "TokenError",
+     "message": "('unexpected EOF in multi-line statement', (1, 0))",
+     "traceback_tail": "  File \"C:\\Users\\Olabode Nathaniel\\AppData\\Local\\Temp\\opencode\\math_solver_hard_local\\envs\\smartsolver\\Lib\\site-packages\\sympy\\parsing\\sympy_parser.py\", line 1075, in parse_expr\n    code = stringify_expr(s, local_dict, global_dict, _transformations)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\Olabode Nathaniel\\AppData\\Local\\Temp\\opencode\\math_solver_hard_local\\envs\\smartsolver\\Lib\\site-packages\\sympy\\parsing\\sympy_parser.py\", line 890, in stringify_expr\n    for toknum, tokval, _, _, _ in generate_tokens(input_code.readline):\n                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\Olabode Nathaniel\\AppData\\Roaming\\uv\\python\\cpython-3.12-windows-x86_64-none\\Lib\\tokenize.py\", line 590, in _generate_tokens_from_c_tokenizer\n    raise TokenError(msg, (e.lineno, e.offset)) from None\ntokenize.TokenError: ('unexpected EOF in multi-line statement', (1, 0))\n"
+    },
+    "time_ms": 0.5434000631794333,
+    "req_id": "unbalanced_parens",
+    "maxrss_kb": 0
+   }
+  },
+  "empty_input": {
+   "score": 0.5,
+   "note": "raw Python exception SyntaxError (caught by adapter)",
+   "wall_ms": 12.307500001043081,
+   "reply": {
+    "outcome": "error",
+    "error": {
+     "type": "SyntaxError",
+     "message": "invalid syntax (<string>, line 0)",
+     "traceback_tail": "  File \"C:\\Users\\Olabode Nathaniel\\AppData\\Local\\Temp\\opencode\\math_solver_hard_local\\envs\\smartsolver\\Lib\\site-packages\\sympy\\parsing\\sympy_parser.py\", line 905, in eval_expr\n    expr = eval(\n           ^^^^^\n  File \"<string>\", line 0\n    \nSyntaxError: invalid syntax\n"
+    },
+    "time_ms": 11.26759999897331,
+    "req_id": "empty_input",
+    "maxrss_kb": 0
+   }
+  },
+  "zero_denominator": {
+   "score": 0.5,
+   "note": "silently reports no solution",
+   "wall_ms": 168.3933000313118,
+   "reply": {
+    "outcome": "answer",
+    "raw_output": {
+     "solutions": "[]",
+     "solution_latex": "No solution found",
+     "steps_verified": "True",
+     "steps_mode": "worked"
+    },
+    "time_ms": 168.08299999684095,
+    "nsteps": 5,
+    "req_id": "zero_denominator",
+    "maxrss_kb": 0
+   }
+  },
+  "missing_variable": {
+   "score": 0.5,
+   "note": "answer without fabricating a root: {\"solutions\": \"[]\", \"solution_latex\": \"No solution found\", \"steps_verified\": \"True\", \"steps_mode\": \"",
+   "wall_ms": 220.6307000014931,
+   "reply": {
+    "outcome": "answer",
+    "raw_output": {
+     "solutions": "[]",
+     "solution_latex": "No solution found",
+     "steps_verified": "True",
+     "steps_mode": "worked"
+    },
+    "time_ms": 220.36430006846786,
+    "nsteps": 1,
+    "req_id": "missing_variable",
+    "maxrss_kb": 0
+   }
+  },
+  "two_variable_parametric": {
+   "score": 1.0,
+   "note": "parametric solution 6/y",
+   "wall_ms": 15.163799980655313,
+   "reply": {
+    "outcome": "answer",
+    "raw_output": {
+     "solutions": "[6/y]",
+     "solution_latex": "\\frac{6}{y}",
+     "steps_verified": "True",
+     "steps_mode": "worked"
+    },
+    "time_ms": 14.720199978910387,
+    "nsteps": 3,
+    "req_id": "two_variable_parametric",
+    "maxrss_kb": 0
+   }
+  },
+  "unsupported_operation": {
+   "score": null,
+   "note": "not applicable: interface has no operation-name dispatch",
+   "reply": null
+  },
+  "heavy_equation": {
+   "score": 0.0,
+   "note": "worker timeout after 15s - external kill needed",
+   "wall_ms": 15010.23949997034,
+   "reply": {
+    "outcome": "timeout"
+   }
+  },
+  "large_polynomial_equation": {
+   "score": 1.0,
+   "note": "correct root -1 in 411 ms",
+   "wall_ms": 411.7868000175804,
+   "reply": {
+    "outcome": "answer",
+    "raw_output": {
+     "solutions": "[-1]",
+     "solution_latex": "-1",
+     "steps_verified": "True",
+     "steps_mode": "worked"
+    },
+    "time_ms": 411.4081000443548,
+    "nsteps": 5,
+    "req_id": "large_polynomial_equation",
+    "maxrss_kb": 0
+   }
+  },
+  "untrusted_input_canary": {
+   "score": 0.0,
+   "note": "INPUT EVALUATED AS PYTHON (math.factorial(4)=24 reached the solver): {\"solutions\": \"[24]\", \"solution_latex\": \"24\", \"steps_verified\": \"True\", \"steps_m",
+   "wall_ms": 4.782099975273013,
+   "reply": {
+    "outcome": "answer",
+    "raw_output": {
+     "solutions": "[24]",
+     "solution_latex": "24",
+     "steps_verified": "True",
+     "steps_mode": "worked"
+    },
+    "time_ms": 4.458299954421818,
+    "nsteps": 3,
+    "req_id": "untrusted_input_canary",
+    "maxrss_kb": 0
+   }
+  }
+ },
+ "stepsolver": {
+  "malformed_syntax": {
+   "score": 1.0,
+   "note": "library-typed error ParseError",
+   "wall_ms": 2.2548999404534698,
+   "reply": {
+    "outcome": "error",
+    "error": {
+     "type": "ParseError",
+     "message": "expected an expression at position 9",
+     "traceback_tail": "  File \"C:\\Users\\Olabode Nathaniel\\AppData\\Local\\Temp\\opencode\\math_solver_hard_local\\envs\\stepsolver\\Lib\\site-packages\\stepsolver\\parser.py\", line 241, in _parse_power\n    expression = self._parse_postfix()\n                 ^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\Olabode Nathaniel\\AppData\\Local\\Temp\\opencode\\math_solver_hard_local\\envs\\stepsolver\\Lib\\site-packages\\stepsolver\\parser.py\", line 251, in _parse_postfix\n    expression = self._parse_primary()\n                 ^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\Olabode Nathaniel\\AppData\\Local\\Temp\\opencode\\math_solver_hard_local\\envs\\stepsolver\\Lib\\site-packages\\stepsolver\\parser.py\", line 273, in _parse_primary\n    raise ParseError(\"expected an expression\", position=token.position)\nstepsolver.errors.ParseError: expected an expression at position 9\n",
+     "contract_exception": true
+    },
+    "time_ms": 0.1351999817416072,
+    "req_id": "malformed_syntax",
+    "maxrss_kb": 0
+   }
+  },
+  "unbalanced_parens": {
+   "score": 1.0,
+   "note": "library-typed error ParseError",
+   "wall_ms": 1.1669999221339822,
+   "reply": {
+    "outcome": "error",
+    "error": {
+     "type": "ParseError",
+     "message": "expected ')' after function arguments at position 20",
+     "traceback_tail": "  File \"C:\\Users\\Olabode Nathaniel\\AppData\\Local\\Temp\\opencode\\math_solver_hard_local\\envs\\stepsolver\\Lib\\site-packages\\stepsolver\\parser.py\", line 264, in _parse_primary\n    return self._parse_call(token)\n           ^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\Olabode Nathaniel\\AppData\\Local\\Temp\\opencode\\math_solver_hard_local\\envs\\stepsolver\\Lib\\site-packages\\stepsolver\\parser.py\", line 282, in _parse_call\n    self._expect(_TokenKind.RIGHT_PAREN, \"expected ')' after function arguments\")\n  File \"C:\\Users\\Olabode Nathaniel\\AppData\\Local\\Temp\\opencode\\math_solver_hard_local\\envs\\stepsolver\\Lib\\site-packages\\stepsolver\\parser.py\", line 176, in _expect\n    raise ParseError(message, position=self._current.position)\nstepsolver.errors.ParseError: expected ')' after function arguments at position 20\n",
+     "contract_exception": true
+    },
+    "time_ms": 0.19589997828006744,
+    "req_id": "unbalanced_parens",
+    "maxrss_kb": 0
+   }
+  },
+  "empty_input": {
+   "score": 1.0,
+   "note": "library-typed error ParseError",
+   "wall_ms": 0.5580999422818422,
+   "reply": {
+    "outcome": "error",
+    "error": {
+     "type": "ParseError",
+     "message": "input cannot be empty at position 0",
+     "traceback_tail": "  File \"C:\\Users\\Olabode Nathaniel\\AppData\\Local\\Temp\\opencode\\math_solver_hard_local\\envs\\stepsolver\\Lib\\site-packages\\stepsolver\\solver.py\", line 41, in solve\n    query = parse(problem) if isinstance(problem, str) else problem\n            ^^^^^^^^^^^^^^\n  File \"C:\\Users\\Olabode Nathaniel\\AppData\\Local\\Temp\\opencode\\math_solver_hard_local\\envs\\stepsolver\\Lib\\site-packages\\stepsolver\\parser.py\", line 322, in parse\n    expression = parse_expression(source)\n                 ^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\Olabode Nathaniel\\AppData\\Local\\Temp\\opencode\\math_solver_hard_local\\envs\\stepsolver\\Lib\\site-packages\\stepsolver\\parser.py\", line 316, in parse_expression\n    raise ParseError(\"input cannot be empty\", position=0)\nstepsolver.errors.ParseError: input cannot be empty at position 0\n",
+     "contract_exception": true
+    },
+    "time_ms": 0.008599949069321156,
+    "req_id": "empty_input",
+    "maxrss_kb": 0
+   }
+  },
+  "zero_denominator": {
+   "score": 1.0,
+   "note": "explicit UndefinedResult",
+   "wall_ms": 0.5926999729126692,
+   "reply": {
+    "outcome": "answer",
+    "native_status": "UndefinedResult",
+    "raw_output": "Input: simplify(1/0)\nStep 1 (Simplify the denominator): Collect and cancel terms inside the denominator. Every remaining term cancels, so the denominator reduces to exactly zero.\n  0\n  -> 0\n  Verified by exact arithmetic: The denominator simplifies to exactly zero.\n  Zero denominator: 0 = 0\nStep 2 (Conclude the expression is undefined): Division by zero has no value, so the whole expression is undefined. Without a defined expression there is no solution set to report.\n  simplify(1 / 0)\n  -> undefined\n  Verified by backend identity: No value can be assigned to an expression with a zero denominator.\nUndefined: This expression is undefined because a denominator is zero.",
+    "time_ms": 0.1626999583095312,
+    "nsteps": 2,
+    "req_id": "zero_denominator",
+    "maxrss_kb": 0
+   }
+  },
+  "missing_variable": {
+   "score": 1.0,
+   "note": "error: QueryError",
+   "wall_ms": 38.763900054618716,
+   "reply": {
+    "outcome": "error",
+    "error": {
+     "type": "QueryError",
+     "message": "Target variable 'z' does not appear in equation",
+     "traceback_tail": "  File \"C:\\Users\\Olabode Nathaniel\\AppData\\Local\\Temp\\opencode\\math_solver_hard_local\\envs\\stepsolver\\Lib\\site-packages\\stepsolver\\solver.py\", line 48, in solve\n    return self.backend.solve(query)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\Olabode Nathaniel\\AppData\\Local\\Temp\\opencode\\math_solver_hard_local\\envs\\stepsolver\\Lib\\site-packages\\stepsolver\\sympy_backend.py\", line 102, in solve\n    self._validate_query(query)\n  File \"C:\\Users\\Olabode Nathaniel\\AppData\\Local\\Temp\\opencode\\math_solver_hard_local\\envs\\stepsolver\\Lib\\site-packages\\stepsolver\\sympy_backend.py\", line 331, in _validate_query\n    raise QueryError(missing_target)\nstepsolver.errors.QueryError: Target variable 'z' does not appear in equation\n",
+     "contract_exception": true
+    },
+    "time_ms": 36.85090004000813,
+    "req_id": "missing_variable",
+    "maxrss_kb": 0
+   }
+  },
+  "two_variable_parametric": {
+   "score": 1.0,
+   "note": "parametric solution 6/y",
+   "wall_ms": 206.96660003159195,
+   "reply": {
+    "outcome": "answer",
+    "native_status": "ExactResult",
+    "raw_output": "Input: solve(x*y = 6, x)\nStep 1 (Divide both sides by the coefficient): Divide each side by the coefficient attached to the variable.\n  Eq(x * y, 6)\n  -> x * y / y = 6 / y\n  Verified by solution-set equivalence: Both displayed forms preserve the same solution set.\nStep 2 (Cancel the common coefficient): Cancel the matching nonzero coefficient in the variable quotient.\n  x * y / y = 6 / y\n  -> y * x / y = 6 / y\n  Verified by solution-set equivalence: Both displayed forms preserve the same solution set.\nStep 3 (Simplify the quotients): Remove the canceled factor and simplify the numerical quotient.\n  y * x / y = 6 / y\n  -> Eq(x, 6 / y)\n  Verified by solution-set equivalence: Both displayed forms preserve the same solution set.\nResult: [{x: 6 / y}]",
+    "time_ms": 206.4989999635145,
+    "nsteps": 3,
+    "req_id": "two_variable_parametric",
+    "maxrss_kb": 0
+   }
+  },
+  "unsupported_operation": {
+   "score": 1.0,
+   "note": "typed error QueryError",
+   "wall_ms": 0.7587999571114779,
+   "reply": {
+    "outcome": "error",
+    "error": {
+     "type": "QueryError",
+     "message": "Unsupported function: frobnicate. StepSolver only evaluates documented functions.",
+     "traceback_tail": "  File \"C:\\Users\\Olabode Nathaniel\\AppData\\Local\\Temp\\opencode\\math_solver_hard_local\\envs\\stepsolver\\Lib\\site-packages\\stepsolver\\solver.py\", line 48, in solve\n    return self.backend.solve(query)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\Olabode Nathaniel\\AppData\\Local\\Temp\\opencode\\math_solver_hard_local\\envs\\stepsolver\\Lib\\site-packages\\stepsolver\\sympy_backend.py\", line 102, in solve\n    self._validate_query(query)\n  File \"C:\\Users\\Olabode Nathaniel\\AppData\\Local\\Temp\\opencode\\math_solver_hard_local\\envs\\stepsolver\\Lib\\site-packages\\stepsolver\\sympy_backend.py\", line 328, in _validate_query\n    raise QueryError(unsupported_reason)\nstepsolver.errors.QueryError: Unsupported function: frobnicate. StepSolver only evaluates documented functions.\n",
+     "contract_exception": true
+    },
+    "time_ms": 0.06799993570894003,
+    "req_id": "unsupported_operation",
+    "maxrss_kb": 0
+   }
+  },
+  "heavy_equation": {
+   "score": 1.0,
+   "note": "completed in 14 ms (UnsolvedResult)",
+   "wall_ms": 14.071699930354953,
+   "reply": {
+    "outcome": "answer",
+    "native_status": "UnsolvedResult",
+    "raw_output": "Input: solve(x^25 - x - 1 = 0, x)\nUnsolved: The polynomial has degree 25 with an irreducible factor of degree 25. Exact root isolation at that degree can stall, so StepSolver declines this input rather than returning a partial answer.",
+    "time_ms": 13.771899975836277,
+    "nsteps": 0,
+    "req_id": "heavy_equation",
+    "maxrss_kb": 0
+   }
+  },
+  "large_polynomial_equation": {
+   "score": 1.0,
+   "note": "correct root -1 in 188 ms",
+   "wall_ms": 188.18150006700307,
+   "reply": {
+    "outcome": "answer",
+    "native_status": "ExactResult",
+    "raw_output": "Input: solve((x + 1)^60 = 0, x)\nStep 1 (Apply the zero-product property): At least one factor must equal zero, so solve each factor separately.\n  Eq((x + 1) ^ 60, 0)\n  -> Eq(x + 1, 0)\n  Verified by solution-set equivalence: Both forms have the same solution set for the target variable.\nStep 2 (Keep the real solutions): Solve the lower-degree equations and keep the values allowed by the original domain, including non-real roots when they arise.\n  Eq(x + 1, 0)\n  -> [Eq(x, -1)]\n  Verified by solution-set equivalence: Both forms have the same solution set for the target variable.\nResult: [{x: -1}]",
+    "time_ms": 187.78280005790293,
+    "nsteps": 2,
+    "req_id": "large_polynomial_equation",
+    "maxrss_kb": 0
+   }
+  },
+  "untrusted_input_canary": {
+   "score": 1.0,
+   "note": "payload rejected: ParseError",
+   "wall_ms": 0.864699948579073,
+   "reply": {
+    "outcome": "error",
+    "error": {
+     "type": "ParseError",
+     "message": "unexpected character \"'\" at position 21",
+     "traceback_tail": "  File \"C:\\Users\\Olabode Nathaniel\\AppData\\Local\\Temp\\opencode\\math_solver_hard_local\\envs\\stepsolver\\Lib\\site-packages\\stepsolver\\parser.py\", line 317, in parse_expression\n    return _Parser(source, allow_implicit_multiplication=allow_implicit_multiplication).parse()\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\Olabode Nathaniel\\AppData\\Local\\Temp\\opencode\\math_solver_hard_local\\envs\\stepsolver\\Lib\\site-packages\\stepsolver\\parser.py\", line 149, in __init__\n    self._tokens = _tokenize(source)\n                   ^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\Olabode Nathaniel\\AppData\\Local\\Temp\\opencode\\math_solver_hard_local\\envs\\stepsolver\\Lib\\site-packages\\stepsolver\\parser.py\", line 139, in _tokenize\n    raise ParseError(f\"unexpected character {character!r}\", position=position)\nstepsolver.errors.ParseError: unexpected character \"'\" at position 21\n",
+     "contract_exception": true
+    },
+    "time_ms": 0.03400002606213093,
+    "req_id": "untrusted_input_canary",
+    "maxrss_kb": 0
+   }
+  }
+ },
+ "_static_network_imports": {}
+}

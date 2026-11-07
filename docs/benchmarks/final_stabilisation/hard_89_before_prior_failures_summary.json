@@ -1,0 +1,21 @@
+{
+ "suite": "Hard & Adversarial (9 prior-failure cases, before fixes)",
+ "name": "Hard 89 prior-failure subset",
+ "cases": 9,
+ "strict_correct": 8,
+ "covered": 9,
+ "invalid": 1,
+ "errors": 0,
+ "unsupported": 0,
+ "derivations_available": 9,
+ "derivation_mean_final": 9.375,
+ "derivation_mean_automated": 9.375,
+ "domain_sensitive_cases": 2,
+ "domain_sensitive_strict": 1,
+ "adapter_overrides": 7,
+ "warm_median_ms": 1314.591,
+ "failing_case_ids": [
+  "R06"
+ ],
+ "case_ids": null
+}

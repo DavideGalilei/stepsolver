@@ -1,0 +1,185 @@
+[
+ {
+  "case_id": "R06",
+  "category": "R",
+  "operation": "integrate",
+  "display_input": "Integrate 1/(x^2 - 1)",
+  "status": "invalid_answer",
+  "status_detail": "wrong_value",
+  "strict_correct": false,
+  "covered": true,
+  "value_correct": false,
+  "actual": "-log(abs(x + 1)) / 2 + log(abs(x - 1)) / 2 + C",
+  "restrictions_reported": [
+   "The original denominator cannot equal zero. | x != -1",
+   "The original denominator cannot equal zero. | x != 1"
+  ],
+  "adapter_overrides": false,
+  "adapter_input": [
+   "integrate(1/(x^2 - 1), x)"
+  ],
+  "warm_median_ms": 2142.2528999391943,
+  "derivation_available": true,
+  "derivation_final": 5
+ },
+ {
+  "case_id": "T06",
+  "category": "T",
+  "operation": "inverse",
+  "display_input": "Inverse of the singular matrix [[1,2],[2,4]]",
+  "status": "valid",
+  "status_detail": "error_signalled_negative_result",
+  "strict_correct": true,
+  "covered": true,
+  "value_correct": true,
+  "actual": "UnexpectedResultType: SingularMatrixResult",
+  "restrictions_reported": [],
+  "adapter_overrides": false,
+  "adapter_input": [
+   "inverse(matrix([[1, 2], [2, 4]]))"
+  ],
+  "warm_median_ms": null,
+  "derivation_available": true,
+  "derivation_final": null
+ },
+ {
+  "case_id": "U01",
+  "category": "U",
+  "operation": "dsolve",
+  "display_input": "Solve y' + y = x",
+  "status": "valid",
+  "status_detail": "",
+  "strict_correct": true,
+  "covered": true,
+  "value_correct": true,
+  "actual": "Eq(y(x), C1 * exp(-x) + x - 1)",
+  "restrictions_reported": [],
+  "adapter_overrides": true,
+  "adapter_input": [
+   "dsolve(diff(y(x), x) + y(x) = x, y(x))"
+  ],
+  "warm_median_ms": 1040.982700069435,
+  "derivation_available": true,
+  "derivation_final": 10
+ },
+ {
+  "case_id": "U02",
+  "category": "U",
+  "operation": "dsolve",
+  "display_input": "Solve y'' - 3y' + 2y = 0",
+  "status": "valid",
+  "status_detail": "",
+  "strict_correct": true,
+  "covered": true,
+  "value_correct": true,
+  "actual": "Eq(y(x), (C1 + C2 * exp(x)) * exp(x))",
+  "restrictions_reported": [],
+  "adapter_overrides": true,
+  "adapter_input": [
+   "dsolve(diff(y(x), x, 2) - 3*diff(y(x), x) + 2*y(x) = 0, y(x))"
+  ],
+  "warm_median_ms": 1793.8565000658855,
+  "derivation_available": true,
+  "derivation_final": 10
+ },
+ {
+  "case_id": "U03",
+  "category": "U",
+  "operation": "dsolve",
+  "display_input": "Solve y'' - 2y' + y = 0",
+  "status": "valid",
+  "status_detail": "",
+  "strict_correct": true,
+  "covered": true,
+  "value_correct": true,
+  "actual": "Eq(y(x), (C1 + C2 * x) * exp(x))",
+  "restrictions_reported": [],
+  "adapter_overrides": true,
+  "adapter_input": [
+   "dsolve(diff(y(x), x, 2) - 2*diff(y(x), x) + y(x) = 0, y(x))"
+  ],
+  "warm_median_ms": 1122.717099962756,
+  "derivation_available": true,
+  "derivation_final": 10
+ },
+ {
+  "case_id": "U04",
+  "category": "U",
+  "operation": "dsolve",
+  "display_input": "Solve y'' + 2y' + 5y = 0",
+  "status": "valid",
+  "status_detail": "",
+  "strict_correct": true,
+  "covered": true,
+  "value_correct": true,
+  "actual": "Eq(y(x), (C1 * sin(2 * x) + C2 * cos(2 * x)) * exp(-x))",
+  "restrictions_reported": [],
+  "adapter_overrides": true,
+  "adapter_input": [
+   "dsolve(diff(y(x), x, 2) + 2*diff(y(x), x) + 5*y(x) = 0, y(x))"
+  ],
+  "warm_median_ms": 1531.0718999244273,
+  "derivation_available": true,
+  "derivation_final": 10
+ },
+ {
+  "case_id": "U05",
+  "category": "U",
+  "operation": "dsolve",
+  "display_input": "Solve y' = x*y",
+  "status": "valid",
+  "status_detail": "",
+  "strict_correct": true,
+  "covered": true,
+  "value_correct": true,
+  "actual": "Eq(y(x), C1 * exp(x ^ 2 / 2))",
+  "restrictions_reported": [],
+  "adapter_overrides": true,
+  "adapter_input": [
+   "dsolve(diff(y(x), x) = x*y(x), y(x))"
+  ],
+  "warm_median_ms": 1506.4644999802113,
+  "derivation_available": true,
+  "derivation_final": 10
+ },
+ {
+  "case_id": "U06",
+  "category": "U",
+  "operation": "dsolve",
+  "display_input": "Solve y'' + y = x",
+  "status": "valid",
+  "status_detail": "",
+  "strict_correct": true,
+  "covered": true,
+  "value_correct": true,
+  "actual": "Eq(y(x), C1 * sin(x) + C2 * cos(x) + x)",
+  "restrictions_reported": [],
+  "adapter_overrides": true,
+  "adapter_input": [
+   "dsolve(diff(y(x), x, 2) + y(x) = x, y(x))"
+  ],
+  "warm_median_ms": 1106.8681000033394,
+  "derivation_available": true,
+  "derivation_final": 10
+ },
+ {
+  "case_id": "U07",
+  "category": "U",
+  "operation": "dsolve",
+  "display_input": "Solve y' = y^2",
+  "status": "valid",
+  "status_detail": "",
+  "strict_correct": true,
+  "covered": true,
+  "value_correct": true,
+  "actual": "Eq(y(x), -1 / (C1 + x))",
+  "restrictions_reported": [],
+  "adapter_overrides": true,
+  "adapter_input": [
+   "dsolve(diff(y(x), x) = y(x)^2, y(x))"
+  ],
+  "warm_median_ms": 919.6657000575215,
+  "derivation_available": true,
+  "derivation_final": 10
+ }
+]

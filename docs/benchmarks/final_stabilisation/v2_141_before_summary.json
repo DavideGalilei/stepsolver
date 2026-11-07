@@ -1,0 +1,31 @@
+{
+ "suite": "V2 Stress",
+ "name": "V2 Stress 141",
+ "cases": 141,
+ "strict_correct": 130,
+ "covered": 131,
+ "invalid": 4,
+ "errors": 5,
+ "unsupported": 2,
+ "derivations_available": 139,
+ "derivation_mean_final": 9.1493,
+ "derivation_mean_automated": 9.1343,
+ "domain_sensitive_cases": 47,
+ "domain_sensitive_strict": 43,
+ "adapter_overrides": 2,
+ "warm_median_ms": null,
+ "failing_case_ids": [
+  "C10",
+  "K03",
+  "C14",
+  "C15",
+  "J05",
+  "J06",
+  "K08",
+  "K09",
+  "K10",
+  "K11",
+  "L08"
+ ],
+ "case_ids": null
+}

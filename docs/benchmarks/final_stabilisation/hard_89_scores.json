@@ -1,0 +1,384 @@
+{
+ "applicable_cases": 89,
+ "weights": {
+  "correctness": 0.35,
+  "derivations": 0.25,
+  "coverage": 0.15,
+  "honesty": 0.1,
+  "reliability": 0.1,
+  "performance": 0.03,
+  "integration": 0.02
+ },
+ "solvers": {
+  "stepsolver": {
+   "version": "0.1.0",
+   "commit": "ef474f6ada961a23733f84535ba7aebcf9ae8fd6",
+   "status_counts": {
+    "valid": 89
+   },
+   "defined": 89,
+   "executed": 89,
+   "skipped": 0,
+   "passed(strict_correct)": 89,
+   "failed(invalid+error)": 0,
+   "unsupported": 0,
+   "unsupported_no_api": 0,
+   "unsolved_by_solver": 0,
+   "value_only_correct": 89,
+   "covered": 89,
+   "attempted": 89,
+   "crashes_timeouts": 0,
+   "reliability_metrics": {
+    "R1_repeatability": 1.0,
+    "R2_engineering_probes": 1.0,
+    "R3_stability": 1.0,
+    "R4_domain_edge_cases": 1.0,
+    "R5_untrusted_input_safety": 1.0
+   },
+   "domain_sensitive_cases": 26,
+   "domain_sensitive_strict_correct": 26,
+   "derivation": {
+    "available": 89,
+    "available_pct_of_applicable": 100.0,
+    "scored": 89,
+    "mean_automated": 9.292134831460674,
+    "mean_final": 9.292134831460674,
+    "mean_final_domain_sensitive": 9.153846153846153,
+    "criterion_means": {
+     "correctness": 2.9887640449438204,
+     "completeness": 1.6179775280898876,
+     "explanation": 1.797752808988764,
+     "consistency": 1,
+     "domain": 0.8876404494382022,
+     "presentation": 1
+    },
+    "manual_reviewed": 0,
+    "distribution": {
+     "9": 29,
+     "10": 46,
+     "8": 9,
+     "7": 4,
+     "6": 1
+    }
+   },
+   "performance": {
+    "cold_start_ready_ms_median": 738.1636000936851,
+    "cold_first_solve_ms_median": 206.23280003201216,
+    "warm_median_common_ms": 46.146800043061376,
+    "warm_p95_common_ms": 460.7573400018737,
+    "warm_median_own_ms": 46.146800043061376,
+    "warm_p95_own_ms": 460.7573400018737,
+    "common_cases": 89,
+    "timeouts": 0,
+    "crashes": 0,
+    "peak_rss_mb": 0.0,
+    "per_operation_median_ms": {
+     "det": 1.6540000215172768,
+     "diff": 25.66099993418902,
+     "dsolve": 345.20310000516474,
+     "eigenvalues": 9.797900100238621,
+     "evaluate": 21.291700017172843,
+     "expand": 5.015700007788837,
+     "factor": 5.345549958292395,
+     "integrate": 172.76200000196695,
+     "inverse": 1.824699982535094,
+     "limit": 30.148399993777275,
+     "rank": 3.634899971075356,
+     "rref": 3.603499964810908,
+     "series": 53.224300034344196,
+     "simplify": 25.14150005299598,
+     "solve": 58.103500050492585,
+     "solve_inequality": 174.88150007557124,
+     "solve_system": 28.160499990917742,
+     "sum": 125.97479997202754
+    }
+   },
+   "integration": {
+    "points": 12,
+    "max": 14,
+    "criteria": {
+     "env_compat": {
+      "score": 1,
+      "evidence": "7 third-party packages installed besides the engine (2 if <=4, 1 if <=30, else 0); requires-python >=3.12,<3.15"
+     },
+     "install": {
+      "score": 2,
+      "evidence": "single install command succeeded"
+     },
+     "adaptation": {
+      "score": 2,
+      "evidence": "0.0% of cases needed per-case adapter handling (2 if <=2%, 1 if <=10%, else 0)"
+     },
+     "testability_extensibility": {
+      "score": 2,
+      "evidence": "385 test functions found statically (2 if >=100, 1 if >=1)"
+     },
+     "licence": {
+      "score": 2,
+      "evidence": "licence MIT (permissive)"
+     },
+     "maintenance": {
+      "score": 1,
+      "evidence": "history: 66 commits, 3 authors, age 81 days, last commit 0 days ago, 0 tags (2 if >=2y and >=5 authors; 1 if >=5 commits and active within 1y)"
+     },
+     "ui_independent": {
+      "score": 1,
+      "evidence": "FIXED ASSUMPTION: used headless as a library in this benchmark"
+     },
+     "no_rewrite": {
+      "score": 1,
+      "evidence": "FIXED ASSUMPTION: plain library call; adapter-sized integration"
+     }
+    }
+   },
+   "tiers": {
+    "1": {
+     "cases": 37,
+     "weight": 1,
+     "strict_correct": 37,
+     "pct": 100.0,
+     "covered": 37
+    },
+    "2": {
+     "cases": 42,
+     "weight": 2,
+     "strict_correct": 42,
+     "pct": 100.0,
+     "covered": 42
+    },
+    "3": {
+     "cases": 10,
+     "weight": 3,
+     "strict_correct": 10,
+     "pct": 100.0,
+     "covered": 10
+    }
+   },
+   "honesty": {
+    "adversarial_cases": 10,
+    "dishonest_cases": [],
+    "score": 100.0
+   },
+   "components": {
+    "correctness": 100.0,
+    "derivations": 92.92134831460673,
+    "coverage": 100.0,
+    "honesty": 100.0,
+    "reliability": 100.0,
+    "integration": 85.71428571428571,
+    "performance": 59.537878986322625
+   },
+   "overall": 96.73075916252708,
+   "sensitivity": {
+    "primary (spec formula)": 96.73075916252708,
+    "value-only correctness (no domain-reporting requirement)": 96.73075916252708,
+    "value correctness ignoring form rules too": 96.73075916252708,
+    "unweighted correctness (tiers ignored)": 96.73075916252708,
+    "adversarial cases only for correctness": 96.73075916252708,
+    "availability-penalised derivations (unavailable=0 over all cases)": 96.73075916252708,
+    "automated-only derivation scores (no manual overlay)": 96.73075916252708,
+    "latency on each solver's own supported cases": 96.73075916252708
+   },
+   "by_category": {
+    "M": {
+     "n": 8,
+     "strict_correct": 8,
+     "covered": 8,
+     "unsupported": 0,
+     "invalid": 0,
+     "errors": 0
+    },
+    "N": {
+     "n": 11,
+     "strict_correct": 11,
+     "covered": 11,
+     "unsupported": 0,
+     "invalid": 0,
+     "errors": 0
+    },
+    "O": {
+     "n": 9,
+     "strict_correct": 9,
+     "covered": 9,
+     "unsupported": 0,
+     "invalid": 0,
+     "errors": 0
+    },
+    "P": {
+     "n": 5,
+     "strict_correct": 5,
+     "covered": 5,
+     "unsupported": 0,
+     "invalid": 0,
+     "errors": 0
+    },
+    "Q": {
+     "n": 5,
+     "strict_correct": 5,
+     "covered": 5,
+     "unsupported": 0,
+     "invalid": 0,
+     "errors": 0
+    },
+    "R": {
+     "n": 15,
+     "strict_correct": 15,
+     "covered": 15,
+     "unsupported": 0,
+     "invalid": 0,
+     "errors": 0
+    },
+    "S": {
+     "n": 17,
+     "strict_correct": 17,
+     "covered": 17,
+     "unsupported": 0,
+     "invalid": 0,
+     "errors": 0
+    },
+    "T": {
+     "n": 9,
+     "strict_correct": 9,
+     "covered": 9,
+     "unsupported": 0,
+     "invalid": 0,
+     "errors": 0
+    },
+    "U": {
+     "n": 7,
+     "strict_correct": 7,
+     "covered": 7,
+     "unsupported": 0,
+     "invalid": 0,
+     "errors": 0
+    },
+    "V": {
+     "n": 3,
+     "strict_correct": 3,
+     "covered": 3,
+     "unsupported": 0,
+     "invalid": 0,
+     "errors": 0
+    }
+   }
+  }
+ },
+ "solver_order": [
+  "stepsolver"
+ ],
+ "hard_gates": {
+  "stepsolver": {
+   "G1_critical_correctness": {
+    "status": "PASS",
+    "critical_cases": [],
+    "major_defects(not gating)": []
+   },
+   "G2_fabricated_or_invalid_derivations": {
+    "status": "PASS",
+    "cases": [],
+    "evidence": []
+   },
+   "G3_unsafe_execution": {
+    "status": "PASS",
+    "canary_score": 1.0,
+    "note": "payload rejected: ParseError"
+   },
+   "G4_licence": {
+    "status": "PASS",
+    "licence": "MIT"
+   },
+   "eligible_for_production_recommendation": "YES"
+  }
+ },
+ "common_latency_cases": [
+  "M01",
+  "M02",
+  "M03",
+  "M04",
+  "M05",
+  "M06",
+  "M07",
+  "M08",
+  "N01",
+  "N02",
+  "N03",
+  "N04",
+  "N05",
+  "N06",
+  "N07",
+  "N08",
+  "N09",
+  "N10",
+  "N11",
+  "O01",
+  "O02",
+  "O03",
+  "O04",
+  "O05",
+  "O06",
+  "O07",
+  "O08",
+  "O09",
+  "P01",
+  "P02",
+  "P03",
+  "P04",
+  "P05",
+  "Q01",
+  "Q02",
+  "Q03",
+  "Q04",
+  "Q05",
+  "R01",
+  "R02",
+  "R03",
+  "R04",
+  "R05",
+  "R06",
+  "R07",
+  "R08",
+  "R09",
+  "R10",
+  "R11",
+  "R12",
+  "R13",
+  "R14",
+  "R15",
+  "S01",
+  "S02",
+  "S03",
+  "S04",
+  "S05",
+  "S06",
+  "S07",
+  "S08",
+  "S09",
+  "S10",
+  "S11",
+  "S12",
+  "S13",
+  "S14",
+  "S15",
+  "S16",
+  "S17",
+  "T01",
+  "T02",
+  "T03",
+  "T04",
+  "T05",
+  "T06",
+  "T07",
+  "T08",
+  "T09",
+  "U01",
+  "U02",
+  "U03",
+  "U04",
+  "U05",
+  "U06",
+  "U07",
+  "V01",
+  "V02",
+  "V03"
+ ]
+}

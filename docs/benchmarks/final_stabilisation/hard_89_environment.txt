@@ -1,0 +1,7 @@
+date: 2026-11-05T12:22:38Z
+os: win32
+cpu: windows
+engine python: 3.12.13
+experiment: Hard & Adversarial 89, StepSolver only, repeats=5, timeout=20
+code commit: ef474f6ada961a23733f84535ba7aebcf9ae8fd6
+note: isolated env reused from the V2 benchmark build; install_seconds not measured
