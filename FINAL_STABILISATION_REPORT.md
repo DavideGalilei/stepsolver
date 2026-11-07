@@ -18,16 +18,14 @@ benchmark suites into one score.
 |---|---|
 | Starting commit (`main` = `origin/main`) | `d965b46ee2fc9a3c0e742cdcdd4b1a4de89c9b3d` |
 | Final code commit under test | `ef474f6ada961a23733f84535ba7aebcf9ae8fd6` |
-| Report and evidence commit | the child commit that adds this file under `docs/benchmarks/final_stabilisation/` |
+| Report and evidence commit | `60337329d216601f0d6ca9a4449ae49987db2ad1` |
 | Merge target | `main` (fast-forward from `final-stabilisation`) |
 
 **SHA circularity note.** A report cannot contain the SHA of the commit that contains it. The
-code tree that produced every benchmark row in this report is `ef474f6`. This report and the raw
-evidence are committed immediately after it. The exact report commit is available from:
-
-```text
-git log -1 --format=%H -- FINAL_STABILISATION_REPORT.md
-```
+code tree that produced every benchmark row in this report is `ef474f6`. The report and raw
+evidence were committed as `6033732`, a child of `ef474f6`; a final metadata-only commit records
+that report SHA. The repository head at handoff is the metadata commit on top of `6033732`, and
+its SHA is reported in the handoff message.
 
 No source file was changed after `ef474f6` for the benchmark runs. The installed `stepsolver`
 package in both isolated benchmark environments was verified byte-for-byte against all 65 Python
