@@ -7,8 +7,6 @@ from dataclasses import asdict, dataclass
 from enum import Enum
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, ValidationError, field_validator
-
 from stepsolver.ast import (
     ApproximateNumber,
     BinaryExpression,
@@ -26,7 +24,7 @@ from stepsolver.ast import (
     Symbol,
     UnaryExpression,
 )
-from stepsolver.errors import LimitError, LimitViolation, ParseError
+from stepsolver.errors import LimitError, LimitViolation
 from stepsolver.formatter import format_expression, format_value
 from stepsolver.parser import parse
 from stepsolver.presentation import (
@@ -64,20 +62,6 @@ class IsolatedLimits:
 
 
 DEFAULT_ISOLATED_LIMITS = IsolatedLimits()
-
-
-class _SolveRequestPayload(BaseModel):
-    model_config = ConfigDict(extra="forbid", strict=True)
-
-    expression: str
-
-    @field_validator("expression")
-    @classmethod
-    def require_ascii_expression(cls, value: str) -> str:
-        if not value.isascii():
-            message = "expression must contain only ASCII characters"
-            raise ValueError(message)
-        return value
 
 
 class IsolatedErrorCode(Enum):
@@ -303,12 +287,10 @@ def parse_isolated_request(
     """Parse the exact JSON request shape and validate its mathematical payload."""
     if len(document) > limits.request_bytes:
         raise LimitError(LimitViolation.REQUEST_BYTES)
-    try:
-        request = _SolveRequestPayload.model_validate_json(document)
-    except ValidationError as error:
-        message = "request must contain one ASCII expression"
-        raise ParseError(message, position=0) from error
-    return validate_solve_request(request.expression, limits)
+    # Pyodide imports the solver package without installing its server dependencies.
+    from stepsolver import isolated_request  # ruff: ignore[import-outside-top-level]
+
+    return validate_solve_request(isolated_request.parse_request_expression(document), limits)
 
 
 def _normalized_expression(query: Query) -> str:

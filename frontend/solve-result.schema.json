@@ -1,0 +1,230 @@
+{
+  "$defs": {
+    "ExplanationPartPayload": {
+      "additionalProperties": false,
+      "description": "One prose or inline-math fragment in a browser explanation.",
+      "properties": {
+        "latex": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Latex"
+        },
+        "text": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Text"
+        }
+      },
+      "required": [
+        "text",
+        "latex"
+      ],
+      "title": "ExplanationPartPayload",
+      "type": "object"
+    },
+    "StepConstraintPayload": {
+      "additionalProperties": false,
+      "description": "One domain restriction introduced by a displayed step.",
+      "properties": {
+        "explanation": {
+          "title": "Explanation",
+          "type": "string"
+        },
+        "expression_ascii": {
+          "title": "Expression Ascii",
+          "type": "string"
+        },
+        "expression_latex": {
+          "title": "Expression Latex",
+          "type": "string"
+        }
+      },
+      "required": [
+        "explanation",
+        "expression_ascii",
+        "expression_latex"
+      ],
+      "title": "StepConstraintPayload",
+      "type": "object"
+    },
+    "StepNotePayload": {
+      "additionalProperties": false,
+      "description": "One labeled identity or substitution displayed with a step.",
+      "properties": {
+        "expression_ascii": {
+          "title": "Expression Ascii",
+          "type": "string"
+        },
+        "expression_latex": {
+          "title": "Expression Latex",
+          "type": "string"
+        },
+        "label": {
+          "title": "Label",
+          "type": "string"
+        }
+      },
+      "required": [
+        "label",
+        "expression_ascii",
+        "expression_latex"
+      ],
+      "title": "StepNotePayload",
+      "type": "object"
+    },
+    "StepPayload": {
+      "additionalProperties": false,
+      "description": "One browser-renderable verified solution step.",
+      "properties": {
+        "after_ascii": {
+          "title": "After Ascii",
+          "type": "string"
+        },
+        "after_latex": {
+          "title": "After Latex",
+          "type": "string"
+        },
+        "before_ascii": {
+          "title": "Before Ascii",
+          "type": "string"
+        },
+        "before_latex": {
+          "title": "Before Latex",
+          "type": "string"
+        },
+        "explanation": {
+          "title": "Explanation",
+          "type": "string"
+        },
+        "explanation_parts": {
+          "items": {
+            "$ref": "#/$defs/ExplanationPartPayload"
+          },
+          "title": "Explanation Parts",
+          "type": "array"
+        },
+        "introduced_constraints": {
+          "items": {
+            "$ref": "#/$defs/StepConstraintPayload"
+          },
+          "title": "Introduced Constraints",
+          "type": "array"
+        },
+        "notes": {
+          "items": {
+            "$ref": "#/$defs/StepNotePayload"
+          },
+          "title": "Notes",
+          "type": "array"
+        },
+        "number": {
+          "title": "Number",
+          "type": "integer"
+        },
+        "rule": {
+          "title": "Rule",
+          "type": "string"
+        },
+        "verification_detail": {
+          "title": "Verification Detail",
+          "type": "string"
+        },
+        "verification_method": {
+          "title": "Verification Method",
+          "type": "string"
+        }
+      },
+      "required": [
+        "number",
+        "rule",
+        "explanation",
+        "explanation_parts",
+        "before_ascii",
+        "after_ascii",
+        "before_latex",
+        "after_latex",
+        "verification_method",
+        "verification_detail",
+        "notes",
+        "introduced_constraints"
+      ],
+      "title": "StepPayload",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Runtime-neutral representation of a completed solver request.",
+  "properties": {
+    "formatted_ascii": {
+      "title": "Formatted Ascii",
+      "type": "string"
+    },
+    "reason": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Reason"
+    },
+    "result_latex": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Result Latex"
+    },
+    "source": {
+      "title": "Source",
+      "type": "string"
+    },
+    "status": {
+      "enum": [
+        "exact",
+        "divergent",
+        "undefined",
+        "unsolved"
+      ],
+      "title": "Status",
+      "type": "string"
+    },
+    "steps": {
+      "items": {
+        "$ref": "#/$defs/StepPayload"
+      },
+      "title": "Steps",
+      "type": "array"
+    }
+  },
+  "required": [
+    "status",
+    "source",
+    "formatted_ascii",
+    "result_latex",
+    "reason",
+    "steps"
+  ],
+  "title": "SolvePayload",
+  "type": "object"
+}

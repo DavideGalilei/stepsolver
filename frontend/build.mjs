@@ -4,6 +4,8 @@ import { fileURLToPath } from "node:url";
 
 import { build } from "esbuild";
 
+import { compileSolveValidator } from "./compile-solve-validator.mjs";
+
 const frontendDirectory = dirname(fileURLToPath(import.meta.url));
 const assetDirectory = resolve(frontendDirectory, "../src/stepsolver/web_assets");
 const fontDirectory = resolve(assetDirectory, "fonts");
@@ -11,6 +13,8 @@ const vendorPath = resolve(assetDirectory, "vendor.mjs");
 const vendorLegalPath = resolve(assetDirectory, "vendor.mjs.LEGAL.txt");
 
 await mkdir(assetDirectory, { recursive: true });
+await writeFile(resolve(assetDirectory, "solve-result-validator.mjs"), await compileSolveValidator());
+
 await rm(fontDirectory, { force: true, recursive: true });
 await cp(resolve(frontendDirectory, "node_modules/mathlive/fonts"), fontDirectory, {
   recursive: true
@@ -33,7 +37,8 @@ await writeFile(vendorLegalPath, vendorLegalSource.replace(/[\t ]+$/gm, ""), "ut
 
 const dependencies = [
   ["MathLive 0.110.0", "mathlive/LICENSE.txt"],
-  ["CortexJS Compute Engine 0.58.0", "@cortex-js/compute-engine/LICENSE"]
+  ["CortexJS Compute Engine 0.58.0", "@cortex-js/compute-engine/LICENSE"],
+  ["Ajv 8.20.0 standalone validation code", "ajv/LICENSE"]
 ];
 const notices = [
   "Third-party software bundled with the StepSolver web interface",

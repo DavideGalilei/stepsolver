@@ -2,7 +2,6 @@
 
 import os
 from pathlib import Path
-from typing import Literal
 
 import uvicorn
 from fastapi import FastAPI, HTTPException
@@ -10,6 +9,7 @@ from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, ConfigDict, Field
 
+from stepsolver.browser_result import SolvePayload
 from stepsolver.errors import QueryError
 from stepsolver.mathjson import JsonValue, query_from_mathjson
 from stepsolver.presentation import solve_payload
@@ -31,79 +31,18 @@ class SolveRequest(BaseModel):
     math_json: JsonValue
 
 
-class StepNoteResponse(BaseModel):
-    """One labeled mathematical rule or substitution supporting a step."""
-
-    model_config = ConfigDict(extra="forbid", frozen=True)
-
-    label: str
-    expression_ascii: str
-    expression_latex: str
-
-
-class StepConstraintResponse(BaseModel):
-    """One domain restriction introduced by a solution step."""
-
-    model_config = ConfigDict(extra="forbid", frozen=True)
-
-    explanation: str
-    expression_ascii: str
-    expression_latex: str
-
-
-class ExplanationPartResponse(BaseModel):
-    """One prose or inline-math fragment in a rendered explanation."""
-
-    model_config = ConfigDict(extra="forbid", frozen=True)
-
-    text: str | None = None
-    latex: str | None = None
-
-
-class StepResponse(BaseModel):
-    """One browser-renderable verified solution step."""
-
-    model_config = ConfigDict(extra="forbid", frozen=True)
-
-    number: int
-    rule: str
-    explanation: str
-    explanation_parts: tuple[ExplanationPartResponse, ...]
-    before_ascii: str
-    after_ascii: str
-    before_latex: str
-    after_latex: str
-    verification_method: str
-    verification_detail: str
-    notes: tuple[StepNoteResponse, ...]
-    introduced_constraints: tuple[StepConstraintResponse, ...]
-
-
-class SolveResponse(BaseModel):
-    """Typed browser response for an exact, divergent, or unsolved query."""
-
-    model_config = ConfigDict(extra="forbid", frozen=True)
-
-    status: Literal["exact", "divergent", "undefined", "unsolved"]
-    source: str
-    formatted_ascii: str
-    result_latex: str | None
-    reason: str | None
-    steps: tuple[StepResponse, ...]
-
-
 def homepage() -> HTMLResponse:
     """Serve the StepSolver single-page frontend."""
     return HTMLResponse(_INDEX_FILE.read_text(encoding="utf-8"))
 
 
-def solve_endpoint(payload: SolveRequest) -> SolveResponse:
+def solve_endpoint(payload: SolveRequest) -> SolvePayload:
     """Parse and solve one graphical-editor query for the browser."""
     try:
         result = Solver().solve(query_from_mathjson(payload.math_json))
     except QueryError as error:
         raise HTTPException(status_code=422, detail=str(error)) from error
-    return SolveResponse.model_validate(solve_payload(result).as_dict())
+    return solve_payload(result)
 
 
 def create_app() -> FastAPI:
@@ -119,7 +58,7 @@ def create_app() -> FastAPI:
         "/api/solve",
         solve_endpoint,
         methods=["POST"],
-        response_model=SolveResponse,
+        response_model=SolvePayload,
     )
     return application
 

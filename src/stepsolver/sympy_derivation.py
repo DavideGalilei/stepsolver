@@ -13,17 +13,21 @@ from stepsolver.derivation.equations import derive_polynomial_equation
 from stepsolver.derivation.integrals_elementary import (
     derive_basic_antiderivative,
     derive_constant_multiple_integral,
-    derive_function_substitution_integral,
-    derive_log_derivative_integral,
     derive_polynomial_sum_integral,
 )
-from stepsolver.derivation.integrals_special import (
-    derive_gaussian_antiderivative,
-    derive_integration_by_parts,
-    derive_inverse_hyperbolic_integral,
-    derive_partial_fraction_integral,
+from stepsolver.derivation.integrals_parts import derive_integration_by_parts
+from stepsolver.derivation.integrals_radical import (
     derive_shifted_semicircle_integral,
     derive_square_root_rational_integral,
+)
+from stepsolver.derivation.integrals_rational import derive_partial_fraction_integral
+from stepsolver.derivation.integrals_substitution import (
+    derive_function_substitution_integral,
+    derive_log_derivative_integral,
+)
+from stepsolver.derivation.integrals_transcendental import (
+    derive_gaussian_antiderivative,
+    derive_inverse_hyperbolic_integral,
     derive_trigonometric_power_integral,
 )
 from stepsolver.derivation.limits import derive_limit

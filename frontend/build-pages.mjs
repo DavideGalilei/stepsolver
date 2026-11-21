@@ -36,7 +36,7 @@ await writeFile(
   "utf8"
 );
 await cp(
-  resolve(frontendDirectory, "browser-runtime.mjs"),
+  resolve(sourceAssets, "worker-runtime.mjs"),
   resolve(outputDirectory, "static/runtime.mjs")
 );
 await writeFile(resolve(outputDirectory, ".nojekyll"), "", "utf8");

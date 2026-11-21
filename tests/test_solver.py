@@ -1,5 +1,7 @@
 """End-to-end symbolic solver tests."""
 
+from fractions import Fraction
+
 import pytest
 
 from stepsolver import (
@@ -7,6 +9,7 @@ from stepsolver import (
     DivergentResult,
     ExactResult,
     NoSolutionValue,
+    ScalarValue,
     Solver,
     UndefinedResult,
     UnsolvedResult,
@@ -14,6 +17,7 @@ from stepsolver import (
     format_expression,
     format_latex_expression,
 )
+from stepsolver.ast import Number
 
 _CONTOUR_STEP_COUNT = 3
 _CROSSED_NUMERIC_FACTOR_COUNT = 4
@@ -398,6 +402,44 @@ def test_divergent_series_are_classified_with_a_human_test(
     assert result.steps[0].rule == rule
     assert "series" in result.reason
     assert "Sum(" not in format_ascii(result)
+
+
+@pytest.mark.parametrize(
+    ("query", "answer", "rule", "identity_label"),
+    [
+        (
+            "sum(4*n/5^n,n,1,oo)",
+            Fraction(5, 4),
+            "Differentiate the geometric-series identity",
+            "Weighted geometric identity",
+        ),
+        (
+            "sum(4*n^2/5^n,n,1,oo)",
+            Fraction(15, 8),
+            "Differentiate the geometric-series identity twice",
+            "Second-moment identity",
+        ),
+    ],
+)
+def test_geometric_moments_keep_their_identity_and_condition(
+    solver: Solver,
+    query: str,
+    answer: Fraction,
+    rule: str,
+    identity_label: str,
+) -> None:
+    """A shifted power representation should retain the verified formula and ratio."""
+    result = solver.solve(query)
+    assert isinstance(result, ExactResult)
+    assert result.value == ScalarValue(expression=Number(value=answer))
+    (step,) = result.steps
+    assert step.rule == rule
+    assert tuple(note.label for note in step.notes) == (
+        identity_label,
+        "Common ratio",
+        "Convergence condition",
+    )
+    assert r"\frac{1}{5}" in format_latex_expression(step.notes[1].expression)
 
 
 def test_equation_system_returns_typed_mappings(solver: Solver) -> None:

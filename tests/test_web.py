@@ -2,13 +2,18 @@
 
 import json
 from dataclasses import dataclass
+from pathlib import Path
 
 import pytest
 from fastapi.testclient import TestClient
+from pydantic import TypeAdapter
 
 from stepsolver import web
 from stepsolver.browser import solve_mathjson_json
-from stepsolver.web import SolveResponse, create_app
+from stepsolver.presentation import SolvePayload
+from stepsolver.web import create_app
+
+_SOLVE_PAYLOAD = TypeAdapter(SolvePayload)
 
 _HTTP_OK = 200
 _HTTP_UNPROCESSABLE_CONTENT = 422
@@ -28,13 +33,23 @@ class _UvicornCall:
     reload: bool = False
 
 
+def test_browser_schema_matches_the_serialized_python_contract() -> None:
+    """Check the browser compiler input against the authoritative records."""
+    schema_file = Path(__file__).parents[1] / "frontend" / "solve-result.schema.json"
+    assert json.loads(schema_file.read_text(encoding="utf-8")) == _SOLVE_PAYLOAD.json_schema(
+        mode="serialization",
+    )
+
+
 def test_homepage_and_assets_are_served() -> None:
     """The browser shell and bundled assets should be available."""
     with TestClient(create_app()) as client:
         homepage = client.get("/")
         stylesheet = client.get("/static/style.css")
         script = client.get("/static/app.js")
+        solution = client.get("/static/solution-view.mjs")
         runtime = client.get("/static/runtime.mjs")
+        result_validator = client.get("/static/solve-result-validator.mjs")
         favicon = client.get("/static/favicon.svg")
     assert homepage.status_code == _HTTP_OK
     assert "StepSolver" in homepage.text
@@ -60,6 +75,7 @@ def test_homepage_and_assets_are_served() -> None:
     assert 'from "./runtime.mjs"' in script.text
     assert 'new URL("./fonts/", import.meta.url).href' in script.text
     assert runtime.status_code == _HTTP_OK
+    assert result_validator.status_code == _HTTP_OK
     assert favicon.status_code == _HTTP_OK
     assert "∬" in favicon.text
     assert 'fetch("./api/solve"' in runtime.text
@@ -77,8 +93,8 @@ def test_homepage_and_assets_are_served() -> None:
     assert "touch-action: manipulation" in stylesheet.text
     assert "pointer-events: none" in stylesheet.text
     assert "--smart-fence-color: var(--ink)" in stylesheet.text
-    assert 'table.className = "derivative-table"' in script.text
-    assert "Differentiate each factor once" in script.text
+    assert 'table.className = "derivative-table"' in solution.text
+    assert "Differentiate each factor once" in solution.text
 
 
 def test_desktop_palette_inserts_on_the_first_pointer_press() -> None:
@@ -158,12 +174,13 @@ def test_frontend_handles_large_math_and_warms_the_browser_runtime() -> None:
         homepage = client.get("/")
         stylesheet = client.get("/static/style.css")
         script = client.get("/static/app.js")
+        solution = client.get("/static/solution-view.mjs")
     assert 'class="math-viewport result-viewport"' in homepage.text
     assert 'aria-label="Scrollable answer"' in homepage.text
     assert 'id="mobile-keyboard-proxy"' in homepage.text
     assert 'id="math-keyboard-button"' in homepage.text
     assert 'inputmode="text"' in homepage.text
-    assert "createMathViewport" in script.text
+    assert "createMathViewport" in solution.text
     assert "keyboard-sink" not in script.text
     assert 'mobileKeyboardProxy.addEventListener("beforeinput"' in script.text
     assert 'mobileKeyboardProxy.addEventListener("compositionend"' in script.text
@@ -212,6 +229,7 @@ def test_python_runtime_preloads_but_only_shows_progress_after_submit() -> None:
         script = client.get("/static/app.js")
         runtime = client.get("/static/runtime.mjs")
         prewarm = client.get("/static/prewarm.mjs")
+        solution = client.get("/static/solution-view.mjs")
 
     assert 'id="runtime-status"' not in homepage.text
     assert 'id="solver-progress" class="solver-progress hidden"' in homepage.text
@@ -232,8 +250,9 @@ def test_python_runtime_preloads_but_only_shows_progress_after_submit() -> None:
     assert 'solveButton.textContent = "Solving…"' not in script.text
     solve_start = script.text.index("async function solve()")
     solve_request = script.text.index("await solverClient.solve", solve_start)
-    progress_scroll = script.text.index('resultSection.scrollIntoView({ block: "start" })')
-    assert solve_start < progress_scroll < solve_request
+    reset = script.text.index("solutionView.reset()", solve_start)
+    assert solve_start < reset < solve_request
+    assert 'resultSection.scrollIntoView({ block: "start" })' in solution.text
     assert 'statusText.classList.add("is-loading")' not in script.text
     assert "async warmup()" in runtime.text
     assert "subscribeRuntimeStatus(listener)" in runtime.text
@@ -287,16 +306,16 @@ def test_mobile_formula_gestures_preserve_vertical_page_scrolling() -> None:
     """Formula panes should reserve native touch panning for the document's vertical axis."""
     with TestClient(create_app()) as client:
         stylesheet = client.get("/static/style.css")
-        script = client.get("/static/app.js")
+        solution = client.get("/static/solution-view.mjs")
     assert ".math-viewport { touch-action: pan-y pinch-zoom; }" in stylesheet.text
     assert ".math-viewport > math-field" in stylesheet.text
     assert "max-width: none" in stylesheet.text
     assert "overflow: visible" in stylesheet.text
     assert "overflow-y: visible" in stylesheet.text
-    assert "function enableTouchMathScrolling(viewport)" in script.text
-    assert "gesture.horizontal = Math.abs(deltaX) > Math.abs(deltaY)" in script.text
-    assert "viewport.scrollLeft = gesture.startScrollLeft - deltaX" in script.text
-    assert 'enableTouchMathScrolling(document.querySelector(".result-viewport"))' in script.text
+    assert "function enableTouchMathScrolling(viewport)" in solution.text
+    assert "gesture.horizontal = Math.abs(deltaX) > Math.abs(deltaY)" in solution.text
+    assert "viewport.scrollLeft = gesture.startScrollLeft - deltaX" in solution.text
+    assert 'enableTouchMathScrolling(document.querySelector(".result-viewport"))' in solution.text
 
 
 def test_mobile_native_keyboard_can_edit_and_extend_systems() -> None:
@@ -351,6 +370,7 @@ def test_frontend_renders_domain_constraints_and_accepts_systems() -> None:
         homepage = client.get("/")
         stylesheet = client.get("/static/style.css")
         script = client.get("/static/app.js")
+        solution = client.get("/static/solution-view.mjs")
     assert 'title="System of equations"' in homepage.text
     assert 'data-structure="system"' in homepage.text
     assert r'data-insert="\begin{cases}\placeholder{}\\\placeholder{}\end{cases}"' in homepage.text
@@ -359,9 +379,9 @@ def test_frontend_renders_domain_constraints_and_accepts_systems() -> None:
     assert 'key.dataset.structure === "system"' in script.text
     assert "expressionField.setValue(template" in script.text
     assert 'insertionMode: "replaceAll"' in script.text
-    assert "createConstraints(step)" in script.text
-    assert "Domain restrictions introduced here" in script.text
-    assert "step.introduced_constraints" in script.text
+    assert "createConstraints(step)" in solution.text
+    assert "Domain restrictions introduced here" in solution.text
+    assert "step.introduced_constraints" in solution.text
     assert ".step-constraints" in stylesheet.text
 
     with TestClient(create_app()) as client:
@@ -376,7 +396,7 @@ def test_frontend_renders_domain_constraints_and_accepts_systems() -> None:
                 ],
             },
         )
-    payload = SolveResponse.model_validate_json(response.text)
+    payload = _SOLVE_PAYLOAD.validate_json(response.text)
     assert payload.status == "exact"
     assert tuple(step.rule for step in payload.steps) == (
         "Eliminate x",
@@ -399,7 +419,7 @@ def test_web_no_solution_payload_keeps_domain_restrictions() -> None:
                 ],
             },
         )
-    payload = SolveResponse.model_validate_json(response.text)
+    payload = _SOLVE_PAYLOAD.validate_json(response.text)
     assert payload.status == "exact"
     assert payload.result_latex == r"\text{No solution}"
     assert payload.steps[0].introduced_constraints[1].expression_latex == r"x \ne 1"
@@ -410,7 +430,7 @@ def test_browser_runtime_serializes_the_same_solver_payload() -> None:
     source = json.dumps(
         ["Integrate", ["Sin", "x"], ["Tuple", "x", 0, "Pi"]],
     )
-    payload = SolveResponse.model_validate_json(solve_mathjson_json(source))
+    payload = _SOLVE_PAYLOAD.validate_json(solve_mathjson_json(source))
     assert payload.status == "exact"
     assert payload.result_latex == "2"
     assert payload.steps
@@ -426,7 +446,8 @@ def test_browser_runtime_solves_the_reported_trigonometric_square_root() -> None
             ["Tuple", "x", 0, ["Multiply", 2, "Pi"]],
         ]
     )
-    payload = SolveResponse.model_validate_json(solve_mathjson_json(source))
+    serialized = solve_mathjson_json(source)
+    payload = _SOLVE_PAYLOAD.validate_json(serialized)
 
     assert payload.status == "exact"
     assert payload.result_latex == "4"
@@ -443,8 +464,8 @@ def test_browser_runtime_solves_the_reported_trigonometric_square_root() -> None
     )
     assert payload.steps[1].explanation_parts[3].latex == r"\sqrt{y^{2}} = \left|y\right|"
     assert all(step.rule != "Compute exact result" for step in payload.steps)
-    assert "Abs(" not in payload.model_dump_json()
-    assert "**" not in payload.model_dump_json()
+    assert "Abs(" not in serialized
+    assert "**" not in serialized
 
 
 def test_undefined_sum_payload_never_exposes_backend_complex_infinity() -> None:
@@ -461,7 +482,7 @@ def test_undefined_sum_payload_never_exposes_backend_complex_infinity() -> None:
                 ],
             },
         )
-    payload = SolveResponse.model_validate_json(response.text)
+    payload = _SOLVE_PAYLOAD.validate_json(response.text)
     assert payload.status == "undefined"
     assert payload.result_latex == r"\text{Undefined}"
     assert payload.reason is not None
@@ -491,7 +512,7 @@ def test_indexed_root_power_series_crosses_the_web_boundary_with_human_steps(
                 ],
             },
         )
-    payload = SolveResponse.model_validate_json(response.text)
+    payload = _SOLVE_PAYLOAD.validate_json(response.text)
     assert response.status_code == _HTTP_OK
     assert payload.status == "divergent"
     assert payload.result_latex == r"\text{Diverges to }+\infty"
@@ -522,7 +543,7 @@ def test_additive_radicand_series_is_reported_as_proved_divergence() -> None:
                 ],
             },
         )
-    payload = SolveResponse.model_validate_json(response.text)
+    payload = _SOLVE_PAYLOAD.validate_json(response.text)
     assert response.status_code == _HTTP_OK
     assert payload.status == "divergent"
     assert payload.result_latex == r"\text{Diverges to }+\infty"
@@ -552,7 +573,7 @@ def test_reciprocal_factorial_tail_has_an_exact_human_web_solution() -> None:
                 ],
             },
         )
-    payload = SolveResponse.model_validate_json(response.text)
+    payload = _SOLVE_PAYLOAD.validate_json(response.text)
     assert response.status_code == _HTTP_OK
     assert payload.status == "exact"
     assert payload.result_latex == r"e - \frac{5}{2}"
@@ -579,7 +600,7 @@ def test_inverse_hyperbolic_mathjson_reaches_a_human_derivative() -> None:
                 "math_json": ["D", ["Arsinh", "x"], "x"],
             },
         )
-    payload = SolveResponse.model_validate_json(response.text)
+    payload = _SOLVE_PAYLOAD.validate_json(response.text)
     assert response.status_code == _HTTP_OK
     assert payload.status == "exact"
     assert payload.steps[0].rule == "Differentiate the inverse hyperbolic sine"
@@ -598,7 +619,7 @@ def test_exact_solve_response_contains_latex_steps() -> None:
             },
         )
     assert response.status_code == _HTTP_OK
-    payload = SolveResponse.model_validate_json(response.text)
+    payload = _SOLVE_PAYLOAD.validate_json(response.text)
     assert payload.status == "exact"
     assert payload.result_latex == "2"
     assert payload.steps
@@ -619,7 +640,7 @@ def test_divergent_absolute_value_integral_has_a_graphical_proof() -> None:
                 ],
             },
         )
-    payload = SolveResponse.model_validate_json(response.text)
+    payload = _SOLVE_PAYLOAD.validate_json(response.text)
     assert response.status_code == _HTTP_OK
     assert payload.status == "divergent"
     assert payload.result_latex == r"\text{Diverges to }+\infty"
@@ -654,7 +675,7 @@ def test_visual_adjacency_uses_the_product_rule() -> None:
                 ],
             },
         )
-    payload = SolveResponse.model_validate_json(response.text)
+    payload = _SOLVE_PAYLOAD.validate_json(response.text)
     assert response.status_code == _HTTP_OK
     assert payload.status == "exact"
     assert [step.rule for step in payload.steps] == ["Apply the product rule"]
@@ -681,7 +702,7 @@ def test_visual_limit_tuple_is_accepted() -> None:
                 ],
             },
         )
-    payload = SolveResponse.model_validate_json(response.text)
+    payload = _SOLVE_PAYLOAD.validate_json(response.text)
     assert response.status_code == _HTTP_OK
     assert payload.status == "exact"
     assert payload.result_latex == "1"
@@ -712,7 +733,7 @@ def test_reciprocal_quadratic_integral_contains_detailed_latex_steps() -> None:
                 ],
             },
         )
-    payload = SolveResponse.model_validate_json(response.text)
+    payload = _SOLVE_PAYLOAD.validate_json(response.text)
     assert response.status_code == _HTTP_OK
     assert [step.rule for step in payload.steps] == [
         "Complete the square",
@@ -765,7 +786,7 @@ def test_dirichlet_integral_contains_human_parameter_steps() -> None:
                 ],
             },
         )
-    payload = SolveResponse.model_validate_json(response.text)
+    payload = _SOLVE_PAYLOAD.validate_json(response.text)
     assert response.status_code == _HTTP_OK
     assert [step.rule for step in payload.steps] == [
         "Introduce a damping parameter",
@@ -793,7 +814,7 @@ def test_graphical_equation_solve_response() -> None:
                 "math_json": ["Equal", ["Subtract", ["Power", "x", 2], 4], 0],
             },
         )
-    payload = SolveResponse.model_validate_json(response.text)
+    payload = _SOLVE_PAYLOAD.validate_json(response.text)
     assert response.status_code == _HTTP_OK
     assert payload.status == "exact"
     assert payload.result_latex == r"x = -2\quad\text{or}\quad x = 2"
@@ -822,7 +843,7 @@ def test_rational_cubic_response_uses_a_student_facing_numerical_method() -> Non
                 ],
             },
         )
-    payload = SolveResponse.model_validate_json(response.text)
+    payload = _SOLVE_PAYLOAD.validate_json(response.text)
     assert payload.status == "exact"
     assert tuple(step.rule for step in payload.steps) == (
         "Multiply both sides by the denominator",
@@ -868,7 +889,7 @@ def test_fractional_linear_response_shows_real_lcd_cancellation() -> None:
                 ],
             },
         )
-    payload = SolveResponse.model_validate_json(response.text)
+    payload = _SOLVE_PAYLOAD.validate_json(response.text)
     assert response.status_code == _HTTP_OK
     assert tuple(step.rule for step in payload.steps) == (
         "Multiply both sides by the denominator",
@@ -914,9 +935,9 @@ def test_fractional_linear_response_shows_real_lcd_cancellation() -> None:
 def test_frontend_labels_approximate_results_as_numerical() -> None:
     """An approximate displayed answer should not be labeled as exact."""
     with TestClient(create_app()) as client:
-        script = client.get("/static/app.js")
-    assert 'payload.result_latex?.includes("\\\\approx")' in script.text
-    assert '"Numerical answer"' in script.text
+        solution = client.get("/static/solution-view.mjs")
+    assert 'payload.result_latex?.includes("\\\\approx")' in solution.text
+    assert '"Numerical answer"' in solution.text
 
 
 def test_invalid_syntax_returns_validation_error() -> None:
@@ -939,7 +960,7 @@ def test_derivative_notation_is_inferred_without_an_operation_field() -> None:
                 "math_json": ["D", ["Power", "x", 2], "x"],
             },
         )
-    payload = SolveResponse.model_validate_json(response.text)
+    payload = _SOLVE_PAYLOAD.validate_json(response.text)
     assert response.status_code == _HTTP_OK
     assert payload.status == "exact"
     assert payload.steps[0].before_latex.startswith(r"\frac{\mathrm{d}}{\mathrm{d}x}")
@@ -955,15 +976,15 @@ def test_general_power_rule_is_rendered_as_a_wide_textbook_identity() -> None:
                 "math_json": ["D", ["Power", "x", "x"], "x"],
             },
         )
-        script = client.get("/static/app.js")
+        solution = client.get("/static/solution-view.mjs")
         stylesheet = client.get("/static/style.css")
-    payload = SolveResponse.model_validate_json(response.text)
+    payload = _SOLVE_PAYLOAD.validate_json(response.text)
     rule = payload.steps[0].notes[0].expression_latex
     assert response.status_code == _HTTP_OK
     assert r"g'\left(x\right)" in rule
     assert r"f'\left(x\right)" in rule
     assert "Derivative" not in rule
-    assert 'note.label === "General power rule"' in script.text
+    assert 'note.label === "General power rule"' in solution.text
     assert ".step-note.is-wide" in stylesheet.text
 
 

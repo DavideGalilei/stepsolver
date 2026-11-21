@@ -171,6 +171,16 @@ Natural-language input and implicit multiplication are not supported.
 
 SymPy objects do not leak into the public API. If the backend leaves an operation unevaluated, StepSolver reports that instead of presenting it as an answer.
 
+The HTTP and Pyodide clients validate responses with the same browser asset.
+After editing the presentation records, regenerate the JSON Schema and its
+standalone validator before packaging either browser client.
+
+```console
+poetry run python export_solve_schema.py
+npm ci --prefix frontend
+npm run build --prefix frontend
+```
+
 ## Checks
 
 ```console

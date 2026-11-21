@@ -1,5 +1,7 @@
 // Web Worker client for the GitHub Pages Pyodide runtime.
 
+import { parseSolveResult } from "./solve-result.mjs";
+
 let nextRequestId = 0;
 let worker;
 const pendingRequests = new Map();
@@ -86,7 +88,8 @@ export function createSolverClient() {
       return warmupPromise;
     },
     solve(payload, onProgress = () => {}) {
-      return request({ action: "solve", mathJson: payload.math_json }, onProgress);
+      return request({ action: "solve", mathJson: payload.math_json }, onProgress)
+        .then(parseSolveResult);
     }
   };
 }

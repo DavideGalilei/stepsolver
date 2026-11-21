@@ -25,9 +25,18 @@ class WorkerStub {
   }
 }
 
+const solvedTwo = {
+  status: "exact",
+  source: "2",
+  formatted_ascii: "2",
+  result_latex: "2",
+  reason: null,
+  steps: []
+};
+
 globalThis.Worker = WorkerStub;
 
-const { createSolverClient } = await import("./browser-runtime.mjs");
+const { createSolverClient } = await import("../src/stepsolver/web_assets/worker-runtime.mjs");
 
 test("warmup exposes shared Python runtime stages before solve", async () => {
   const client = createSolverClient();
@@ -85,8 +94,8 @@ test("warmup exposes shared Python runtime stages before solve", async () => {
     action: "solve",
     mathJson: ["Add", 1, 1]
   });
-  worker.emit("message", { id: 1, type: "result", payload: { status: "exact" } });
-  assert.deepEqual(await solving, { status: "exact" });
+  worker.emit("message", { id: 1, type: "result", payload: solvedTwo });
+  assert.deepEqual(await solving, solvedTwo);
   assert.equal(statuses.filter((status) => status.state === "loading").length, 1);
   unsubscribe();
 });
@@ -117,4 +126,17 @@ test("worker reports each concrete Python initialization phase", () => {
   assert.ok(pydanticInstall >= 0, "the worker should install Pydantic");
   assert.ok(pydanticInstall < stepSolverInstall, "Pydantic should precede StepSolver installation");
   assert.ok(pydanticInstall < stepSolverImport, "Pydantic should precede StepSolver import");
+});
+
+test("the worker client validates solve results separately from warmup", async () => {
+  const client = createSolverClient();
+  const solving = client.solve({ math_json: 2 });
+  const worker = WorkerStub.instance;
+  worker.emit("message", { id: worker.messages.at(-1).id, type: "result", payload: solvedTwo });
+  assert.deepEqual(await solving, solvedTwo);
+
+  const malformed = client.solve({ math_json: 2 });
+  worker.emit("message", { id: worker.messages.at(-1).id, type: "result",
+    payload: { ...solvedTwo, steps: null } });
+  await assert.rejects(malformed, /invalid result/);
 });

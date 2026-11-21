@@ -1,9 +1,13 @@
 """Runtime-neutral serialization for graphical StepSolver clients."""
 
-from dataclasses import asdict, dataclass
-from typing import Literal
-
 from stepsolver.ast import FunctionCall, OpaqueExpression, Operation, Relation
+from stepsolver.browser_result import (
+    ExplanationPartPayload,
+    SolvePayload,
+    StepConstraintPayload,
+    StepNotePayload,
+    StepPayload,
+)
 from stepsolver.formatter import format_ascii, format_expression
 from stepsolver.latex import format_latex_expression, format_latex_value
 from stepsolver.results import (
@@ -17,65 +21,14 @@ from stepsolver.results import (
     UndefinedResult,
 )
 
-
-@dataclass(frozen=True, slots=True, kw_only=True)
-class ExplanationPartPayload:
-    """One prose or inline-math fragment in a browser explanation."""
-
-    text: str | None = None
-    latex: str | None = None
-
-
-@dataclass(frozen=True, slots=True, kw_only=True)
-class StepNotePayload:
-    """One labeled identity or substitution displayed with a step."""
-
-    label: str
-    expression_ascii: str
-    expression_latex: str
-
-
-@dataclass(frozen=True, slots=True, kw_only=True)
-class StepConstraintPayload:
-    """One domain restriction introduced by a displayed step."""
-
-    explanation: str
-    expression_ascii: str
-    expression_latex: str
-
-
-@dataclass(frozen=True, slots=True, kw_only=True)
-class StepPayload:
-    """One browser-renderable verified solution step."""
-
-    number: int
-    rule: str
-    explanation: str
-    explanation_parts: tuple[ExplanationPartPayload, ...]
-    before_ascii: str
-    after_ascii: str
-    before_latex: str
-    after_latex: str
-    verification_method: str
-    verification_detail: str
-    notes: tuple[StepNotePayload, ...]
-    introduced_constraints: tuple[StepConstraintPayload, ...]
-
-
-@dataclass(frozen=True, slots=True, kw_only=True)
-class SolvePayload:
-    """Runtime-neutral representation of a completed solver request."""
-
-    status: Literal["exact", "divergent", "undefined", "unsolved"]
-    source: str
-    formatted_ascii: str
-    result_latex: str | None
-    reason: str | None
-    steps: tuple[StepPayload, ...]
-
-    def as_dict(self) -> dict[str, object]:
-        """Convert this payload into standard JSON-compatible containers."""
-        return asdict(self)
+__all__ = [
+    "ExplanationPartPayload",
+    "SolvePayload",
+    "StepConstraintPayload",
+    "StepNotePayload",
+    "StepPayload",
+    "solve_payload",
+]
 
 
 def _single_variable_solutions_latex(value: MathValue) -> str | None:

@@ -50,6 +50,25 @@ _CASES = (
         "diff((sin(x)+2)^cos(x),x)",
         "Use logarithmic differentiation",
     ),
+    _case("elementary pairs", "integrate(sin(x),x)", "Use the sine antiderivative"),
+    _case(
+        "elementary pairs",
+        "integrate(cos(4*x-1),x)",
+        "Apply the reverse chain rule for cosine",
+    ),
+    _case(
+        "elementary pairs",
+        "integrate(5*exp(x),x)",
+        "Factor out the constant",
+        "Use the exponential antiderivative",
+    ),
+    _case(
+        "elementary pairs",
+        "integrate(6*x*exp(x^2+1),x)",
+        "Substitute the inner function",
+        "Integrate in the new variable",
+        "Substitute back",
+    ),
     _case(
         "inverse functions by parts",
         "integrate(log(x),x)",

@@ -2,8 +2,8 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 
-const appSource = readFileSync(
-  new URL("../src/stepsolver/web_assets/app.js", import.meta.url),
+const solutionSource = readFileSync(
+  new URL("../src/stepsolver/web_assets/solution-view.mjs", import.meta.url),
   "utf8"
 );
 const styleSource = readFileSync(
@@ -12,17 +12,17 @@ const styleSource = readFileSync(
 );
 
 test("step explanations render structured mathematics through MathLive", () => {
-  assert.match(appSource, /function createStepExplanation\(step\)/);
+  assert.match(solutionSource, /function createStepExplanation\(step\)/);
   assert.match(
-    appSource,
+    solutionSource,
     /createInlineMath\(part\.latex, "step-explanation-math"\)/
   );
-  assert.match(appSource, /document\.createElement\("math-span"\)/);
-  assert.match(appSource, /math\.textContent = latex/);
-  assert.match(appSource, /document\.createTextNode\(part\.text\)/);
-  assert.doesNotMatch(appSource, /explanation\.textContent = step\.explanation/);
+  assert.match(solutionSource, /document\.createElement\("math-span"\)/);
+  assert.match(solutionSource, /math\.textContent = latex/);
+  assert.match(solutionSource, /document\.createTextNode\(part\.text\)/);
+  assert.doesNotMatch(solutionSource, /explanation\.textContent = step\.explanation/);
   assert.doesNotMatch(
-    appSource,
+    solutionSource,
     /createReadonlyMath\(part\.latex, "step-explanation-math"\)/
   );
   const inlineMathStyle = styleSource.match(/\.step-explanation-math\s*\{[^}]+\}/s);

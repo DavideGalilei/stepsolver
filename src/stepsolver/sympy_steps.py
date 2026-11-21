@@ -1,7 +1,7 @@
 """Select and build detailed student-facing derivations."""
 
 from fractions import Fraction
-from typing import cast
+from typing import TYPE_CHECKING, cast
 
 import sympy as sp
 
@@ -22,42 +22,13 @@ from stepsolver.derivation.algebra import (
     is_algebra_scalar,
     symbolic_denominators,
 )
-from stepsolver.derivation.definite_integrals import (
-    derive_definite_integral,
-    derive_dirichlet_integral,
-    derive_improper_integral,
-)
 from stepsolver.derivation.derivatives import derive_derivative
 from stepsolver.derivation.equations import derive_polynomial_equation
-from stepsolver.derivation.integrals_benchmark import derive_advanced_substitution_integral
-from stepsolver.derivation.integrals_elementary import (
-    derive_basic_antiderivative,
-    derive_constant_multiple_integral,
-    derive_function_substitution_integral,
-    derive_log_derivative_integral,
-    derive_polynomial_sum_integral,
-)
-from stepsolver.derivation.integrals_special import (
-    derive_gaussian_antiderivative,
-    derive_integration_by_parts,
-    derive_inverse_hyperbolic_integral,
-    derive_partial_fraction_integral,
-    derive_shifted_semicircle_integral,
-    derive_square_root_rational_integral,
-    derive_trigonometric_power_integral,
-)
-from stepsolver.derivation.integrals_structural import (
-    derive_cyclic_exponential_trig_integral,
-    derive_inverse_function_by_parts,
-    derive_inverse_tangent_substitution,
-    derive_trig_power_substitution,
-)
 from stepsolver.derivation.limits import derive_limit
-from stepsolver.derivation.model import BackendDerivationStep
-from stepsolver.derivation.reciprocal_quadratic import derive_reciprocal_quadratic_integral
 from stepsolver.derivation.sums import derive_sum
 from stepsolver.derivation.systems import derive_linear_system
 from stepsolver.derivation.transcendental_equations import derive_transcendental_equation
+from stepsolver.integral_dispatch import build_antiderivative_steps, build_definite_integral_steps
 from stepsolver.results import (
     SolutionStep,
     StepConstraint,
@@ -67,6 +38,9 @@ from stepsolver.results import (
 from stepsolver.sympy_conversion import SympyConverter
 from stepsolver.sympy_rendering import SympyDerivationRenderer
 from stepsolver.sympy_support import is_object_mapping, is_object_sequence
+
+if TYPE_CHECKING:
+    from stepsolver.derivation.model import BackendDerivationStep
 
 _MIN_DERIVATIVE_ARGUMENTS = 2
 _MAX_DERIVATIVE_ARGUMENTS = 3
@@ -82,38 +56,6 @@ def _derivative_order(query: Query) -> int | None:
     if order.denominator != 1 or order <= 0:
         return None
     return order.numerator
-
-
-def _derive_indefinite_integral(
-    integrand: sp.Basic,
-    variable: sp.Symbol,
-    result: sp.Basic,
-) -> tuple[BackendDerivationStep, ...]:
-    strategies = (
-        derive_basic_antiderivative,
-        derive_log_derivative_integral,
-        derive_polynomial_sum_integral,
-        derive_constant_multiple_integral,
-        derive_function_substitution_integral,
-        derive_trig_power_substitution,
-        derive_inverse_tangent_substitution,
-        derive_square_root_rational_integral,
-        derive_shifted_semicircle_integral,
-        derive_inverse_hyperbolic_integral,
-        derive_trigonometric_power_integral,
-        derive_inverse_function_by_parts,
-        derive_cyclic_exponential_trig_integral,
-        derive_integration_by_parts,
-        derive_advanced_substitution_integral,
-        derive_gaussian_antiderivative,
-        derive_reciprocal_quadratic_integral,
-        derive_partial_fraction_integral,
-    )
-    for strategy in strategies:
-        derivation = strategy(integrand, variable, result)
-        if derivation:
-            return derivation
-    return ()
 
 
 def _domain_denominators(expression: Expression) -> tuple[Expression, ...]:
@@ -136,28 +78,6 @@ def _domain_denominators(expression: Expression) -> tuple[Expression, ...]:
             denominator for item in expression.items for denominator in _domain_denominators(item)
         )
     return ()
-
-
-def _derive_definite_integral(
-    integrand: sp.Basic,
-    variable: sp.Symbol,
-    lower: sp.Basic,
-    upper: sp.Basic,
-    result: sp.Basic,
-) -> tuple[BackendDerivationStep, ...]:
-    derivation = derive_dirichlet_integral(
-        integrand,
-        variable,
-        lower,
-        upper,
-        result,
-    )
-    if derivation:
-        return derivation
-    derivation = derive_improper_integral(integrand, variable, lower, upper, result)
-    if derivation:
-        return derivation
-    return derive_definite_integral(integrand, variable, lower, upper, result)
 
 
 class SympyStepBuilder:
@@ -426,14 +346,14 @@ class SympyStepBuilder:
             return ()
         if len(query.arguments) == 2:
             try:
-                derivation = _derive_indefinite_integral(integrand, variable, backend_value)
+                derivation = build_antiderivative_steps(integrand, variable, backend_value)
             except (sp.PolynomialError, TypeError, ValueError):
                 return ()
         else:
             lower = self._converter.to_sympy(query.arguments[2])
             upper = self._converter.to_sympy(query.arguments[3])
             try:
-                derivation = _derive_definite_integral(
+                derivation = build_definite_integral_steps(
                     integrand, variable, lower, upper, backend_value
                 )
             except (sp.PolynomialError, TypeError, ValueError):
